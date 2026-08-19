@@ -29,7 +29,10 @@ consistently across the task packages, stored trajectories, and verifier
 artifacts. The private source repository and its history are not published.
 
 Historical `task_checksum` values inside stored run results are retained as
-run identifiers. Hashes for the delivered, anonymized task packages are in
+legacy run identifiers. Control-to-trial identity is validated with Harbor's
+authoritative `lock.json` task digest; the matching digests and control gate are
+recorded in `sample-run/indexes/execution-summary.json`. Hashes for the
+delivered, anonymized task packages are in
 `sample-run/manifests/frozen-cohort.json`; the transformation policy is in
 `sample-run/manifests/public-snapshot.json`.
 
@@ -72,11 +75,13 @@ least one of `k` sampled attempts succeeds.
 | [Task 4](tasks/04-usage-attribution-chain/instruction.md) | Opus 4.8 | 0/8 | 0.0000 | 0.0000 | 0.0000 |
 <!-- MINI_SWE_MATRIX_END -->
 
+<!-- MINI_SWE_MACRO_START -->
 Unweighted macro-average across the four tasks:
 
 | Model | Valid solves | Raw solve rate | pass@1 | pass@3 | pass@8 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Opus 4.8 | 5/32 | 15.6% | 0.1563 | 0.3929 | 0.7500 |
+| Opus 4.8 | 6/32 | 18.8% | 0.1875 | 0.4598 | 0.7500 |
+<!-- MINI_SWE_MACRO_END -->
 
 The macro pass@k values average the four task-level estimates; they are not a
 pooled trial estimator.

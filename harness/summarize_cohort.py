@@ -12,6 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 START = "<!-- MINI_SWE_MATRIX_START -->"
 END = "<!-- MINI_SWE_MATRIX_END -->"
+MACRO_START = "<!-- MINI_SWE_MACRO_START -->"
+MACRO_END = "<!-- MINI_SWE_MACRO_END -->"
 # Both routes serve the same Claude Opus 4.8 weights.
 MODELS = (
     "bedrock/us.anthropic.claude-opus-4-8",
@@ -39,6 +41,16 @@ def pass_at_k(n: int, c: int, k: int) -> float:
     return 1.0 - comb(n - c, k) / comb(n, k)
 
 
+def task_digest(trial_dir: Path) -> str | None:
+    lock_path = trial_dir / "lock.json"
+    if not lock_path.is_file():
+        return None
+    try:
+        return (json.loads(lock_path.read_text()).get("task") or {}).get("digest")
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 def load_trials() -> list[dict]:
     trials = []
     for result_path in sorted(RAW.glob("*/result.json")):
@@ -63,12 +75,14 @@ def load_trials() -> list[dict]:
             trial_dir / "verifier" / "reward.json",
             trial_dir / "verifier" / "output.json",
         )
+        digest = task_digest(trial_dir)
         valid = (
             result.get("exception_info") is None
             and isinstance(reward, (int, float))
             and trajectory is not None
             and native_trajectory is not None
             and verifier is not None
+            and digest is not None
         )
         agent_result = result.get("agent_result") or {}
         trials.append(
@@ -95,23 +109,37 @@ def load_trials() -> list[dict]:
                 "cache_tokens": agent_result.get("n_cache_tokens"),
                 "output_tokens": agent_result.get("n_output_tokens"),
                 "reported_cost_usd": agent_result.get("cost_usd"),
+                "task_digest": digest,
+                "legacy_task_checksum": result.get("task_checksum"),
             }
         )
     return trials
 
 
-def load_controls() -> dict:
+def load_controls(expected_task_digests: dict[str, str]) -> dict:
     rewards: dict[str, list[float]] = defaultdict(list)
+    digest_matches = []
     for result_path in sorted(CONTROLS_RAW.glob("*/result.json")):
         result = json.loads(result_path.read_text())
-        agent = ((result.get("config") or {}).get("agent") or {}).get("name")
+        config = result.get("config") or {}
+        agent = (config.get("agent") or {}).get("name")
+        task = Path(str(((config.get("task") or {}).get("path")) or "")).name
         reward = ((result.get("verifier_result") or {}).get("rewards") or {}).get(
             "reward"
         )
-        if agent in {"oracle", "nop"} and isinstance(reward, (int, float)):
+        digest = task_digest(result_path.parent)
+        if (
+            task in expected_task_digests
+            and agent in {"oracle", "nop"}
+            and isinstance(reward, (int, float))
+        ):
             rewards[agent].append(float(reward))
+            digest_matches.append(digest == expected_task_digests[task])
     controls = {
         "cohort_directory": CONTROLS_RAW.relative_to(ROOT).as_posix(),
+        "task_digests": expected_task_digests,
+        "task_digests_match_scored": len(digest_matches) == 2 * len(TASKS)
+        and all(digest_matches),
         "oracle": {
             "count": len(rewards["oracle"]),
             "all_reward_one": len(rewards["oracle"]) == len(TASKS)
@@ -123,9 +151,11 @@ def load_controls() -> dict:
             and all(value == 0.0 for value in rewards["nop"]),
         },
     }
-    if not controls["oracle"]["all_reward_one"] or not controls["nop"][
-        "all_reward_zero"
-    ]:
+    if (
+        not controls["task_digests_match_scored"]
+        or not controls["oracle"]["all_reward_one"]
+        or not controls["nop"]["all_reward_zero"]
+    ):
         raise SystemExit(f"control gate failed: {controls}")
     return controls
 
@@ -151,6 +181,37 @@ def matrix(cells: dict[str, list[dict]], prefix: str) -> str:
     return "\n".join(lines)
 
 
+def macro(cells: dict[str, list[dict]]) -> str:
+    total_valid = 0
+    total_passes = 0
+    per_task_pass_at_k = []
+    for task in TASKS:
+        valid = cells[task]
+        n = len(valid)
+        c = sum(item["passed"] for item in valid)
+        total_valid += n
+        total_passes += c
+        per_task_pass_at_k.append([pass_at_k(n, c, k) for k in (1, 3, 8)])
+    macro_values = [
+        sum(row[index] for row in per_task_pass_at_k) / len(per_task_pass_at_k)
+        for index in range(3)
+    ]
+    return "\n".join(
+        [
+            MACRO_START,
+            "Unweighted macro-average across the four tasks:",
+            "",
+            "| Model | Valid solves | Raw solve rate | pass@1 | pass@3 | pass@8 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
+            f"| {MODEL_LABEL} | {total_passes}/{total_valid} | "
+            f"{100 * total_passes / total_valid:.1f}% | "
+            + " | ".join(f"{value:.4f}" for value in macro_values)
+            + " |",
+            MACRO_END,
+        ]
+    )
+
+
 def main() -> None:
     trials = load_trials()
     cells: dict[str, list[dict]] = defaultdict(list)
@@ -161,7 +222,13 @@ def main() -> None:
     if incomplete:
         raise SystemExit(f"expected exactly {TARGET} valid trials per task: {incomplete}")
 
-    controls = load_controls()
+    expected_task_digests = {}
+    for task in TASKS:
+        digests = {item["task_digest"] for item in cells[task]}
+        if len(digests) != 1:
+            raise SystemExit(f"scored task digest mismatch for {task}: {sorted(digests)}")
+        expected_task_digests[task] = digests.pop()
+    controls = load_controls(expected_task_digests)
     summaries = []
     for task in TASKS:
         valid = cells[task]
@@ -208,14 +275,22 @@ def main() -> None:
 
     readme_matrix = matrix(cells, "")
     index_matrix = matrix(cells, "../../")
-    (index_dir / "pass-rate-matrix.md").write_text(index_matrix + "\n")
+    macro_table = macro(cells)
+    (index_dir / "pass-rate-matrix.md").write_text(
+        index_matrix + "\n\n" + macro_table + "\n"
+    )
     readme_path = ROOT / "README.md"
     readme = readme_path.read_text()
     if START not in readme or END not in readme:
         raise SystemExit("README matrix markers are missing")
     prefix, rest = readme.split(START, 1)
     _, suffix = rest.split(END, 1)
-    readme_path.write_text(prefix + readme_matrix + suffix)
+    readme = prefix + readme_matrix + suffix
+    if MACRO_START not in readme or MACRO_END not in readme:
+        raise SystemExit("README macro markers are missing")
+    prefix, rest = readme.split(MACRO_START, 1)
+    _, suffix = rest.split(MACRO_END, 1)
+    readme_path.write_text(prefix + macro_table + suffix)
     print(f"indexed={len(trials)} valid={sum(item['valid'] for item in trials)} excluded={sum(not item['valid'] for item in trials)}")
 
 

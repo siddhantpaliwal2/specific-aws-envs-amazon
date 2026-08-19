@@ -6,3 +6,11 @@
 | [Task 3](../../tasks/03-usage-window-aggregation/instruction.md) | Opus 4.8 | 1/8 | 0.1250 | 0.3750 | 1.0000 |
 | [Task 4](../../tasks/04-usage-attribution-chain/instruction.md) | Opus 4.8 | 0/8 | 0.0000 | 0.0000 | 0.0000 |
 <!-- MINI_SWE_MATRIX_END -->
+
+<!-- MINI_SWE_MACRO_START -->
+Unweighted macro-average across the four tasks:
+
+| Model | Valid solves | Raw solve rate | pass@1 | pass@3 | pass@8 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Opus 4.8 | 6/32 | 18.8% | 0.1875 | 0.4598 | 0.7500 |
+<!-- MINI_SWE_MACRO_END -->
