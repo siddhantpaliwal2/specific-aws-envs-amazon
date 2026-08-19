@@ -1,0 +1,234 @@
+--- a/src/utils/aws/awsSSM.ts
++++ b/src/utils/aws/awsSSM.ts
+@@ -6,3 +6,9 @@
+     const { Parameter } = await client.send(new GetParameterCommand({ Name: regionURL }));
+     return Parameter?.Value;
+ };
++
++export const getParameterValue = async (name: string): Promise<string> => {
++    const client = new SSMClient({});
++    const { Parameter } = await client.send(new GetParameterCommand({ Name: name }));
++    return Parameter?.Value;
++};
+--- a/src/utils/aws/awsEc2.ts
++++ b/src/utils/aws/awsEc2.ts
+@@ -238,3 +238,19 @@
+         }),
+     );
+ };
++
++export const getInstanceTags = async (region, creds, instanceId: string): Promise<Record<string, string>> => {
++    const ec2Client = new EC2Client({ region, credentials: creds });
++    const response = await ec2Client.send(new DescribeInstancesCommand({ InstanceIds: [instanceId] }));
++    const tags: Record<string, string> = {};
++    (response?.Reservations ?? []).forEach(({ Instances }) => {
++        (Instances ?? []).forEach((instance) => {
++            (instance.Tags ?? []).forEach(({ Key, Value }) => {
++                if (Key) {
++                    tags[Key] = Value ?? '';
++                }
++            });
++        });
++    });
++    return tags;
++};
+--- a/src/onboarding/entities/attributionDirectory.entity.ts
++++ b/src/onboarding/entities/attributionDirectory.entity.ts
+@@ -1,6 +1,14 @@
+ import { getDocument } from '../../utils/aws/s3.js';
++import { getInstanceTags } from '../../utils/aws/awsEc2.js';
++import { getParameterValue } from '../../utils/aws/awsSSM.js';
+ 
+ const POOL_REFERENCE = 'pool/';
++const UNIT_REFERENCE = 'unit/';
++const NODE_REFERENCE = 'node/';
++const ALIAS_REFERENCE = 'alias/';
++const ALIAS_PARAMETER_ROOT = '/metering/attribution/alias/';
++const CHARGE_CODE_TAG = 'meteringChargeCode';
++const ROLLUP_TAG = 'meteringRollsInto';
+ 
+ /**
+  * One pocket of a business' estate. The finance system rewrites the whole set
+@@ -10,6 +18,8 @@
+ export class AttributionPool {
+     /** The code spend sitting on this pool is booked to. */
+     public chargeCode: string;
++    /** Where the pool hands its cost on to, when it does not carry it itself. */
++    public rollsUpTo?: string;
+ }
+ 
+ export class AttributionPoolDocument {
+@@ -18,27 +28,120 @@
+ }
+ 
+ /**
+- * The attribution material a business keeps beside its onboarding record.
++ * One billing unit. Units change one at a time and are versioned by the finance
++ * system on their own, so each keeps its own object beside the pool document.
+  */
++export class AttributionUnit {
++    public unitId: string;
++    public chargeCode: string;
++    /** Where the unit hands its cost on to, when it does not carry it itself. */
++    public parentRef?: string;
++}
++
++/**
++ * One step of a walk: what the record booked to, and where it hands over next.
++ */
++type AttributionStep = {
++    chargeCode?: string;
++    delegate?: string;
++};
++
++/**
++ * The attribution material a business keeps beside its onboarding record. A
++ * reference points at exactly one of four places, and what it finds there may
++ * point somewhere else again.
++ */
+ export class AttributionDirectory {
++    private readonly bucket: string;
++    private readonly prefix: string;
+     private readonly pools: Record<string, AttributionPool>;
++    private readonly units: Record<string, AttributionUnit> = {};
++    private readonly nodes: Record<string, Record<string, string>> = {};
++    private readonly aliases: Record<string, string> = {};
+ 
+-    private constructor(pools: Record<string, AttributionPool>) {
++    private constructor(bucket: string, prefix: string, pools: Record<string, AttributionPool>) {
++        this.bucket = bucket;
++        this.prefix = prefix;
+         this.pools = pools;
+     }
+ 
+     static async load(bucket: string, prefix: string): Promise<AttributionDirectory> {
+         const document = await getDocument<AttributionPoolDocument>(bucket, `${prefix}pools.json`);
+-        return new AttributionDirectory(document?.pools ?? {});
++        return new AttributionDirectory(bucket, prefix, document?.pools ?? {});
+     }
+ 
+     /**
+-     * The charge code named by the attribution reference a usage line carries.
++     * The charge code the attribution reference a usage line carries finally
++     * lands on. Hand-offs are followed until a record has none left. A
++     * reference the walk has already stood on ends it, which is what keeps a
++     * pocket that hands back to something above it from running for ever.
+      */
+-    chargeCodeFor(reference: string): string {
+-        if (!reference || !reference.startsWith(POOL_REFERENCE)) {
+-            return undefined;
++    async chargeCodeFor(reference: string, credentialsFor: (accountId: string) => any): Promise<string> {
++        const seen: Record<string, boolean> = {};
++        let pointer = reference;
++        let chargeCode: string;
++        while (pointer && !seen[pointer]) {
++            seen[pointer] = true;
++            if (pointer.startsWith(ALIAS_REFERENCE)) {
++                // eslint-disable-next-line no-await-in-loop
++                pointer = await this.aliasTarget(pointer.slice(ALIAS_REFERENCE.length));
++                continue;
++            }
++            // eslint-disable-next-line no-await-in-loop
++            const step = await this.stepFor(pointer, credentialsFor);
++            if (!step) {
++                return chargeCode;
++            }
++            chargeCode = step.chargeCode ?? chargeCode;
++            pointer = step.delegate;
+         }
+-        return this.pools[reference.slice(POOL_REFERENCE.length)]?.chargeCode;
++        return chargeCode;
+     }
++
++    private async stepFor(reference: string, credentialsFor: (accountId: string) => any): Promise<AttributionStep> {
++        if (reference.startsWith(POOL_REFERENCE)) {
++            const pool = this.pools[reference.slice(POOL_REFERENCE.length)];
++            return pool ? { chargeCode: pool.chargeCode, delegate: pool.rollsUpTo } : undefined;
++        }
++        if (reference.startsWith(UNIT_REFERENCE)) {
++            const unit = await this.unit(reference.slice(UNIT_REFERENCE.length));
++            return unit ? { chargeCode: unit.chargeCode, delegate: unit.parentRef } : undefined;
++        }
++        if (reference.startsWith(NODE_REFERENCE)) {
++            const [accountId, region, instanceId] = reference.slice(NODE_REFERENCE.length).split('/');
++            if (!accountId || !region || !instanceId) {
++                return undefined;
++            }
++            const tags = await this.nodeTags(accountId, region, instanceId, credentialsFor);
++            return { chargeCode: tags[CHARGE_CODE_TAG], delegate: tags[ROLLUP_TAG] };
++        }
++        return undefined;
++    }
++
++    private async unit(name: string): Promise<AttributionUnit> {
++        if (this.units[name] === undefined) {
++            this.units[name] = await getDocument<AttributionUnit>(this.bucket, `${this.prefix}units/${name}.json`);
++        }
++        return this.units[name];
++    }
++
++    private async nodeTags(
++        accountId: string,
++        region: string,
++        instanceId: string,
++        credentialsFor: (accountId: string) => any,
++    ): Promise<Record<string, string>> {
++        const key = `${accountId}/${region}/${instanceId}`;
++        if (this.nodes[key] === undefined) {
++            this.nodes[key] = await getInstanceTags(region, credentialsFor(accountId), instanceId);
++        }
++        return this.nodes[key];
++    }
++
++    private async aliasTarget(key: string): Promise<string> {
++        if (this.aliases[key] === undefined) {
++            this.aliases[key] = await getParameterValue(`${ALIAS_PARAMETER_ROOT}${key}`);
++        }
++        return this.aliases[key];
++    }
+ }
+--- a/src/microservices/usageAttribution/usageAttribution.service.ts
++++ b/src/microservices/usageAttribution/usageAttribution.service.ts
+@@ -61,18 +61,29 @@
+         const directory = await AttributionDirectory.load(registryBucket, registry.attributionPrefix);
+         const totals: Record<string, AttributedSpendEntity> = {};
+ 
++        // A hand-off can name an instance in any of the onboarded accounts, not
++        // only the one whose export the line came out of, so every account's
++        // credentials have to be to hand before the first line is walked.
++        const credentials: Record<string, any> = {};
++        registry.accounts.forEach((account) => {
++            credentials[account.accountId] = credentialsForAccount(account);
++        });
++        const credentialsFor = (accountId: string) => credentials[accountId];
++
+         for (const account of registry.accounts) {
+             // eslint-disable-next-line no-await-in-loop
+             const lines = await UsageExport.linesForAccount(
+                 account.usageBucket,
+                 registry.usageExportPrefix,
+                 account.accountId,
+-                credentialsForAccount(account),
++                credentialsFor(account.accountId),
+             );
+-            lines.forEach((line) => {
+-                const chargeCode = directory.chargeCodeFor(line.attribution);
++            for (const line of lines) {
++                // eslint-disable-next-line no-await-in-loop
++                const chargeCode = await directory.chargeCodeFor(line.attribution, credentialsFor);
+                 if (!chargeCode) {
+-                    return;
++                    // eslint-disable-next-line no-continue
++                    continue;
+                 }
+                 const running =
+                     totals[chargeCode] ??
+@@ -81,7 +92,7 @@
+                 running.amount += Number(line.amount ?? 0);
+                 running.lineCount += 1;
+                 totals[chargeCode] = running;
+-            });
++            }
+         }
+ 
+         const codes = Object.keys(totals).sort();

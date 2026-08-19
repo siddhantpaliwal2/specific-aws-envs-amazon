@@ -1,0 +1,3963 @@
+This is mini-swe-agent version 2.4.5.
+Check the v2 migration guide at https://klieret.short.gy/mini-v2-migration
+Loading global config from '/home/agent/.config/mini-swe-agent/.env'
+Warning: Input is not a terminal (fd=0).
+Building agent config from specs: ['mini', '/tmp/mswea-config/custom.yaml']
+
+System:
+You are a helpful assistant that can interact with a computer.
+
+User:
+Please solve this issue: Each customer's aggregated usage reaches the metric
+store by business, customer and dimension. Each business keeps a billing
+catalogue in the billing bucket with plans, dimensions, allowances, overage
+rules, invoice settings and customer assignments. The invoicing collector
+already reads both. Charge only permitted usage beyond a finite exhausted
+allowance; an unlimited or unexhausted allowance, or a plan that forbids
+overage, charges nothing. Give a dimension a line whenever the customer owes
+something on it, and give a dimension the plan prices at zero a line unless the
+invoice settings hide free dimensions. This task includes a local AWS-compatible
+emulator at the preconfigured AWS_ENDPOINT_URL. Its credentials and region are
+already in the shell, the repository's AWS SDK clients use it, and no real AWS
+account is involved. You may inspect its resources while developing and testing.
+
+
+You can execute bash commands and edit files to implement the necessary changes.
+
+## Recommended Workflow
+
+This workflow should be done step-by-step so that you can iterate on your
+changes and any possible problems.
+
+1. Analyze the codebase by finding and reading relevant files
+2. Create a script to reproduce the issue
+3. Edit the source code to resolve the issue
+4. Verify your fix works by running your script again
+5. Test edge cases to ensure your fix is robust
+6. Submit your changes and finish your work by issuing the following command:
+`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
+   Do not combine it with any other command. <important>After this command, you
+cannot continue working on this task.</important>
+
+## Command Execution Rules
+
+You are operating in an environment where
+
+1. You issue at least one command
+2. The system executes the command(s) in a subshell
+3. You see the result(s)
+4. You write your next command(s)
+
+Each response should include:
+
+1. **Reasoning text** where you explain your analysis and plan
+2. At least one tool call with your command
+
+**CRITICAL REQUIREMENTS:**
+
+- Your response SHOULD include reasoning text explaining what you're doing
+- Your response MUST include AT LEAST ONE bash tool call
+- Directory or environment variable changes are not persistent. Every action is
+executed in a new subshell.
+- However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd
+/path/to/working/dir && ...` or write/load environment variables from files
+- Submit your changes and finish your work by issuing the following command:
+`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
+  Do not combine it with any other command. <important>After this command, you
+cannot continue working on this task.</important>
+
+Example of a CORRECT response:
+<example_response>
+I need to understand the structure of the repository first. Let me check what
+files are in the current directory to get a better understanding of the
+codebase.
+
+[Makes bash tool call with {"command": "ls -la"} as arguments]
+</example_response>
+
+<system_information>
+Linux 6.8.0-101-generic #101-Ubuntu SMP PREEMPT_DYNAMIC Mon Feb  9 10:15:05 UTC
+2026 x86_64
+</system_information>
+
+## Useful command examples
+
+### Create a new file:
+
+```bash
+cat <<'EOF' > newfile.py
+import numpy as np
+hello = "world"
+print(hello)
+EOF
+```
+
+### Edit files with sed:```bash
+# Replace all occurrences
+sed -i 's/old_string/new_string/g' filename.py
+
+# Replace only first occurrence
+sed -i 's/old_string/new_string/' filename.py
+
+# Replace first occurrence on line 1
+sed -i '1s/old_string/new_string/' filename.py
+
+# Replace all occurrences in lines 1-10
+sed -i '1,10s/old_string/new_string/g' filename.py
+```
+
+### View file content:
+
+```bash
+# View specific lines with numbers
+nl -ba filename.py | sed -n '10,20p'
+```
+
+### Any other command you want to run
+
+```bash
+anything
+```
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 1, $0.02):
+I'll start by exploring the repository structure to understand the codebase.
+
+```
+cd /app 2>/dev/null || cd ~ ; pwd; ls -la; echo "---"; env | grep -i aws
+```
+
+Tool:
+<returncode>
+0
+<output>
+/app
+total 1320
+drwxr-xr-x    1 agent agent      63 Aug 18 21:15 .
+drwxr-xr-x    1 root  root      130 Aug 19 02:01 ..
+-rw-r--r--    1 agent agent      15 Jan  1  1970 .eslintignore
+-rw-r--r--    1 agent agent     760 Jan  1  1970 .eslintrc.js
+drwxr-xr-x    3 agent agent      31 Aug 18 21:15 .github
+-rw-r--r--    1 agent agent    1783 Jan  1  1970 .gitignore
+drwxr-xr-x    2 agent agent      52 Aug 18 21:15 .husky
+-rw-r--r--    1 agent agent      99 Jan  1  1970 .prettierrc.json
+drwxr-xr-x    2 agent agent      33 Aug 18 21:15 .vscode
+-rw-r--r--    1 agent agent    2064 Jan  1  1970 Dockerfile
+-rw-r--r--    1 agent agent    8358 Jan  1  1970 README.md
+drwxr-xr-x    2 agent agent    4096 Aug 18 21:15 docs
+drwxr-xr-x   16 agent agent    4096 Aug 18 21:15 integration
+-rw-r--r--    1 agent agent     641 Jan  1  1970 jest.unit.config.json
+-rw-r--r--    1 agent agent     400 Jan  1  1970 nest-cli.json
+drwxr-xr-x 1004 agent agent   28672 Aug 18 21:16 node_modules
+-rw-r--r--    1 agent agent 1224450 Aug 18 21:16 package-lock.json
+-rw-r--r--    1 agent agent    9725 Jan  1  1970 package.json
+drwxr-xr-x    4 agent agent     106 Aug 18 21:15 resources
+drwxr-xr-x   39 agent agent    4096 Aug 18 21:15 src
+drwxr-xr-x    6 agent agent     175 Aug 18 21:15 test
+-rw-r--r--    1 agent agent     770 Jan  1  1970 testTSConfig.json
+-rw-r--r--    1 agent agent     109 Jan  1  1970 tsconfig.build.json
+-rw-r--r--    1 agent agent     758 Jan  1  1970 tsconfig.json
+---
+AWS_CONFIG_FILE=/tmp/mswea-bedrock-provider/config
+AWS_DEFAULT_REGION=us-east-1
+AWS_ENDPOINT_URL=http://127.0.0.1:4566
+AWS_SHARED_CREDENTIALS_FILE=/tmp/mswea-bedrock-provider/credentials
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=[REDACTED_AWS_ACCESS_KEY_ID]
+AWS_SECRET_ACCESS_KEY=[REDACTED_AWS_SECRET_ACCESS_KEY]
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 2, $0.03):
+I see this is a NestJS project. Let me explore the source structure and look for
+invoicing-related code.
+
+```
+cd /app; ls src; echo "==="; grep -ril "invoic" src | head -50
+```
+
+Tool:
+<returncode>
+0
+<output>
+agent-measurement
+alerts
+analytics
+app.controller.spec.ts
+app.controller.ts
+app.module.ts
+app.service.ts
+audit
+authz
+azure
+basicResponseDTO.ts
+billing
+cacheStore.ts
+contract
+cost
+credit
+customer
+customergroup
+dimensions
+genericExpressEnv.ts
+inbox
+influx
+interceptors
+invoice
+kubernetes-deployer
+ledger
+margincalc
+measurement
+measurement-config
+microservices
+offering
+onboarding
+openApiPublicSpecGenerator.ts
+openApiSpecGenerator.ts
+payment
+portal
+scheduler
+services
+setting
+tax
+token-consumer
+tracer.ts
+transformer
+usage
+users
+utils
+webhook
+===
+src/analytics/analytics.service.ts
+src/app.module.ts
+src/authz/jwt-local.gaurd.ts
+src/authz/jwt-local.strategy.ts
+src/billing/billing.module.ts
+src/billing/billing.service.spec.ts
+src/billing/billing.service.ts
+src/billing/entities/billing.entity.ts
+src/contract/contract.module.ts
+src/contract/contract.service.spec.ts
+src/contract/contract.service.ts
+src/contract/dto/customerContractDiscount.ts
+src/contract/dto/prepareContractResponse.dto.ts
+src/credit/credit.service.spec.ts
+src/credit/credit.service.ts
+src/customer/customer.controller.ts
+src/customer/customer.module.ts
+src/customer/customer.service.spec.ts
+src/customer/customer.service.ts
+src/customer/dto/create-customer-refund.dto.ts
+src/customer/dto/create-customer.dto.ts
+src/customer/dto/createCustomerEnrollment.dto.ts
+src/customer/dto/find-payments-query-param.dto.ts
+src/customer/dto/update-customer.dto.ts
+src/customer/dto/updateCustomerEnrollment.dto.ts
+src/customer/dto/updateFreeTrial.dto.ts
+src/customer/entities/customer.entity.ts
+src/customergroup/dto/ReadChildRowResponseData.ts
+src/customergroup/dto/createCustomerGroup.dto.ts
+src/customergroup/entities/customergroup.entity.ts
+src/dimensions/dto/dimensionTier.dto.ts
+src/influx/entities/InvoiceInfluxTable.entity.ts
+src/influx/entities/settingsInfluxTable.entity.ts
+src/influx/entities/webhook.entity.ts
+src/influx/influx.service.ts
+src/invoice/dto/create-Invoices.dto.ts
+src/invoice/dto/createOffcycleInvoice.ts
+src/invoice/dto/manualInvoiceValidation.ts
+src/invoice/dto/read-invoices.dto.ts
+src/invoice/dto/update-invoices.dto.ts
+src/invoice/entities/InvoicePaymentTerm.ts
+src/invoice/entities/InvoiceStatus.ts
+src/invoice/entities/invoice.entity.ts
+src/invoice/invoice.entity.spec.ts
+src/invoice/invoice.services.spec.ts
+src/invoice/invoices.controller.spec.ts
+src/invoice/invoices.controller.ts
+src/invoice/invoices.module.ts
+src/invoice/invoices.service.ts
+src/ledger/dto/allowedLedgerFilters.ts
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 3, $0.04):
+The task mentions an "invoicing collector" that reads usage from a metric store
+and billing catalogue from a billing bucket. Let me search for that collector.
+
+```
+cd /app; grep -ril "collector" src | head; echo "==="; grep -rl "metric
+store\|metricStore\|MetricStore\|billing bucket\|billingBucket\|BillingBucket"
+src | head
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/tracer.ts
+===
+src/microservices/invoiceLineGatherer/dto/invoiceLineGatherer.dto.ts
+src/microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 4, $0.05):
+```
+cd /app; ls -la src/microservices/invoiceLineGatherer/; echo "==="; wc -l
+src/microservices/invoiceLineGatherer/*.ts
+src/microservices/invoiceLineGatherer/**/*.ts 2>/dev/null
+```
+
+Tool:
+<returncode>
+0
+<output>
+total 16
+drwxr-xr-x  3 agent agent  108 Aug 18 21:15 .
+drwxr-xr-x 11 agent agent 4096 Aug 18 21:15 ..
+drwxr-xr-x  2 agent agent   48 Aug 18 21:15 dto
+-rw-r--r--  1 agent agent  399 Jan  1  1970 invoiceLineGatherer.module.ts
+-rw-r--r--  1 agent agent 6172 Jan  1  1970 invoiceLineGatherer.service.ts
+===
+  14 src/microservices/invoiceLineGatherer/invoiceLineGatherer.module.ts
+ 157 src/microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts
+  64 src/microservices/invoiceLineGatherer/dto/invoiceLineGatherer.dto.ts
+ 235 total
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 5, $0.06):
+```
+cd /app; cat
+src/microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { Logger } from '@nestjs/common';
+import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import { Job } from 'bull';
+import { SchedulerEntity } from '../../scheduler/entities/scheduler.entity.js';
+import { AuditService } from '../../audit/audit.service.js';
+import { AuditScope } from '../../audit/entities/audit.interface.js';
+import { AggregatedUsageResponse } from
+'../../customer/dto/read-customer.dto.js';
+import { InvoiceLineItems } from '../../invoice/entities/invoice.entity.js';
+import { Offering } from '../../offering/entities/offeringPackage.entity.js';
+import { ReadOfferingResponseData } from
+'../../offering/dto/readOffering.dto.js';
+import { getMetricSeries } from '../../utils/aws/cloudwatch.js';
+import { getDocument } from '../../utils/aws/s3.js';
+import { BillingCatalogue, CustomerInvoiceLines, InvoiceLineGathererDto } from
+'./dto/invoiceLineGatherer.dto.js';
+
+export const meteredInvoiceLines = 'meteredInvoiceLines';
+
+@Processor('scheduler_billing_queue')
+export class InvoiceLineGathererService {
+    private static readonly logger = new
+Logger(InvoiceLineGathererService.name);
+
+    @Process(meteredInvoiceLines)
+    async readOperationJob({ data: { scheduleParameters, businessID } }:
+Job<SchedulerEntity>) {
+        const { catalogueBucket, catalogueKey, periodStart, periodEnd } =
+scheduleParameters as InvoiceLineGathererDto;
+        InvoiceLineGathererService.logger.log(
+            `Assembling metered invoice lines for ${businessID} from
+${catalogueBucket}/${catalogueKey}`,
+        );
+        return this.gatherInvoiceLines({
+            businessID,
+            catalogueBucket,
+            catalogueKey,
+            periodStart,
+            periodEnd,
+        });
+    }
+
+    async gatherInvoiceLines({
+        businessID,
+        catalogueBucket,
+        catalogueKey,
+        periodStart,
+        periodEnd,
+    }: {
+        businessID: string;
+        catalogueBucket: string;
+        catalogueKey: string;
+        periodStart?: string;
+        periodEnd?: string;
+    }): Promise<Array<CustomerInvoiceLines>> {
+        const catalogue = await getDocument<BillingCatalogue>(catalogueBucket,
+catalogueKey);
+        const startDate = new Date(periodStart ?? catalogue.periodStart);
+        const endDate = new Date(periodEnd ?? catalogue.periodEnd);
+        const offerings = (catalogue.offerings ?? []).reduce(
+            (acc, offering) => {
+                acc[offering.offeringId] = offering;
+                return acc;
+            },
+            {} as Record<string, ReadOfferingResponseData>,
+        );
+
+        const assembled: Array<CustomerInvoiceLines> = [];
+        for (const { customerId, offeringId } of catalogue.enrolments ?? []) {
+            const offering = offerings[offeringId];
+            if (!offering) {
+                InvoiceLineGathererService.logger.warn(
+                    `Customer ${customerId} is enrolled in ${offeringId}, which
+the catalogue does not describe`,
+                );
+                continue;
+            }
+            // eslint-disable-next-line no-await-in-loop
+            const usageOverrides = await this.readUsage({ catalogue, offering,
+customerId });
+            const offeringInstance = Offering.getInstance(
+                offering,
+                customerId,
+                businessID,
+                undefined,
+                catalogue.settings,
+                undefined,
+                undefined,
+                undefined,
+                usageOverrides,
+            );
+            const lineItems = new InvoiceLineItems();
+            // eslint-disable-next-line no-await-in-loop
+            await Offering.getLineItemsForUsage({
+                startDate,
+                endDate,
+                lineItems,
+                negative: false,
+                businessID,
+                customerId,
+                customerService: undefined,
+                dimensions: offering.dimensions,
+                offeringInstance,
+            });
+            assembled.push({
+                customerId,
+                offeringId,
+                offeringName: offering.offeringName,
+                lineItems: lineItems.getLineItems(),
+            });
+        }
+        InvoiceLineGathererService.logger.log(`Assembled invoice lines for
+${assembled.length} customers`);
+        return assembled;
+    }
+
+    /**
+     * The aggregated usage the metric store holds for one customer over the
+     * invoiced period, one entry per dimension the offering carries.
+     */
+    private async readUsage({
+        catalogue,
+        offering,
+        customerId,
+    }: {
+        catalogue: BillingCatalogue;
+        offering: ReadOfferingResponseData;
+        customerId: string;
+    }): Promise<Array<AggregatedUsageResponse>> {
+        const startTime = new Date(catalogue.periodStart);
+        const endTime = new Date(catalogue.periodEnd);
+        const series: Array<AggregatedUsageResponse> = [];
+        for (const dimension of offering.dimensions ?? []) {
+            // eslint-disable-next-line no-await-in-loop
+            const readings = await getMetricSeries({
+                namespace: catalogue.usageNamespace,
+                metricName: catalogue.usageMetricName,
+                dimensions: {
+                    BusinessId: catalogue.businessID,
+                    CustomerId: customerId,
+                    DimensionId: dimension.dimensionId,
+                },
+                startTime,
+                endTime,
+                period: catalogue.usagePeriod,
+            });
+            series.push({
+                offeringId: offering.offeringId,
+                dimensionId: dimension.dimensionId,
+                usage: readings.map(({ timestamp, value }) => ({
+                    value: value.toString(),
+                    startTime: timestamp,
+                    endTime: timestamp,
+                })),
+            });
+        }
+        return series;
+    }
+
+    @OnQueueFailed({ name: meteredInvoiceLines })
+    jobFailure(job: Job) {
+        AuditService.publishEvent({
+            message: 'Failed to assemble metered invoice lines',
+            data: [job],
+            topic: AuditScope.ERROR,
+        });
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 6, $0.09):
+```
+cd /app; cat
+src/microservices/invoiceLineGatherer/dto/invoiceLineGatherer.dto.ts; echo
+"==="; cat src/microservices/invoiceLineGatherer/invoiceLineGatherer.module.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { InvoiceLineItem } from '../../../invoice/entities/invoice.entity.js';
+import { ReadOfferingResponseData } from
+'../../../offering/dto/readOffering.dto.js';
+import { ReadSettingsResponseData } from
+'../../../setting/dto/read-setting.dto.js';
+
+/**
+ * The scheduler payload for a metered invoice run. The catalogue the run works
+ * from is kept in the business' billing bucket rather than in the payload,
+ * because the sales team edits it far more often than the schedule.
+ */
+export class InvoiceLineGathererDto {
+    public businessID: string;
+    /**
+     * The bucket holding the business' billing catalogue.
+     */
+    public catalogueBucket: string;
+    /**
+     * The key of the catalogue document inside that bucket.
+     */
+    public catalogueKey: string;
+    /**
+     * Start of the period being invoiced, ISO 8601.
+     */
+    public periodStart?: string;
+    /**
+     * End of the period being invoiced, ISO 8601.
+     */
+    public periodEnd?: string;
+}
+
+/**
+ * One customer's place in the catalogue: the offering they are on.
+ */
+export class CatalogueEnrolment {
+    public customerId: string;
+    public offeringId: string;
+}
+
+/**
+ * The billing catalogue as it is stored. `usageNamespace`, `usageMetricName`
+ * and `usagePeriod` say where in the metric store the aggregated usage for this
+ * business is published; every series there is keyed by business, customer and
+ * dimension.
+ */
+export class BillingCatalogue {
+    public businessID: string;
+    public periodStart: string;
+    public periodEnd: string;
+    public usageNamespace: string;
+    public usageMetricName: string;
+    public usagePeriod: number;
+    public settings: ReadSettingsResponseData;
+    public offerings: Array<ReadOfferingResponseData>;
+    public enrolments: Array<CatalogueEnrolment>;
+}
+
+/**
+ * What the run produces for one customer: the lines their invoice would carry.
+ */
+export class CustomerInvoiceLines {
+    public customerId: string;
+    public offeringId: string;
+    public offeringName: string;
+    public lineItems: Array<InvoiceLineItem>;
+}
+===
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
+import { InvoiceLineGathererService } from './invoiceLineGatherer.service.js';
+
+@Module({
+    controllers: [],
+    providers: [InvoiceLineGathererService],
+    imports: [
+        BullModule.registerQueue({
+            name: 'scheduler_billing_queue',
+        }),
+    ],
+})
+export class InvoiceLineGathererModule {}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 7, $0.10):
+Now let me look at the core logic in the Offering entity, particularly
+`getLineItemsForUsage`, which seems to be where the charging logic lives.
+
+```
+cd /app; ls src/offering/entities/; echo "==="; wc -l
+src/offering/entities/offeringPackage.entity.ts; echo "==="; grep -n
+"getLineItemsForUsage\|getInstance\|allowance\|overage\|Allowance\|Overage\|unli
+mited\|Unlimited" src/offering/entities/offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+OfferingType.ts
+offeringPackage.entity.spec.ts
+offeringPackage.entity.ts
+===
+2000 src/offering/entities/offeringPackage.entity.ts
+===
+364:    static async getLineItemsForUsage({
+759:    public static getInstance(
+1048:        await Offering.getLineItemsForUsage({
+1201:                await Offering.getLineItemsForUsage({
+1219:                await Offering.getLineItemsForUsage({
+1234:            await Offering.getLineItemsForUsage({
+1449:        await Offering.getLineItemsForUsage({
+1482:        await Offering.getLineItemsForUsage({
+1537:            await Offering.getLineItemsForUsage({
+1554:            await Offering.getLineItemsForUsage({
+1568:        await Offering.getLineItemsForUsage({
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 8, $0.12):
+```
+cd /app; sed -n '364,620p' src/offering/entities/offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output_head>
+    static async getLineItemsForUsage({
+        startDate,
+        endDate,
+        customer,
+        lineItems,
+        negative,
+        businessID,
+        customerId,
+        customerService,
+        dimensions,
+        offeringInstance,
+        proratedStartDate,
+    }: {
+        startDate: Date;
+        endDate: Date;
+        customer?: ReadCustomerResponseData;
+        lineItems: InvoiceLineItems;
+        negative?: boolean;
+        businessID: string;
+        customerId: string;
+        customerService: CustomerService;
+        dimensions: ReadOfferingResponseData['dimensions'];
+        offeringInstance: Offering;
+        proratedStartDate?: Date;
+    }): Promise<InvoiceLineItems> {
+        let usage: { data: (AggregatedUsageResponse |
+MetadataGroupedAggregatedUsageResponse)[] };
+        if (offeringInstance.usageOverrides &&
+offeringInstance.usageOverrides?.length) {
+            usage = { data: offeringInstance.usageOverrides };
+        } else {
+            const res = await customerService.findUsageForCustomer(
+                {
+                    businessID,
+                    customerId,
+                    customer,
+                },
+                {
+                    startTime: startDate.toISOString(),
+                    endTime: endDate.toISOString(),
+                },
+            );
+            usage = res as { data: (AggregatedUsageResponse |
+MetadataGroupedAggregatedUsageResponse)[] };
+        }
+
+        const aggregateUsageData = usage?.data;
+        const tieredDimensionMap: Record<string, ReadDimensionResponseData> =
+{};
+        const groupedDimensionMap: Record<string, ReadDimensionResponseData> =
+{};
+        const nonTieredDimensionsMap: Record<string, ReadDimensionResponseData>
+= {};
+        dimensions.map((dimension) => {
+            if (dimension?.tiers && dimension?.tiers?.length) {
+                tieredDimensionMap[dimension.dimensionId] = dimension;
+            } else if (dimension?.tiersGroupByMetadata) {
+                groupedDimensionMap[dimension.dimensionId] = dimension;
+            } else if (
+                (dimension?.consumptionPrice !== undefined &&
+dimension?.consumptionPrice !== null) ||
+                (dimension?.usageEntitlement !== undefined &&
+dimension?.usageEntitlement !== null)
+            ) {
+                nonTieredDimensionsMap[dimension.dimensionId] = dimension;
+            }
+        });
+        const aggreatedUsageDataDimensionMap = aggregateUsageData.reduce(
+            (acc, item) => {
+                if
+((<MetadataGroupedAggregatedUsageResponse>item)?.metadataGroup) {
+                    const keys =
+Object.keys((<MetadataGroupedAggregatedUsageResponse>item).metadataGroup);
+                    const uniqueGroupId = keys.reduce((acc, key) => {
+                        acc += key +
+(<MetadataGroupedAggregatedUsageResponse>item).metadataGroup[key];
+                        return acc;
+                    }, '');
+                    acc[uniqueGroupId] = item;
+                } else {
+                    acc[item.dimensionId] = item;
+                }
+                return acc;
+            },
+            {} as Record<string, AggregatedUsageResponse |
+MetadataGroupedAggregatedUsageResponse>,
+        );
+        const dimensionTotals = Object.keys(nonTieredDimensionsMap).reduce((acc,
+nonTieredDimensionId) => {
+            const usageElement =
+aggreatedUsageDataDimensionMap[nonTieredDimensionId];
+            const dimension = nonTieredDimensionsMap[nonTieredDimensionId];
+            let total;
+            if (dimension?.aggregationMethod === aggregationMethod.last) {
+                total = Offering.billableTotal(
+                    usageElement && usageElement?.usage?.length
+                        ? [usageElement?.usage[usageElement?.usage?.length - 1]]
+                        : [],
+                );
+            } else {
+                total = Offering.billableTotal(usageElement ? usageElement.usage
+: []);
+            }
+
+            if (acc[nonTieredDimensionId]) {
+                acc[nonTieredDimensionId] += parseFloat(total);
+                acc[nonTieredDimensionId] =
+acc[nonTieredDimensionId].toFixed(2);
+            } else {
+                acc[nonTieredDimensionId] = parseFloat(total);
+                acc[nonTieredDimensionId] =
+acc[nonTieredDimensionId].toFixed(2);
+            }
+
+            return acc;
+        }, {}) as Record<string, number>;
+        let exchangeRate = 1;
+
+        if (Offering.getCurrency({ customer, offering: offeringInstance }) !==
+SupportedCurrencies.USD) {
+            console.log('Inside exchange rate');
+            exchangeRate = await AnalyticsService.getExchangeRate({
+                currency: Offering.getCurrency({ customer, offering:
+offeringInstance }),
+            });
+            lineItems.addTerms(
+                `Invoice dynamically calculated with realtime currency exchange
+rate €${exchangeRate.toFixed(
+                    2,
+                )} = $1.00`,
+            );
+        }
+
+        Object.keys(dimen
+<output_tail>
+              lowerBound = 0;
+                    }
+                    let difference;
+                    if (upperBound === 'inf') {
+                        difference = remainingUsage;
+                    } else if (index === 0 && tieredDimension?.usageEntitlement)
+{
+                        if (tieredDimension?.usageEntitlement === 'inf') {
+                            difference = remainingUsage;
+                        } else {
+                            difference = (tieredDimension?.usageEntitlement as
+number) - lowerBound;
+                        }
+                    } else {
+                        difference = parseFloat(upperBound) - lowerBound;
+                    }
+                    let usageInTier;
+                    let unitCost;
+                    if (tier?.unitPrice) {
+                        unitCost = Number(
+                            (parseFloat(tier?.unitPrice) *
+exchangeRate).toFixed(
+                                Offering.getDecimalsForNumber(parseFloat(tier?.u
+nitPrice)) === 0
+                                    ? 2
+                                    :
+Offering.getDecimalsForNumber(parseFloat(tier?.unitPrice)),
+                            ),
+                        );
+                        if (tieredDimension?.paymentSchedule ===
+PaymentSchedule.upfront) {
+                            const billingMSStartDate = proratedStartDate ?
+proratedStartDate : startDate;
+                            const billingMSSeconds: number = Math.round(
+                                Math.abs(endDate.getTime() -
+billingMSStartDate.getTime()),
+                            );
+                            const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+                                date: billingMSStartDate,
+                                billingCycle: offeringInstance?.billingCycle,
+                            }) as number;
+                            unitCost =
+                                Math.round(100 * unitCost * (billingMSSeconds /
+billingMSSecondsInBillingCycle)) / 100;
+                        }
+                    } else {
+                        unitCost = Number(0);
+                    }
+                    if (remainingUsage - difference > 0) {
+                        usageInTier = difference;
+                        const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                            total: usageInTier,
+                            dimensionType:
+tieredDimension?.consumptionUnit?.type,
+                            dimensionId: tieredDimensionId,
+                            dimensionName: tieredDimension?.dimensionName,
+                            offeringName: offeringInstance.offeringName,
+                            usageIncrement:
+parseInt(tieredDimension?.usageIncrement),
+                            dimensionUnit:
+tieredDimension?.consumptionUnit?.unit,
+                            negative,
+                            tieredName: tier?.tierName,
+                        });
+                        lineItems.addLineItem(new InvoiceLineItem(displayName,
+displayTotal, unitCost));
+                        remainingUsage -= difference;
+                    } else {
+                        usageInTier = remainingUsage;
+                        const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                            total: usageInTier,
+                            dimensionType:
+tieredDimension?.consumptionUnit?.type,
+                            dimensionId: tieredDimensionId,
+                            dimensionName: tieredDimension?.dimensionName,
+                            offeringName: offeringInstance.offeringName,
+                            usageIncrement:
+parseInt(tieredDimension?.usageIncrement),
+                            dimensionUnit:
+tieredDimension?.consumptionUnit?.unit,
+                            negative,
+                            tieredName: tier?.tierName,
+                        });
+                        lineItems.addLineItem(new InvoiceLineItem(displayName,
+displayTotal, unitCost));
+                        remainingUsage = 0;
+                    }
+                    priorTier = tier;
+                });
+            }, {});
+        }
+        if (Object.keys(groupedDimensionMap).length) {
+            Object.keys(groupedDimensionMap).forEach((groupedDimensionId) => {
+                const groupedDimension =
+groupedDimensionMap[groupedDimensionId];
+                const tiersForMetadataGroupedDimension =
+groupedDimension?.tiersGroupByMetadata;
+                tiersForMetadataGroupedDimension.forEach((grouping) => {
+                    const uniqueGroupId =
+Object.keys(grouping?.metadataGroups).reduce((acc, key) => {
+                        acc += key + grouping.metadataGroups[key];
+                        return acc;
+                    }, '');
+                    const usageElement = aggreatedUsageDataDimensionMap[
+                        uniqueGroupId
+
+<elided_chars>
+3154
+<warning>
+Output too long.
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 9, $0.15):
+Let me see the middle section that handles non-tiered dimensions with allowances
+and overage logic.
+
+```
+cd /app; sed -n '480,620p' src/offering/entities/offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+                    Offering.getDecimalsForNumber(parseFloat(nonTieredDimensions
+Map[dimensionId].consumptionPrice)) ===
+                        0
+                        ? 2
+                        : Offering.getDecimalsForNumber(
+                              parseFloat(nonTieredDimensionsMap[dimensionId].con
+sumptionPrice),
+                          ),
+                ),
+            );
+            if (nonTieredDimensionsMap[dimensionId]?.paymentSchedule ===
+PaymentSchedule.upfront) {
+                const billingMSStartDate = proratedStartDate ? proratedStartDate
+: startDate;
+                const billingMSSeconds: number =
+Math.round(Math.abs(endDate.getTime() - billingMSStartDate.getTime()));
+                const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+                    date: billingMSStartDate,
+                    billingCycle: offeringInstance?.billingCycle,
+                }) as number;
+                unitCost = Math.round(100 * unitCost * (billingMSSeconds /
+billingMSSecondsInBillingCycle)) / 100;
+            }
+            const {
+                usageIncrement,
+                consumptionUnit: { unit, type },
+            } = nonTieredDimensionsMap[dimensionId];
+            // Handle currency conversion
+
+            const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                total: dimensionTotals[dimensionId],
+                dimensionType: type,
+                dimensionId,
+                dimensionName:
+nonTieredDimensionsMap[dimensionId].dimensionName,
+                offeringName: offeringInstance.offeringName,
+                usageIncrement: parseInt(usageIncrement),
+                dimensionUnit: unit,
+                negative,
+            });
+            lineItems.addLineItem(new InvoiceLineItem(displayName, displayTotal,
+unitCost));
+        });
+        if (Object.keys(tieredDimensionMap).length) {
+            Object.keys(tieredDimensionMap).forEach((tieredDimensionId) => {
+                const tieredDimension = tieredDimensionMap[tieredDimensionId];
+                const usageElement =
+aggreatedUsageDataDimensionMap[tieredDimensionId];
+                const sortedTiers = tieredDimension.tiers.sort((a, b) => {
+                    return parseFloat(a.tierPosition) -
+parseFloat(b.tierPosition);
+                });
+                let priorTier: DimensionTierDto;
+                let remainingUsage = usageElement?.usage.reduce((acc, { value })
+=> {
+                    acc += parseFloat(value);
+                    return acc;
+                }, 0);
+                sortedTiers.forEach((tier, index) => {
+                    if (!remainingUsage) {
+                        return;
+                    }
+                    const { upperBound } = tier;
+                    let lowerBound = 0;
+                    if (priorTier) {
+                        lowerBound = parseFloat(priorTier.upperBound);
+                    } else {
+                        lowerBound = 0;
+                    }
+                    let difference;
+                    if (upperBound === 'inf') {
+                        difference = remainingUsage;
+                    } else if (index === 0 && tieredDimension?.usageEntitlement)
+{
+                        if (tieredDimension?.usageEntitlement === 'inf') {
+                            difference = remainingUsage;
+                        } else {
+                            difference = (tieredDimension?.usageEntitlement as
+number) - lowerBound;
+                        }
+                    } else {
+                        difference = parseFloat(upperBound) - lowerBound;
+                    }
+                    let usageInTier;
+                    let unitCost;
+                    if (tier?.unitPrice) {
+                        unitCost = Number(
+                            (parseFloat(tier?.unitPrice) *
+exchangeRate).toFixed(
+                                Offering.getDecimalsForNumber(parseFloat(tier?.u
+nitPrice)) === 0
+                                    ? 2
+                                    :
+Offering.getDecimalsForNumber(parseFloat(tier?.unitPrice)),
+                            ),
+                        );
+                        if (tieredDimension?.paymentSchedule ===
+PaymentSchedule.upfront) {
+                            const billingMSStartDate = proratedStartDate ?
+proratedStartDate : startDate;
+                            const billingMSSeconds: number = Math.round(
+                                Math.abs(endDate.getTime() -
+billingMSStartDate.getTime()),
+                            );
+                            const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+                                date: billingMSStartDate,
+                                billingCycle: offeringInstance?.billingCycle,
+                            }) as number;
+                            unitCost =
+                                Math.round(100 * unitCost * (billingMSSeconds /
+billingMSSecondsInBillingCycle)) / 100;
+                        }
+                    } else {
+                        unitCost = Number(0);
+                    }
+                    if (remainingUsage - difference > 0) {
+                        usageInTier = difference;
+                        const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                            total: usageInTier,
+                            dimensionType:
+tieredDimension?.consumptionUnit?.type,
+                            dimensionId: tieredDimensionId,
+                            dimensionName: tieredDimension?.dimensionName,
+                            offeringName: offeringInstance.offeringName,
+                            usageIncrement:
+parseInt(tieredDimension?.usageIncrement),
+                            dimensionUnit:
+tieredDimension?.consumptionUnit?.unit,
+                            negative,
+                            tieredName: tier?.tierName,
+                        });
+                        lineItems.addLineItem(new InvoiceLineItem(displayName,
+displayTotal, unitCost));
+                        remainingUsage -= difference;
+                    } else {
+                        usageInTier = remainingUsage;
+                        const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                            total: usageInTier,
+                            dimensionType:
+tieredDimension?.consumptionUnit?.type,
+                            dimensionId: tieredDimensionId,
+                            dimensionName: tieredDimension?.dimensionName,
+                            offeringName: offeringInstance.offeringName,
+                            usageIncrement:
+parseInt(tieredDimension?.usageIncrement),
+                            dimensionUnit:
+tieredDimension?.consumptionUnit?.unit,
+                            negative,
+                            tieredName: tier?.tierName,
+                        });
+                        lineItems.addLineItem(new InvoiceLineItem(displayName,
+displayTotal, unitCost));
+                        remainingUsage = 0;
+                    }
+                    priorTier = tier;
+                });
+            }, {});
+        }
+        if (Object.keys(groupedDimensionMap).length) {
+            Object.keys(groupedDimensionMap).forEach((groupedDimensionId) => {
+                const groupedDimension =
+groupedDimensionMap[groupedDimensionId];
+                const tiersForMetadataGroupedDimension =
+groupedDimension?.tiersGroupByMetadata;
+                tiersForMetadataGroupedDimension.forEach((grouping) => {
+                    const uniqueGroupId =
+Object.keys(grouping?.metadataGroups).reduce((acc, key) => {
+                        acc += key + grouping.metadataGroups[key];
+                        return acc;
+                    }, '');
+                    const usageElement = aggreatedUsageDataDimensionMap[
+                        uniqueGroupId
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 10, $0.19):
+Let me see the beginning of the non-tiered dimensions loop (around line 475).
+
+```
+cd /app; sed -n '470,515p' src/offering/entities/offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+            lineItems.addTerms(
+                `Invoice dynamically calculated with realtime currency exchange
+rate €${exchangeRate.toFixed(
+                    2,
+                )} = $1.00`,
+            );
+        }
+
+        Object.keys(dimensionTotals).forEach((dimensionId) => {
+            let unitCost = Number(
+                (parseFloat(nonTieredDimensionsMap[dimensionId].consumptionPrice
+) * exchangeRate).toFixed(
+                    Offering.getDecimalsForNumber(parseFloat(nonTieredDimensions
+Map[dimensionId].consumptionPrice)) ===
+                        0
+                        ? 2
+                        : Offering.getDecimalsForNumber(
+                              parseFloat(nonTieredDimensionsMap[dimensionId].con
+sumptionPrice),
+                          ),
+                ),
+            );
+            if (nonTieredDimensionsMap[dimensionId]?.paymentSchedule ===
+PaymentSchedule.upfront) {
+                const billingMSStartDate = proratedStartDate ? proratedStartDate
+: startDate;
+                const billingMSSeconds: number =
+Math.round(Math.abs(endDate.getTime() - billingMSStartDate.getTime()));
+                const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+                    date: billingMSStartDate,
+                    billingCycle: offeringInstance?.billingCycle,
+                }) as number;
+                unitCost = Math.round(100 * unitCost * (billingMSSeconds /
+billingMSSecondsInBillingCycle)) / 100;
+            }
+            const {
+                usageIncrement,
+                consumptionUnit: { unit, type },
+            } = nonTieredDimensionsMap[dimensionId];
+            // Handle currency conversion
+
+            const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                total: dimensionTotals[dimensionId],
+                dimensionType: type,
+                dimensionId,
+                dimensionName:
+nonTieredDimensionsMap[dimensionId].dimensionName,
+                offeringName: offeringInstance.offeringName,
+                usageIncrement: parseInt(usageIncrement),
+                dimensionUnit: unit,
+                negative,
+            });
+            lineItems.addLineItem(new InvoiceLineItem(displayName, displayTotal,
+unitCost));
+        });
+        if (Object.keys(tieredDimensionMap).length) {
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 11, $0.22):
+Let me understand the dimension model and settings. Let me look at the dimension
+DTO and settings.
+
+```
+cd /app; cat src/offering/dto/readOffering.dto.ts | head -120; echo "===
+SETTINGS ==="; sed -n '1,120p' src/setting/dto/read-setting.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { Logger } from '@nestjs/common';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
+
+import { IsNotEmpty, IsString } from 'class-validator';
+import { BasicResponseDTO } from '../../basicResponseDTO.js';
+import { ReadDimensionResponseData } from
+'dimensions/dto/create-dimension.dto.js';
+import { CreateOfferingDTO } from './createOffering.dto.js';
+
+export class ReadPricingDTO {
+    private static readonly logger = new Logger(ReadPricingDTO.name);
+    // BusinessID used for lookup (Unique ID for business)
+    @IsString()
+    @IsNotEmpty()
+    public businessID: string;
+
+    // Client ID for the invoice used for lookup
+    @IsString()
+    @IsNotEmpty()
+    public offeringId: string;
+}
+
+export class ReadOfferingResponseData extends OmitType(CreateOfferingDTO,
+['dimensionIds', 'businessID'] as const) {
+    /**
+     * Unique identifier assigned by Metering.
+     * <br><br>
+     * Example: `539b7f74-3832-474e-a955-6d69c5df12d0`
+     *
+     * @example "539b7f74-3832-474e-a955-6d69c5df12d0"
+     */
+    public offeringId: string;
+
+    /**
+     * The list of dimensions attached to the offering.
+     *
+     */
+    public dimensions: Array<ReadDimensionResponseData>;
+}
+
+export class ReadOfferingResponseDTO extends BasicResponseDTO {
+    /**
+     * A list of offerings
+     *
+     */
+    @ApiProperty({ minItems: 0 })
+    public data: Array<ReadOfferingResponseData>;
+}
+=== SETTINGS ===
+import { ApiProperty } from '@nestjs/swagger';
+import { BasicResponseDTO } from '../../basicResponseDTO.js';
+import { SettingsEntity } from '../entities/settings.entity.js';
+import { AccountState } from '../entities/AccountState.js';
+import { SendInvoiceEmail, UpdateSettingsDto } from './update-settings.dto.js';
+
+export class ReadSettingsResponse extends BasicResponseDTO {
+    public data: ReadSettingsResponseData[];
+}
+
+export class ReadSettingsResponseData extends UpdateSettingsDto {
+    /**
+     * Wether or not the account is a sandbox account. This effects payment and
+other integrations like tax.
+     * <br><br>
+     * Example: `"sandbox"`
+     * @example "sandbox"
+     *
+     */
+    @ApiProperty({ default: AccountState.production, enum: AccountState })
+    public declare accountState?: AccountState;
+    constructor(entity: SettingsEntity) {
+        super();
+        if (entity) {
+            this.businessName = entity.businessName;
+            this.taxRate = entity.taxRate;
+            this.addressLine1 = entity.addressLine1;
+            this.addressLine2 = entity.addressLine2;
+            this.city = entity.city;
+            this.state = entity.state;
+            this.country = entity.country;
+            this.postalCode = entity.postalCode;
+            this.vatId = entity.vatId;
+            this.invoicePaymentTerm = entity.invoicePaymentTerm;
+            this.customFields = entity.customFields;
+            this.logoUrl = entity.logoUrl;
+            this.taxCategory = entity.taxCategory;
+            this.taxCalculationType = entity.taxCalculationType;
+            this.stripeAccountId = entity.stripeAccountId;
+            this.cloudIAM = entity.cloudIAM;
+            this.computeCostSource = entity.computeCostSource;
+            this.storageCostSource = entity.storageCostSource;
+            this.archiveCostSource = entity.archiveCostSource;
+            this.stripeConnected = entity.stripeConnected;
+            this.taxJarApiKey = entity.taxJarApiKey;
+            this.accountState = entity.accountState;
+            this.pages = entity.pages;
+            this.invoiceApproval = entity.invoiceApproval;
+            this.freeDimensionOnInvoice = entity.freeDimensionOnInvoice;
+            this.invoiceGeneration = entity.invoiceGeneration;
+            this.supportEmail = entity.supportEmail;
+            this.sendInvoiceEmail = entity.sendInvoiceEmail;
+            this.redirectionUrl = entity.redirectionUrl;
+        }
+    }
+}
+
+export class ReadProfileResponseData {
+    /**
+     * The Name for the Business Entity using Metering
+     * <br><br>
+     * Example: `"My Smart Business Name"`
+     * @example "My Smart Business Name"
+     */
+    public businessName?: string;
+
+    /**
+     * Street number and name (address line 1)
+     * <br><br>
+     * Example: `"123 Success Street"`
+     * @example "123 Success Street"
+     */
+    public addressLine1?: string;
+
+    /**
+     * Apartment or unit and its number (address line 2)
+     * <br><br>
+     * Example: `"Suite 100"`
+     * @example "Suite 100"
+     */
+    public addressLine2?: string;
+
+    /**
+     * City of Business Entity's Location
+     * <br><br>
+     * Example: `"San Francisco"`
+     * @example "San Francisco"
+     */
+    public city?: string;
+
+    /**
+     * State of Business Entity's Location
+     * <br><br>
+     * Example: `"CA"`
+     * @example "CA"
+     */
+    public state?: string;
+
+    /**
+     * Country of Business Entity's Location
+     * <br><br>
+     * Example: `"USA"`
+     * @example "USA"
+     */
+    public country?: string;
+
+    /**
+     * Postal code of Business Entity's Location
+     * <br><br>
+     * Example: `"94188"`
+     * @example "94188"
+     */
+    public postalCode?: string;
+
+    /**
+     * Email address utilized by the Business Entity for customer support
+     * <br><br>
+     * Example: `"support@mybusiness.com"`
+     * @example "support@mybusiness.com"
+     */
+    public supportEmail?: string;
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 12, $0.26):
+`freeDimensionOnInvoice` is the setting for hiding free dimensions. Let me
+examine the dimension DTO for allowance/overage fields.
+
+```
+cd /app; grep -n
+"usageEntitlement\|allowance\|Allowance\|overage\|Overage\|consumptionPrice\|inf
+" src/dimensions/dto/create-dimension.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+69: * This infrastructureType Enum is used in various places within the codebase
+to determine and process data for dimensions
+75:export enum infrastructureType {
+193:export enum overageAllowedEnum {
+335:    @EntitlementCanbeInf('usageEntitlement')
+338:        name: 'usageEntitlement',
+348:                format: 'inf',
+350:                example: 'inf',
+353:        examples: ['inf', 1000000],
+356:    public usageEntitlement?: number | 'inf';
+362:    @IsEnum(overageAllowedEnum, {
+366:            return `overageAllowed: The value ${value} is not a valid value
+for the overageAllowed field. The correct values are: ${correctValues}`;
+371:    @EntitlementMustBeSet('overageAllowed')
+372:    public overageAllowed?: overageAllowedEnum;
+386:    @ShouldSetConsumptionPrice('consumptionPrice')
+387:    @ValidateDecimalPlace('consumptionPrice')
+388:    public consumptionPrice?: string;
+511:     * Used to more granularly define the price of a dimension. For example
+if you want to charge a customer $1 for the first 1000 API calls and $0.50 for
+every API call after that you would define two tiers, the first tier with an
+`upperLimit` of `"1000"` and `tierPosition` of `"1"` with a `unitPrice` of `"1"`
+and a second tier with an `upperLimit` of `"inf"`, `tierPosition`  of `"2"` and
+`unitPrice` of `"0.50"`. Exclusive with standard `consumptionPrice`,
+`entitlement` and `overageAllowed` fields.
+524:    // 1. If metadata groups are set then tiers or consumptionPrice, and
+overageAllowed, and entitlements must not be set
+528:     * Used to group tiers by metadata, meaning instead of grouping by the
+dimensionId for usage Metering will group requests with the metadata passed in on
+the usage request. Exclusive with standard `consumptionPrice`, `entitlement`,
+`overageAllowed` and `tiers` fields.
+550:                    overageAllowed,
+553:                    usageEntitlement,
+559:                this.overageAllowed = overageAllowed ? overageAllowed :
+undefined;
+560:                this.consumptionPrice = priceSegments[0].price;
+561:                this.usageEntitlement = usageEntitlement;
+581:                    overageAllowed,
+585:                    consumptionPrice,
+587:                    usageEntitlement,
+592:                this.overageAllowed = overageAllowed;
+596:                this.usageEntitlement = usageEntitlement;
+604:                this.consumptionPrice = consumptionPrice;
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 13, $0.28):
+```
+cd /app; sed -n '185,200p;320,400p' src/dimensions/dto/create-dimension.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+}
+
+export enum roundingEnum {
+    round = 'round',
+    floor = 'floor',
+    ceiling = 'ceiling',
+}
+
+export enum overageAllowedEnum {
+    true = 'true',
+    false = 'false',
+}
+export class CreateDimensionResponse extends BasicResponseDTO {
+    /**
+     * The unique identifier assigned by Metering.
+     * <br><br>
+            const { value, constraints } = args;
+            const correctValues = Object.values(constraints[0]);
+            return `roundingEnum: The value ${value} is not a valid value for
+the roundingEnum field. The correct values are: ${correctValues}`;
+        },
+        each: true,
+    })
+    @IsNotEmpty()
+    public rounding: roundingEnum;
+
+    /**
+     * Used with Subscription Tier Offering type. <br>
+     * SaaS customers subscribed to a subscription tier are entitled to use the
+amount of product
+     * with regard to the dimension up to the value specified in this field.
+     * For example, a subscription tier may entitle subscribers to make up to
+1,000,000 API requests.
+     */
+    @EntitlementCanbeInf('usageEntitlement')
+    @IsOptional()
+    @ApiProperty({
+        name: 'usageEntitlement',
+        oneOf: [
+            {
+                type: 'number',
+                description:
+                    'The number of units that the customer is entitled to use,
+must be greater than or equal to 0',
+                example: 1000000,
+            },
+            {
+                type: 'string',
+                format: 'inf',
+                description: "The customer is entitled to use the product's
+dimension without any limit",
+                example: 'inf',
+            },
+        ],
+        examples: ['inf', 1000000],
+        required: false,
+    })
+    public usageEntitlement?: number | 'inf';
+    /**
+     * Used with Subscription Tier Offering type. <br>
+     * When the usage entitlement is specified,
+     * this field decides if allowing SaaS customers to use more than entitled
+amount of the product dimension.
+     */
+    @IsEnum(overageAllowedEnum, {
+        message: (args: ValidationArguments) => {
+            const { value, constraints } = args;
+            const correctValues = Object.values(constraints[0]);
+            return `overageAllowed: The value ${value} is not a valid value for
+the overageAllowed field. The correct values are: ${correctValues}`;
+        },
+        each: true,
+    })
+    @IsOptional()
+    @EntitlementMustBeSet('overageAllowed')
+    public overageAllowed?: overageAllowedEnum;
+
+    @ApiHideProperty()
+    @IsString()
+    @IsOptional()
+    public businessID?: string;
+
+    /**
+     * The unit price of dimension.
+     * Numerical values are represented as strings to avoid precision loss.
+     * <br><br>
+     *
+     * @example "20.00"
+     */
+    @ShouldSetConsumptionPrice('consumptionPrice')
+    @ValidateDecimalPlace('consumptionPrice')
+    public consumptionPrice?: string;
+
+    /**
+     *
+     * The sample type used for the data. Gauge is a value that can go up or
+down. <br>
+     * Currently set to gauge by default on all dimensions.
+     * @example "gauge"
+     */
+    @IsOptional()
+    @IsEnum(SampleType, {
+        message: (args: ValidationArguments) => {
+            const { value, constraints } = args;
+            const correctValues = Object.values(constraints[0]);
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 14, $0.32):
+Let me check for existing tests related to the gatherer and understand what
+behavior is expected.
+
+```
+cd /app; find . -path ./node_modules -prune -o -name "*.spec.ts" -print | xargs
+grep -l
+"gatherInvoiceLines\|invoiceLineGatherer\|InvoiceLineGatherer\|freeDimensionOnIn
+voice\|overageAllowed" 2>/dev/null | grep -v node_modules
+```
+
+Tool:
+<returncode>
+0
+<output>
+./integration/dimension/dimensionCrud.integration.spec.ts
+./src/offering/entities/offeringPackage.entity.spec.ts
+./src/portal/portal.service.spec.ts
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 15, $0.34):
+```
+cd /app; ls integration/; echo "==="; grep -rln
+"gatherInvoiceLines\|InvoiceLineGatherer\|meteredInvoiceLines\|catalogueBucket"
+integration/ 2>/dev/null
+```
+
+Tool:
+<returncode>
+1
+<output>
+analytics
+billing
+ciEnvVars.js
+client
+customer
+dimension
+invoice
+jest.ci.config.json
+jest.local.config.json
+localEnvVars.js
+measurement
+offering
+service
+settings
+setupAndTeardown
+usage
+users
+utils
+===
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 16, $0.37):
+```
+cd /app; grep -rn "overageAllowed\|usageEntitlement\|freeDimensionOnInvoice"
+src/ --include=*.ts | grep -v ".spec.ts" | grep -v "dto/"
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/customer/customer.service.ts:1136:            if
+(dimension?.usageEntitlement !== undefined && dimension?.usageEntitlement !==
+'inf') {
+src/customer/customer.service.ts:1142:                    entitlementAmount:
+dimension?.usageEntitlement,
+src/customer/customer.service.ts:1143:                    isEntitled:
+usageAmount <= dimension?.usageEntitlement,
+src/customer/customer.service.ts:1144:                    percentageUtilized:
+dimension?.usageEntitlement
+src/customer/customer.service.ts:1145:                        ? (usageAmount /
+dimension?.usageEntitlement) * 100
+src/dimensions/dimensions.service.ts:18:    overageAllowedEnum,
+src/dimensions/dimensions.service.ts:341:        if
+(updatedFields?.usageEntitlement === null || updatedFields?.overageAllowed ===
+null) {
+src/dimensions/dimensions.service.ts:343:
+updatedFields?.usageEntitlement === null &&
+src/dimensions/dimensions.service.ts:344:                rest?.overageAllowed
+!== overageAllowedEnum.false &&
+src/dimensions/dimensions.service.ts:345:                rest?.overageAllowed
+!== null &&
+src/dimensions/dimensions.service.ts:346:                rest?.overageAllowed
+!== undefined &&
+src/dimensions/dimensions.service.ts:347:
+updatedFields?.overageAllowed !== null &&
+src/dimensions/dimensions.service.ts:348:
+updatedFields?.overageAllowed !== overageAllowedEnum.false
+src/dimensions/dimensions.service.ts:356:
+(updatedFields?.consumptionPrice || updatedFields?.usageEntitlement !==
+undefined) &&
+src/dimensions/dimensions.service.ts:485:            usageEntitlement,
+src/dimensions/dimensions.service.ts:486:            overageAllowed,
+src/dimensions/dimensions.service.ts:543:                usageEntitlement,
+src/dimensions/dimensions.service.ts:544:                overageAllowed,
+src/dimensions/entities/dimensions.entity.ts:10:    overageAllowedEnum,
+src/dimensions/entities/dimensions.entity.ts:147:    public usageEntitlement?:
+number | 'inf';
+src/dimensions/entities/dimensions.entity.ts:149:    public overageAllowed?:
+overageAllowedEnum;
+src/dimensions/entities/dimensions.entity.ts:162:
+usageEntitlement,
+src/dimensions/entities/dimensions.entity.ts:163:                overageAllowed,
+src/dimensions/entities/dimensions.entity.ts:176:
+this.usageEntitlement = usageEntitlement;
+src/dimensions/entities/dimensions.entity.ts:177:            this.overageAllowed
+= overageAllowed ? overageAllowed : undefined;
+src/dimensions/entities/dimensions.entity.ts:194:            usageEntitlement,
+src/dimensions/entities/dimensions.entity.ts:196:            overageAllowed,
+src/dimensions/entities/dimensions.entity.ts:213:        if (usageEntitlement
+!== undefined && usageEntitlement !== null) {
+src/dimensions/entities/dimensions.entity.ts:214:
+point.tag('usageEntitlement', usageEntitlement.toString());
+src/dimensions/entities/dimensions.entity.ts:217:        if (overageAllowed !==
+undefined && overageAllowed !== null) {
+src/dimensions/entities/dimensions.entity.ts:218:
+point.tag('overageAllowed', overageAllowed);
+src/dimensions/entities/dimensions.entity.ts:240:            usageEntitlement,
+src/dimensions/entities/dimensions.entity.ts:241:            overageAllowed,
+src/dimensions/entities/dimensions.entity.ts:255:            usageEntitlement:
+usageEntitlement ? parseInt(usageEntitlement) : undefined,
+src/dimensions/entities/dimensions.entity.ts:256:            overageAllowed,
+src/influx/entities/settingsInfluxTable.entity.ts:63:    public
+freeDimensionOnInvoice?: FreeDimensionOnInvoice;
+src/microservices/entitlementChecker/entitlementChecker.service.ts:58:
+eventType: 'usageEntitlementLimitReached',
+src/microservices/entitlementChecker/entitlementChecker.service.ts:82:
+eventType: 'usageEntitlementCloseToLimit',
+src/offering/entities/offeringPackage.entity.ts:418:
+(dimension?.usageEntitlement !== undefined && dimension?.usageEntitlement !==
+null)
+src/offering/entities/offeringPackage.entity.ts:541:                    } else
+if (index === 0 && tieredDimension?.usageEntitlement) {
+src/offering/entities/offeringPackage.entity.ts:542:                        if
+(tieredDimension?.usageEntitlement === 'inf') {
+src/offering/entities/offeringPackage.entity.ts:545:
+difference = (tieredDimension?.usageEntitlement as number) - lowerBound;
+src/setting/entities/settings.entity.ts:90:    public freeDimensionOnInvoice:
+FreeDimensionOnInvoice;
+src/setting/entities/settings.entity.ts:131:        freeDimensionOnInvoice =
+FreeDimensionOnInvoice.show,
+src/setting/entities/settings.entity.ts:162:        this.freeDimensionOnInvoice
+= freeDimensionOnInvoice;
+src/setting/entities/settings.entity.ts:219:            freeDimensionOnInvoice,
+src/setting/entities/settings.entity.ts:256:        if (freeDimensionOnInvoice)
+{
+src/setting/entities/settings.entity.ts:257:
+settingPoint.tag('freeDimensionOnInvoice', freeDimensionOnInvoice);
+src/setting/entities/settings.entity.ts:303:            freeDimensionOnInvoice =
+FreeDimensionOnInvoice.show,
+src/setting/entities/settings.entity.ts:335:            freeDimensionOnInvoice,
+src/users/entities/entitlement.entity.ts:205:
+entitlementLimit: dimension.usageEntitlement ?
+dimension.usageEntitlement.toString() : '0',
+src/webhook/webhook.controller.ts:183:            eventType:
+'usageEntitlementLimitReached',
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 17, $0.41):
+Let me look at the `FreeDimensionOnInvoice` enum and how free dimensions / line
+items are handled.
+
+```
+cd /app; grep -rn "FreeDimensionOnInvoice\|freeDimension"
+src/setting/entities/*.ts src/influx/entities/settingsInfluxTable.entity.ts;
+echo "=== enum def ==="; find src -name "*.ts" | xargs grep -ln "enum
+FreeDimensionOnInvoice" 2>/dev/null
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/setting/entities/settings.entity.ts:22:import { FreeDimensionOnInvoice }
+from '../dto/FreeDimensionOnInvoice.js';
+src/setting/entities/settings.entity.ts:90:    public freeDimensionOnInvoice:
+FreeDimensionOnInvoice;
+src/setting/entities/settings.entity.ts:131:        freeDimensionOnInvoice =
+FreeDimensionOnInvoice.show,
+src/setting/entities/settings.entity.ts:162:        this.freeDimensionOnInvoice
+= freeDimensionOnInvoice;
+src/setting/entities/settings.entity.ts:219:            freeDimensionOnInvoice,
+src/setting/entities/settings.entity.ts:256:        if (freeDimensionOnInvoice)
+{
+src/setting/entities/settings.entity.ts:257:
+settingPoint.tag('freeDimensionOnInvoice', freeDimensionOnInvoice);
+src/setting/entities/settings.entity.ts:303:            freeDimensionOnInvoice =
+FreeDimensionOnInvoice.show,
+src/setting/entities/settings.entity.ts:335:            freeDimensionOnInvoice,
+src/influx/entities/settingsInfluxTable.entity.ts:14:import {
+FreeDimensionOnInvoice } from '../../setting/dto/FreeDimensionOnInvoice.js';
+src/influx/entities/settingsInfluxTable.entity.ts:63:    public
+freeDimensionOnInvoice?: FreeDimensionOnInvoice;
+=== enum def ===
+src/setting/dto/FreeDimensionOnInvoice.ts
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 18, $0.43):
+```
+cd /app; cat src/setting/dto/FreeDimensionOnInvoice.ts; echo "===
+InvoiceLineItem/Items ==="; grep -n "class InvoiceLineItem\|class
+InvoiceLineItems\|addLineItem\|getLineItems\|prepareLineItem\|freeDimension\|Fre
+eDimension" src/invoice/entities/invoice.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+export enum FreeDimensionOnInvoice {
+    show = 'show',
+    hide = 'hide',
+}
+=== InvoiceLineItem/Items ===
+50:export class InvoiceLineItem {
+105:    static prepareLineItem({
+219:export class InvoiceLineItems {
+226:    addLineItem(lineItem: InvoiceLineItem) {
+236:    getLineItems() {
+400:        if (totalAmountWithoutTax === 0 && invoiceLineItems &&
+invoiceLineItems.getLineItems().length > 0) {
+421:        this.invoiceLineItems.getLineItems().forEach((lineItem) => {
+511:                          .getLineItems()
+836:            this.invoiceLineItems.getLineItems().forEach((lineItem) => {
+837:
+taxableLineItems.addLineItem(TaxableLineItem.fromInvoiceLineItem(this.taxCategor
+y, lineItem));
+1045:            this.invoiceLineItems ?
+JSON.stringify(this.invoiceLineItems.getLineItems()) : JSON.stringify([]),
+1074:            this.invoiceLineItems ?
+JSON.stringify(this.invoiceLineItems.getLineItems()) : JSON.stringify([]),
+1091:                invoiceLineItems.addLineItem(
+1185:                    invoiceLineItems.addLineItem(new
+InvoiceLineItem(item.name, item.quantity, item.unitCost));
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 19, $0.46):
+```
+cd /app; sed -n '50,245p' src/invoice/entities/invoice.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+export class InvoiceLineItem {
+    /**
+     * The name of the line item as it appears on the invoice.
+     * <br><br>
+     * Example: `"Metering Pro"`
+     * @example "Metering Pro"
+     */
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty()
+    name: string;
+
+    /**
+     * The quantity of the line item.
+     * <br><br>
+     * Example: `1`
+     * @example 1
+     */
+    @IsNumber()
+    @Min(0)
+    @IsNotEmpty()
+    @ApiProperty()
+    quantity: number;
+
+    /**
+     * The unit cost of the line item.
+     * <br><br>
+     * Example: `100.00`
+     * @example 100.00
+     */
+    @IsNumber()
+    @IsNotEmpty()
+    @ApiProperty()
+    unitCost: number;
+
+    /**
+     * The description of the line item.
+     * <br><br>
+     * Example: `"Metering Pro subscription"`
+     * @example "Metering Pro subscription"
+     */
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    description?: string;
+
+    constructor(name: string, quantity: number, unitCost: number, description?:
+string) {
+        this.name = name;
+        this.quantity = quantity;
+        this.unitCost = unitCost;
+        this.description = description;
+    }
+    static snakeCaseTransformUnitCost({ unitCost, ...rest }: InvoiceLineItem) {
+        return { unit_cost: unitCost, ...rest };
+    }
+    static prepareLineItem({
+        total,
+        dimensionType,
+        dimensionUnit,
+        dimensionName,
+        dimensionId,
+        offeringName,
+        usageIncrement,
+        negative,
+        tieredName,
+    }: {
+        total: number;
+        dimensionType: string;
+        dimensionName: string;
+        dimensionUnit: string;
+        dimensionId: string;
+        offeringName: string;
+        usageIncrement: number;
+        negative?: boolean;
+        tieredName?: string;
+    }): { total: number; dimension: string; unit?: string; displayName: string }
+{
+        const timeBasedUnits = {
+            second: {
+                60: 'minute',
+                3600: 'hour',
+                86400: 'day',
+            },
+            minute: { 60: 'hour', 1440: 'day' },
+            hour: { 24: 'day' },
+        };
+        const dataBasedUnits = {
+            byte: {
+                1024: 'kibibyte',
+                1000: 'kilobyte',
+                1048576: 'mebibyte',
+                1000000: 'megabyte',
+                1073741824: 'gibibyte',
+                1000000000: 'gigabyte',
+            },
+            kilobyte: {
+                1000: 'megabyte',
+                1000000: 'gigabyte',
+            },
+            megabyte: {
+                1000: 'gigabyte',
+            },
+            kibibyte: {
+                1024: 'mebibyte',
+                1048576: 'gibibyte',
+            },
+            mebibyte: {
+                1024: 'gibibyte',
+            },
+        };
+
+        const rawTotal = total;
+        let newDisplayUnit = dimensionUnit;
+        let displayName = dimensionName;
+        switch (dimensionType) {
+            case 'count':
+                if (rawTotal >= 1000000000 && usageIncrement / 1000000000 === 1)
+{
+                    newDisplayUnit = 'Billion ' + dimensionName;
+                } else if (rawTotal >= 1000000 && usageIncrement / 1000000 ===
+1) {
+                    newDisplayUnit = 'Million ' + dimensionName;
+                } else if (rawTotal >= 1000 && usageIncrement / 1000 === 1) {
+                    newDisplayUnit = 'Thousand';
+                } else {
+                    newDisplayUnit = undefined;
+                }
+                break;
+            case 'time':
+                if (usageIncrement === 1) {
+                    break;
+                }
+                if (!timeBasedUnits[dimensionUnit]) {
+                    newDisplayUnit = undefined;
+                    break;
+                }
+                if (!timeBasedUnits[dimensionUnit][usageIncrement]) {
+                    newDisplayUnit = undefined;
+                    break;
+                }
+                newDisplayUnit = timeBasedUnits[dimensionUnit][usageIncrement];
+                break;
+            case 'data':
+                if (usageIncrement === 1) {
+                    break;
+                }
+
+                if (!dataBasedUnits[dimensionUnit]) {
+                    newDisplayUnit = undefined;
+                    break;
+                }
+                if (!dataBasedUnits[dimensionUnit][usageIncrement]) {
+                    newDisplayUnit = undefined;
+                    break;
+                }
+                newDisplayUnit = dataBasedUnits[dimensionUnit][usageIncrement];
+                break;
+        }
+
+        displayName = newDisplayUnit
+            ? `${dimensionName} -
+${newDisplayUnit[0].toUpperCase()}${newDisplayUnit.slice(1)} - ${offeringName}`
+            : `${dimensionName} - ${offeringName}`;
+        displayName = tieredName ? `${displayName} - ${tieredName}` :
+displayName;
+        return {
+            total: negative ? (rawTotal / usageIncrement) * -1 : rawTotal /
+usageIncrement,
+            dimension: dimensionId,
+            displayName: negative ? `${displayName} - Free Trial Credit` :
+displayName,
+            unit: newDisplayUnit ? newDisplayUnit.replace(/\w/, (c) =>
+c.toUpperCase()) : undefined,
+        };
+    }
+}
+
+export class InvoiceLineItems {
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => InvoiceLineItem)
+    private lineItems: InvoiceLineItem[] = [];
+    private terms?: string;
+
+    addLineItem(lineItem: InvoiceLineItem) {
+        this.lineItems.push(lineItem);
+    }
+    addTerms(terms: string) {
+        this.terms = terms;
+    }
+    getTerms() {
+        return this.terms;
+    }
+
+    getLineItems() {
+        return this.lineItems;
+    }
+    getTotal() {
+        return this.lineItems.reduce((acc, curr) => acc + curr.unitCost *
+curr.quantity, 0);
+    }
+    getSnakeCaseLineItems() {
+        return this.lineItems.map(InvoiceLineItem.snakeCaseTransformUnitCost);
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 20, $0.53):
+Let me check git status and history to understand what's recently added.
+
+```
+cd /app; git log --oneline -15; echo "==="; git status
+```
+
+Tool:
+<returncode>
+128
+<output>
+fatal: not a git repository (or any of the parent directories): .git
+===
+fatal: not a git repository (or any of the parent directories): .git
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 21, $0.56):
+Let me search for where free dimensions are actually filtered in invoice
+generation (existing patterns).
+
+```
+cd /app; grep -rn "freeDimension\|FreeDimension\|unitCost === 0\|unitCost ==
+0\|quantity === 0\|hide\b" src/ --include=*.ts | grep -iv
+"settingsInflux\|settings.entity\|dto/FreeDimension\|read-setting\|update-settin
+gs" | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/invoice/dto/manualInvoiceValidation.ts:65:                    if
+(lineItemTest?.unitCost === 0) {
+src/offering/entities/offeringPackage.entity.spec.ts:49:    let fakeSettings = {
+freeDimensionOnInvoice: FreeDimensionOnInvoice.show } as
+ReadSettingsResponseData;
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 22, $0.59):
+```
+cd /app; grep -n
+"freeDimensionOnInvoice\|FreeDimensionOnInvoice\|getLineItemsForUsage\|addLineIt
+em\|settings\|overage\|Overage\|allowance\|entitlement\|Entitlement"
+src/offering/entities/offeringPackage.entity.spec.ts | head -60
+```
+
+Tool:
+<returncode>
+0
+<output>
+10:    overageAllowedEnum,
+26:import { FreeDimensionOnInvoice } from
+'../../setting/dto/FreeDimensionOnInvoice.js';
+28:import { InvoiceGeneration } from '../../setting/dto/update-settings.dto.js';
+49:    let fakeSettings = { freeDimensionOnInvoice: FreeDimensionOnInvoice.show
+} as ReadSettingsResponseData;
+191:            const lineItems = await Offering.getLineItemsForUsage({
+280:            const lineItems = await Offering.getLineItemsForUsage({
+369:            const lineItems = await Offering.getLineItemsForUsage({
+509:            const lineItems = await Offering.getLineItemsForUsage({
+678:            const lineItems = await Offering.getLineItemsForUsage({
+794:            const lineItems = await Offering.getLineItemsForUsage({
+896:            const lineItems = await Offering.getLineItemsForUsage({
+1010:            const lineItems = await Offering.getLineItemsForUsage({
+1088:        test('Line items should be generated correctly for tiers where
+there is not overage', async () => {
+1122:            const lineItems = await Offering.getLineItemsForUsage({
+1299:            const lineItems = await Offering.getLineItemsForUsage({
+1337:                                usageEntitlement: 100,
+1398:            const lineItems = await Offering.getLineItemsForUsage({
+1479:        test('Line items without tiers, consumption price or entitlements
+should still work fine', async () => {
+1513:            const lineItems = await Offering.getLineItemsForUsage({
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 23, $0.62):
+Let me examine the spec tests to understand the expected behaviors around
+entitlement/overage for non-tiered dimensions.
+
+```
+cd /app; sed -n '40,120p' src/offering/entities/offeringPackage.entity.spec.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+    let basicSubscriptionOffering: ReadOfferingResponseData;
+    let basicUsageOffering: ReadOfferingResponseData;
+    let basicReadCustomerResponseData: ReadCustomerResponseData;
+    let zeroConsumptionPriceDimension: ReadDimensionResponseData;
+    let creditService: CreditService;
+    let AnalyticsService: AnalyticsService;
+    let fakeBusinessID = 'fakeBusinessID';
+    let fakeCustomerID = 'fakeCustomerID';
+    let freeTrialLength = '30';
+    let fakeSettings = { freeDimensionOnInvoice: FreeDimensionOnInvoice.show }
+as ReadSettingsResponseData;
+
+    beforeAll(async () => {
+        //eslint-disable-next-line
+        //@ts-ignore
+        invoicesService = new InvoicesService();
+        //eslint-disable-next-line
+        //@ts-ignore
+        customerService = new CustomerService();
+        //eslint-disable-next-line
+        //@ts-ignore
+        schedulerService = new SchedulerService();
+        //eslint-disable-next-line
+        //@ts-ignore
+        creditService = new CreditService();
+        //eslint-disable-next-line
+        //@ts-ignore
+        jest.spyOn(invoicesService, 'create').mockImplementation(async () => ({
+invoiceId: '123', message: 'foobar' }));
+        //eslint-disable-next-line
+        //@ts-ignore
+        jest.spyOn(invoicesService, 'findOne').mockImplementation(async () => ({
+            invoiceId: '123',
+            message: 'foobar',
+        }));
+
+        jest.spyOn(invoicesService, 'queueInvoice').mockImplementation(async ()
+=> ({ message: 'foobar' }));
+        jest.spyOn(invoicesService,
+'consolidateInvoice').mockImplementation(async () => ({
+            message: 'foobar',
+            invoiceId: '123',
+        }));
+        //eslint-disable-next-line
+        //@ts-ignore
+        jest.spyOn(customerService, 'findOne').mockImplementation(async () =>
+({}));
+        //eslint-disable-next-line
+        //@ts-ignore
+        jest.spyOn(customerService, 'create').mockImplementation(async () =>
+({}));
+
+        //eslint-disable-next-line
+        //@ts-ignore
+        jest.spyOn(customerService,
+'findUsageForCustomer').mockImplementation(async () => ({}));
+
+        //eslint-disable-next-line
+        //@ts-ignore
+        jest.spyOn(creditService, 'create').mockImplementation(async () =>
+({}));
+
+        //eslint-disable-next-line
+        //@ts-ignore
+        jest.spyOn(schedulerService, 'create').mockImplementation(async () =>
+({}));
+        //eslint-disable-next-line
+        //@ts-ignore
+        jest.spyOn(schedulerService, 'emitOne').mockImplementation(async () =>
+({}));
+    });
+    beforeEach(async () => {
+        jest.useFakeTimers('modern').setSystemTime(new Date('2023-08-16'));
+        fakeBusinessID = 'fakeBusinessID';
+        fakeCustomerID = 'fakeCustomerID';
+        freeTrialLength = '30';
+        basicSubscriptionOffering = {
+            offeringId: '123',
+            offeringName: 'foobar',
+            offeringType: OfferingType.subscription,
+            currency: SupportedCurrencies.USD,
+            dimensions: [],
+            subscriptionPrice: 100,
+            billingCycle: ValidBillingCycles.monthly,
+        };
+        zeroConsumptionPriceDimension = {
+            dimensionId: '123',
+            dimensionName: 'foobar',
+            aggregationInterval: aggregationInterval.day,
+            aggregationMethod: aggregationMethod.sum,
+            usageIncrement: '1',
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 24, $0.65):
+```
+cd /app; sed -n '1280,1560p'
+src/offering/entities/offeringPackage.entity.spec.ts
+```
+
+Tool:
+<returncode>
+0
+<output_head>
+                {
+                    tierPosition: '8',
+                    tierName: 'tier8',
+                    upperBound: '800',
+                    unitPrice: '0.08',
+                },
+                {
+                    tierPosition: '9',
+                    tierName: 'tier9',
+                    upperBound: '900',
+                    unitPrice: '0.09',
+                },
+                {
+                    tierPosition: '10',
+                    tierName: 'tier10',
+                    upperBound: '1000',
+                    unitPrice: '0.10',
+                },
+            ];
+            const lineItems = await Offering.getLineItemsForUsage({
+                customerService: customerService,
+                customer: fakeCustomer,
+                startDate: DatetimeUtils.fifthDayOfLastMonthAtMidnight(new
+Date()),
+                endDate: new Date(),
+                customerId: fakeCustomerID,
+                dimensions: [
+                    {
+                        aggregationInterval: aggregationInterval.month,
+                        aggregationMethod: aggregationMethod.sum,
+                        dimensionName: 'fakeDimensionName',
+                        rounding: roundingEnum.floor,
+                        consumptionUnit: {
+                            unit: countBasedUnits['count-based'],
+                            type: 'count',
+                        },
+                        dimensionId: '123',
+                        usageIncrement: '1',
+                        tiers,
+                    },
+                ],
+                businessID: fakeBusinessID,
+                lineItems: new InvoiceLineItems(),
+                offeringInstance: Offering.getInstance(
+                    {
+                        ...basicUsageOffering,
+                        dimensions: [
+                            {
+                                aggregationInterval: aggregationInterval.month,
+                                aggregationMethod: aggregationMethod.sum,
+                                dimensionName: 'fakeDimensionName',
+                                rounding: roundingEnum.floor,
+                                consumptionUnit: {
+                                    unit: countBasedUnits['count-based'],
+                                    type: 'count',
+                                },
+                                dimensionId: '123',
+                                usageIncrement: '1',
+                                usageEntitlement: 100,
+                                tiers,
+                            },
+                        ],
+                    },
+                    fakeCustomerID,
+                    fakeBusinessID,
+                    invoicesService,
+                    fakeSettings,
+                    schedulerService,
+                    customerService,
+                ),
+            });
+
+            expect(lineItems.getLineItems()).toEqual([
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier1', 100, 0.01)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier2', 100, 0.02)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier3', 100, 0.03)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier4', 100, 0.04)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier5', 100, 0.05)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier6', 100, 0.06)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier7', 100, 0.07)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier8', 100, 0.08)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier9', 100, 0.09)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier10', 100, 0.1)),
+            ]);
+        });
+        test('Line items should take into account usage increment with tiers',
+async () => {
+            basicReadCustomerResponseData = { ...basicReadCustomerResponseData,
+currency: SupportedCurrencies.USD };
+            jest.spyOn(customerService,
+'findUsageForCustomer').mockImplementation(
+                async () =>
+                    ({
+                        message: 'fake',
+                        data: [
+                            {
+                                dimensionId: '123',
+                                usage: [
+                                    {
+                                        startTime: DatetimeUtils.beginningOfDay(
+                                            DatetimeUtils.fifthDayOfLastMonthAtM
+idnight(new Date()),
+                                        ).toISOString(),
+                                        endTime: DatetimeUtils.endOfDay(
+
+<output_tail>
+  tierPosition: '2',
+                                        tierName: 'tier2',
+                                        upperBound: '200',
+                                        unitPrice: '0.02',
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    fakeCustomerID,
+                    fakeBusinessID,
+                    invoicesService,
+                    fakeSettings,
+                    schedulerService,
+                    customerService,
+                ),
+            });
+
+            expect(lineItems.getLineItems()).toEqual([
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier1', 10, 0.01)),
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar - tier2', 10, 0.02)),
+            ]);
+        });
+        test('Line items without tiers, consumption price or entitlements should
+still work fine', async () => {
+            basicReadCustomerResponseData = { ...basicReadCustomerResponseData,
+currency: SupportedCurrencies.USD };
+            jest.spyOn(customerService,
+'findUsageForCustomer').mockImplementation(
+                async () =>
+                    ({
+                        message: 'fake',
+                        data: [
+                            {
+                                dimensionId: '123',
+                                usage: [
+                                    {
+                                        startTime: DatetimeUtils.beginningOfDay(
+                                            DatetimeUtils.fifthDayOfLastMonthAtM
+idnight(new Date()),
+                                        ).toISOString(),
+                                        endTime: DatetimeUtils.endOfDay(
+                                            DatetimeUtils.fifthDayOfLastMonthAtM
+idnight(new Date()),
+                                        ).toISOString(),
+                                        value: '1000',
+                                    },
+                                    {
+                                        startTime: new Date().toISOString(),
+                                        endTime: DatetimeUtils.endOfTomorrow(new
+Date()).toISOString(),
+                                        value: '10000',
+                                    },
+                                ],
+                            },
+                        ],
+                    }) as ReadCustomerUsageData,
+            );
+            const fakeCustomer = { ...basicReadCustomerResponseData, invoices:
+[], offering: basicUsageOffering };
+            jest.spyOn(customerService, 'findOne').mockImplementation(async ()
+=> ({
+                data: [{ ...fakeCustomer }],
+                message: 'test',
+            }));
+            const lineItems = await Offering.getLineItemsForUsage({
+                customerService: customerService,
+                customer: fakeCustomer,
+                startDate: DatetimeUtils.fifthDayOfLastMonthAtMidnight(new
+Date()),
+                endDate: new Date(),
+                customerId: fakeCustomerID,
+                dimensions: [
+                    {
+                        aggregationInterval: aggregationInterval.month,
+                        aggregationMethod: aggregationMethod.sum,
+                        dimensionName: 'fakeDimensionName',
+                        rounding: roundingEnum.floor,
+                        consumptionUnit: {
+                            unit: countBasedUnits['count-based'],
+                            type: 'count',
+                        },
+                        dimensionId: '123',
+                        usageIncrement: '10',
+                    },
+                ],
+                businessID: fakeBusinessID,
+                lineItems: new InvoiceLineItems(),
+                offeringInstance: Offering.getInstance(
+                    {
+                        ...basicUsageOffering,
+                        dimensions: [
+                            {
+                                aggregationInterval: aggregationInterval.month,
+                                aggregationMethod: aggregationMethod.sum,
+                                dimensionName: 'fakeDimensionName',
+                                rounding: roundingEnum.floor,
+                                consumptionUnit: {
+                                    unit: countBasedUnits['count-based'],
+                                    type: 'count',
+                                },
+                                dimensionId: '123',
+                                usageIncrement: '10',
+                            },
+                        ],
+                    },
+                    fakeCustomerID,
+                    fakeBusinessID,
+                    invoicesService,
+                    fakeSettings,
+                    schedulerService,
+                    customerService,
+                ),
+            });
+
+<elided_chars>
+3772
+<warning>
+Output too long.
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 25, $0.71):
+```
+cd /app; grep -n "test(\|it(\|describe(\|expect(lineItems.getLineItems())"
+src/offering/entities/offeringPackage.entity.spec.ts | head -60
+```
+
+Tool:
+<returncode>
+0
+<output>
+36:describe('OfferingPackageEntity', () => {
+156:    describe('Offering', () => {
+157:        test('Line Items should respect the precision of the rate passed
+into it when converting to EUR', async () => {
+241:            expect(lineItems.getLineItems()).toEqual([
+246:        test('Line Items should respect the precision when using USD', async
+() => {
+330:            expect(lineItems.getLineItems()).toEqual([
+335:        test('Line items should be generated correctly for dimension tiers',
+async () => {
+445:            expect(lineItems.getLineItems()).toEqual([
+450:        test('Line items should be generated correctly for dimension with
+grouped by metadata tiers', async () => {
+637:            expect(lineItems.getLineItems()).toEqual([
+644:        test('Line items should be generated correctly for dimension tiers
+with no upperBound', async () => {
+755:            expect(lineItems.getLineItems()).toEqual([
+760:        test('Line items should be generated correctly for a dimension with
+only one tier', async () => {
+858:            expect(lineItems.getLineItems()).toEqual([
+862:        test('Line items should be generated correctly for a dimension where
+the first tier doesnt have a unit price', async () => {
+971:            expect(lineItems.getLineItems()).toEqual([
+976:        test('Line items should be generated correctly for a dimension where
+any tier doesnt have a unit price', async () => {
+1083:            expect(lineItems.getLineItems()).toEqual([
+1088:        test('Line items should be generated correctly for tiers where
+there is not overage', async () => {
+1198:            expect(lineItems.getLineItems()).toEqual([
+1203:        test('Line items should be genenerated correctly for a large number
+of tiers', async () => {
+1351:            expect(lineItems.getLineItems()).toEqual([
+1364:        test('Line items should take into account usage increment with
+tiers', async () => {
+1474:            expect(lineItems.getLineItems()).toEqual([
+1479:        test('Line items without tiers, consumption price or entitlements
+should still work fine', async () => {
+1562:            expect(lineItems.getLineItems()).toEqual([]);
+1564:        test('Free trial scheduler must set parameters correctly', async ()
+=> {
+1607:    describe('Subscription offerings', () => {
+1615:        test('Subscription unenrollment should credit the remaining plan
+time if the boolean value is set on the unenrollment call', async () => {
+1694:        test('Subscription offering enrollment should call scheduler',
+async () => {
+1707:        test('Subscriptions that end their free trial should bill for the
+rest of the subscription in the billing cycle', async () => {
+1733:        test('FTPCOP-38: Subscription offering enrollment should create an
+invoice if no free trial is specified', async () => {
+1758:        test('FTPCOP-38: Subscription offering process billing should
+create an invoice', async () => {
+1783:        test('Subscription offering enrollment should not create an invoice
+if a free trial is specified', async () => {
+1797:        test('Subscription offering enrollment with upfront dimensions
+should prorate if billing cycle is monthly', async () => {
+1841:        test('Subscription offering enrollment with upfront dimensions
+should not prorate if billing cycle is annualToDate', async () => {
+1885:        test('Subscription offering enrollment with upfront dimensions
+should prorate tiers if billing cycle is monthly', async () => {
+1944:        test('Mixed upfront and arrear dimensions should only bill upfront
+on enrollment', async () => {
+2012:        test('Subscription offering enrollment calculate subscription line
+item correctly for Monthly', async () => {
+2030:        test('Subscription offering enrollment calculate subscription line
+item correctly for annualToDate', async () => {
+2048:        test('Subscription offering enrollment should call scheduler emit
+one and create on free trials', async () => {
+2063:        test('Subscription process billing should create an invoice', async
+() => {
+2076:        test('Subscription process billing should consider if a free trial
+is ending during the month', async () => {
+2100:        test('Subscription process billing should consider if a free trial
+is ending much later in the future', async () => {
+2124:        test('Subscription process billing should consider not look back at
+free trials which ended in the past', async () => {
+2148:        test('Subscriptions with usage should consider free trials in the
+past', async () => {
+2360:        test('Subscription offerings which upgrade should calculate the
+start time of the subscription to be right now, not the start of the day', async
+() => {
+2395:        test('Subscription Enrollment should understand upgrades when prior
+offering enrollment date is set', async () => {
+2424:    describe('Usage based offering', () => {
+2432:        test('FTPCOP-37: Should Create an invoice for process billing when
+called', async () => {
+2497:        test('Usage based offerings with a minimum charge should use the
+minimum charge value if the current usage is below the minimum charge dollar
+amount', async () => {
+2549:        test('Usage based offerings with a minimum charge should use the
+usage value if the current usage is above the minimum charge dollar amount',
+async () => {
+2601:        test('Usage based offerings with a minimum charge should be
+offering enrollment date aware if its set', async () => {
+2676:        test('Usage based offerings with a minimum charge should be
+offering enrollment date aware on general process billing requests', async () =>
+{
+2760:        test('Usage based offerings with a minimum charge should have
+multiple line items if there are multiple dimensions', async () => {
+2834:        test('Usage based offerings with a minimum charge during a free
+trial should have negated the minimum charge', async () => {
+2901:        test('Unenrollments should be prorated by the number of days left
+in the current billing cycle', async () => {
+2973:        test('FTPCOP-37: Should not create an invoice immedaitely when
+enrolled is called', async () => {
+2987:        test('FTPCOP-5: Should use free trial date exactly when calculating
+usage', async () => {
+3065:        test('Usage based offerings for unenrollment should only bill for
+this month so far', async () => {
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 26, $0.77):
+```
+cd /app; sed -n '246,335p' src/offering/entities/offeringPackage.entity.spec.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+        test('Line Items should respect the precision when using USD', async ()
+=> {
+            basicReadCustomerResponseData = { ...basicReadCustomerResponseData,
+currency: SupportedCurrencies.USD };
+            jest.spyOn(customerService,
+'findUsageForCustomer').mockImplementation(
+                async () =>
+                    ({
+                        message: 'fake',
+                        data: [
+                            {
+                                dimensionId: '123',
+                                usage: [
+                                    {
+                                        startTime: DatetimeUtils.beginningOfDay(
+                                            DatetimeUtils.fifthDayOfLastMonthAtM
+idnight(new Date()),
+                                        ).toISOString(),
+                                        endTime: DatetimeUtils.endOfDay(
+                                            DatetimeUtils.fifthDayOfLastMonthAtM
+idnight(new Date()),
+                                        ).toISOString(),
+                                        value: '1000',
+                                    },
+                                    {
+                                        startTime: new Date().toISOString(),
+                                        endTime: DatetimeUtils.endOfTomorrow(new
+Date()).toISOString(),
+                                        value: '1000',
+                                    },
+                                ],
+                            },
+                        ],
+                    }) as ReadCustomerUsageData,
+            );
+            const fakeCustomer = { ...basicReadCustomerResponseData, invoices:
+[], offering: basicUsageOffering };
+            jest.spyOn(customerService, 'findOne').mockImplementation(async ()
+=> ({
+                data: [{ ...fakeCustomer }],
+                message: 'test',
+            }));
+            const lineItems = await Offering.getLineItemsForUsage({
+                customerService: customerService,
+                customer: fakeCustomer,
+                startDate: DatetimeUtils.fifthDayOfLastMonthAtMidnight(new
+Date()),
+                endDate: new Date(),
+                customerId: fakeCustomerID,
+                dimensions: [
+                    {
+                        aggregationInterval: aggregationInterval.month,
+                        aggregationMethod: aggregationMethod.sum,
+                        dimensionName: 'fakeDimensionName',
+                        consumptionPrice: '1.23456789',
+                        rounding: roundingEnum.floor,
+                        consumptionUnit: {
+                            unit: countBasedUnits['count-based'],
+                            type: 'count',
+                        },
+                        dimensionId: '123',
+                        usageIncrement: '1',
+                    },
+                ],
+                businessID: fakeBusinessID,
+                lineItems: new InvoiceLineItems(),
+                offeringInstance: Offering.getInstance(
+                    {
+                        ...basicUsageOffering,
+                        dimensions: [
+                            {
+                                aggregationInterval: aggregationInterval.month,
+                                aggregationMethod: aggregationMethod.sum,
+                                dimensionName: 'fakeDimensionName',
+                                consumptionPrice: '1.23456789',
+                                rounding: roundingEnum.floor,
+                                consumptionUnit: {
+                                    unit: countBasedUnits['count-based'],
+                                    type: 'count',
+                                },
+                                dimensionId: '123',
+                                usageIncrement: '1',
+                            },
+                        ],
+                    },
+                    fakeCustomerID,
+                    fakeBusinessID,
+                    invoicesService,
+                    fakeSettings,
+                    schedulerService,
+                    customerService,
+                ),
+            });
+            expect(lineItems.getLineItems()).toEqual([
+                // 1.12345678  = 0.91 * 1.23456789 (exchange rate math, 0.91 is
+the set exchange rate by the mocl)
+                expect.objectContaining(new InvoiceLineItem('fakeDimensionName -
+foobar', 2000, 1.23456789)),
+            ]);
+        });
+        test('Line items should be generated correctly for dimension tiers',
+async () => {
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 27, $0.84):
+Let me inspect the AWS emulator resources to understand the test setup.
+
+```
+cd /app; aws s3 ls 2>&1 | head; echo "=== cloudwatch ==="; aws cloudwatch
+list-metrics 2>&1 | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+/bin/sh: 1: aws: not found
+=== cloudwatch ===
+/bin/sh: 1: aws: not found
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 28, $0.88):
+```
+cd /app; cat src/utils/aws/s3.ts | head -60; echo "=== cw ==="; sed -n '1,80p'
+src/utils/aws/cloudwatch.js 2>/dev/null || find src -name "cloudwatch*";
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
+
+export const putDocument = (document, Bucket, Key) =>
+    new Upload({ client: new S3Client({ region: 'us-east-1' }), params: { Body:
+document, Bucket, Key } });
+
+export const getDocument = async <T>(Bucket: string, Key: string): Promise<T> =>
+{
+    const client = new S3Client({});
+    const { Body } = await client.send(new GetObjectCommand({ Bucket, Key }));
+    return JSON.parse(await Body.transformToString()) as T;
+};
+=== cw ===
+src/utils/aws/cloudwatch.ts
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 29, $0.91):
+```
+cd /app; cat src/utils/aws/cloudwatch.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { BadRequestException } from '@nestjs/common';
+import { CloudWatchClient, GetMetricDataCommand } from
+'@aws-sdk/client-cloudwatch';
+
+export type MetricReading = {
+    timestamp: string;
+    value: number;
+};
+
+/**
+ * The readings a single series published over a window, oldest first. The
+ * caller names the series by its whole dimension set, which is how the metric
+ * store keys them.
+ */
+export const getMetricSeries = async ({
+    namespace,
+    metricName,
+    dimensions,
+    startTime,
+    endTime,
+    period,
+}: {
+    namespace: string;
+    metricName: string;
+    dimensions: Record<string, string>;
+    startTime: Date;
+    endTime: Date;
+    period: number;
+}): Promise<MetricReading[]> => {
+    const cloudwatchClient = new CloudWatchClient({});
+    const readings: MetricReading[] = [];
+    let NextToken: string | undefined;
+    do {
+        const response = await cloudwatchClient.send(
+            new GetMetricDataCommand({
+                StartTime: startTime,
+                EndTime: endTime,
+                ScanBy: 'TimestampAscending',
+                NextToken,
+                MetricDataQueries: [
+                    {
+                        Id: 'series',
+                        ReturnData: true,
+                        MetricStat: {
+                            Metric: {
+                                Namespace: namespace,
+                                MetricName: metricName,
+                                Dimensions: Object.keys(dimensions).map((Name)
+=> ({
+                                    Name,
+                                    Value: dimensions[Name],
+                                })),
+                            },
+                            Period: period,
+                            Stat: 'Sum',
+                        },
+                    },
+                ],
+            }),
+        );
+        (response?.MetricDataResults ?? []).forEach((metricDataResult) => {
+            const values = metricDataResult?.Values ?? [];
+            (metricDataResult?.Timestamps ?? []).forEach((timestamp, index) => {
+                readings.push({
+                    timestamp: new Date(timestamp).toISOString(),
+                    value: Number(values[index] ?? 0),
+                });
+            });
+        });
+        NextToken = response?.NextToken;
+    } while (NextToken);
+    return readings.sort((left, right) =>
+left.timestamp.localeCompare(right.timestamp));
+};
+
+export const getEc2Egress = async (region, creds, startTime, endTime,
+instanceIds: string[]): Promise<any> => {
+    if (instanceIds.length === 0) {
+        return [];
+    }
+    try {
+        const cloudwatchClient = new CloudWatchClient({ region, credentials:
+creds });
+        let res = [];
+        for (const instanceId of instanceIds) {
+            const MetricDataQueries = [instanceId].map((instanceId) => {
+                return {
+                    Id: 'i' + instanceId.substring(2),
+                    Period: 300,
+                    Expression: `SELECT SUM(NetworkOut) FROM SCHEMA("AWS/EC2",
+InstanceId) WHERE InstanceId = '${instanceId}'`,
+                };
+            });
+            const params = {
+                StartTime: startTime,
+                EndTime: endTime,
+                MetricDataQueries,
+            };
+            let next;
+            do {
+                const response = await cloudwatchClient.send(new
+GetMetricDataCommand(params));
+                const { MetricDataResults } = response;
+                MetricDataResults.forEach((metricDataResult) => {
+                    metricDataResult.Id = 'i-' +
+metricDataResult.Id.substring(1);
+                });
+                next = response?.NextToken;
+                res = res.concat(MetricDataResults);
+            } while (next);
+        }
+        return res;
+    } catch (err) {
+        console.log('Error', err);
+        if (err.Code === 'AccessDenied') {
+            throw new BadRequestException(`Invalid IAM role or external ID`);
+        } else {
+            throw new BadRequestException(`'Error fetching cloudwatch metrics`);
+        }
+    }
+};
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 30, $0.96):
+Let me check the emulator resources using node with the AWS SDK.
+
+```
+cd /app; ls node_modules/@aws-sdk/ | grep -i "client-s3\|client-cloudwatch";
+echo "==="; node -e "
+const {S3Client, ListBucketsCommand, ListObjectsV2Command, GetObjectCommand} =
+require('@aws-sdk/client-s3');
+(async()=>{
+  const c = new S3Client({});
+  const b = await c.send(new ListBucketsCommand({}));
+  console.log('BUCKETS', JSON.stringify(b.Buckets));
+  for(const bk of b.Buckets||[]){
+    const o = await c.send(new ListObjectsV2Command({Bucket:bk.Name}));
+    console.log(bk.Name, (o.Contents||[]).map(x=>x.Key));
+  }
+})().catch(e=>console.error('ERR',e.message));
+" 2>&1 | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+client-cloudwatch
+client-s3
+===
+BUCKETS
+[{"Name":"metering-billing-sandbox","CreationDate":"2025-06-01T00:00:00.000Z"}]
+metering-billing-sandbox [
+  'catalogues/biz-ridge-2026-07.json',
+  'catalogues/biz-vale-2026-07.json'
+]
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 31, $1.00):
+```
+cd /app; node -e "
+const {S3Client, GetObjectCommand} = require('@aws-sdk/client-s3');
+(async()=>{
+  const c = new S3Client({});
+  for(const k of
+['catalogues/biz-ridge-2026-07.json','catalogues/biz-vale-2026-07.json']){
+    const {Body}=await c.send(new
+GetObjectCommand({Bucket:'metering-billing-sandbox',Key:k}));
+    const s=await Body.transformToString();
+    console.log('==== '+k+' ====');
+    console.log(s);
+  }
+})().catch(e=>console.error('ERR',e.message));
+" 2>&1 | head -300
+```
+
+Tool:
+<returncode>
+0
+<output>
+==== catalogues/biz-ridge-2026-07.json ====
+{"businessID":"biz-ridge","periodStart":"2026-07-01T00:00:00Z","periodEnd":"2026
+-08-01T00:00:00Z","usageNamespace":"Metering/Usage","usageMetricName":"AggregatedUs
+age","usagePeriod":3600,"settings":{"businessID":"biz-ridge","invoiceGeneration"
+:"perOffering","freeDimensionOnInvoice":"hide"},"offerings":[{"offeringId":"off-
+ridge-plan","offeringName":"Ridge
+Plan","offeringType":"subscription","billingCycle":"monthly","offeringVisibility
+":"public","dimensions":[{"dimensionId":"ridge-api-calls","dimensionName":"Ridge
+ API
+Calls","consumptionPrice":"0.01","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"dimen
+sionId":"ridge-seats","dimensionName":"Ridge
+Seats","consumptionPrice":"10.00","usageIncrement":"1","rounding":"round","sampl
+eType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSc
+hedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usageE
+ntitlement":10,"overageAllowed":"true"},{"dimensionId":"ridge-alerts","dimension
+Name":"Ridge
+Alerts","consumptionPrice":"0.00","usageIncrement":"1","rounding":"round","sampl
+eType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSc
+hedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"dime
+nsionId":"ridge-reports","dimensionName":"Ridge
+Reports","consumptionPrice":"1.00","usageIncrement":"1","rounding":"round","samp
+leType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentS
+chedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usage
+Entitlement":5,"overageAllowed":"false"},{"dimensionId":"ridge-storage","dimensi
+onName":"Ridge
+Storage","consumptionPrice":"0.20","usageIncrement":"1","rounding":"round","samp
+leType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentS
+chedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usage
+Entitlement":"inf","overageAllowed":"true"}],"subscriptionPrice":0},{"offeringId
+":"off-ridge-usage","offeringName":"Ridge
+Metered","offeringType":"usage-based","billingCycle":"monthly","offeringVisibili
+ty":"public","dimensions":[{"dimensionId":"ridge-jobs","dimensionName":"Ridge
+Jobs","consumptionPrice":"0.05","usageIncrement":"1","rounding":"round","sampleT
+ype":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSche
+dule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"dimens
+ionId":"ridge-minutes","dimensionName":"Ridge
+Minutes","consumptionPrice":"0.02","usageIncrement":"1","rounding":"round","samp
+leType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentS
+chedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usage
+Entitlement":100,"overageAllowed":"true"},{"dimensionId":"ridge-scans","dimensio
+nName":"Ridge
+Scans","consumptionPrice":"0.50","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usageEn
+titlement":"inf","overageAllowed":"true"},{"dimensionId":"ridge-tasks","dimensio
+nName":"Ridge
+Tasks","consumptionPrice":"0.10","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usageEn
+titlement":50}]}],"enrolments":[{"customerId":"cus_sample_alpha","offeringId":"o
+ff-ridge-plan"},{"customerId":"cus_sample_bravo","offeringId":"off-ridge-usage"}
+]}
+==== catalogues/biz-vale-2026-07.json ====
+{"businessID":"biz-vale","periodStart":"2026-07-01T00:00:00Z","periodEnd":"2026-
+08-01T00:00:00Z","usageNamespace":"Metering/Usage","usageMetricName":"AggregatedUsa
+ge","usagePeriod":3600,"settings":{"businessID":"biz-vale","invoiceGeneration":"
+perOffering","freeDimensionOnInvoice":"show"},"offerings":[{"offeringId":"off-va
+le-plan","offeringName":"Vale
+Plan","offeringType":"subscription","billingCycle":"monthly","offeringVisibility
+":"public","dimensions":[{"dimensionId":"vale-messages","dimensionName":"Vale
+Messages","consumptionPrice":"0.01","usageIncrement":"1","rounding":"round","sam
+pleType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","payment
+Schedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"di
+mensionId":"vale-hours","dimensionName":"Vale
+Hours","consumptionPrice":"0.00","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"dimen
+sionId":"vale-units","dimensionName":"Vale
+Units","consumptionPrice":"5.00","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usageEn
+titlement":20,"overageAllowed":"true"}],"subscriptionPrice":0}],"enrolments":[{"
+customerId":"cus_sample_charlie","offeringId":"off-vale-plan"}]}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 32, $1.08):
+Now let me check the CloudWatch usage data in the emulator.
+
+```
+cd /app; node -e "
+const {CloudWatchClient,
+ListMetricsCommand}=require('@aws-sdk/client-cloudwatch');
+(async()=>{
+  const c=new CloudWatchClient({});
+  let nt, all=[];
+  do{ const r=await c.send(new
+ListMetricsCommand({Namespace:'Metering/Usage',NextToken:nt}));
+all=all.concat(r.Metrics||[]); nt=r.NextToken;}while(nt);
+  for(const m of all){ console.log(m.MetricName,
+JSON.stringify(m.Dimensions.map(d=>d.Name+'='+d.Value))); }
+})().catch(e=>console.error(e.message));
+" 2>&1 | head -60
+```
+
+Tool:
+<returncode>
+0
+<output>
+AggregatedUsage
+["BusinessId=biz-ridge","CustomerId=cus_sample_alpha","DimensionId=ridge-alerts"
+]
+AggregatedUsage
+["BusinessId=biz-ridge","CustomerId=cus_sample_alpha","DimensionId=ridge-api-cal
+ls"]
+AggregatedUsage
+["BusinessId=biz-ridge","CustomerId=cus_sample_alpha","DimensionId=ridge-reports
+"]
+AggregatedUsage
+["BusinessId=biz-ridge","CustomerId=cus_sample_alpha","DimensionId=ridge-seats"]
+AggregatedUsage
+["BusinessId=biz-ridge","CustomerId=cus_sample_alpha","DimensionId=ridge-storage
+"]
+AggregatedUsage
+["BusinessId=biz-ridge","CustomerId=cus_sample_bravo","DimensionId=ridge-jobs"]
+AggregatedUsage
+["BusinessId=biz-ridge","CustomerId=cus_sample_bravo","DimensionId=ridge-minutes
+"]
+AggregatedUsage
+["BusinessId=biz-ridge","CustomerId=cus_sample_bravo","DimensionId=ridge-tasks"]
+AggregatedUsage
+["BusinessId=biz-vale","CustomerId=cus_sample_charlie","DimensionId=vale-hours"]
+AggregatedUsage
+["BusinessId=biz-vale","CustomerId=cus_sample_charlie","DimensionId=vale-message
+s"]
+AggregatedUsage
+["BusinessId=biz-vale","CustomerId=cus_sample_charlie","DimensionId=vale-units"]
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 33, $1.13):
+Let me look at how to run TypeScript and check package.json scripts.
+
+```
+cd /app; grep -n "\"test\|\"build\|ts-node\|jest\|tsx" package.json | head; echo
+"==="; cat jest.unit.config.json
+```
+
+Tool:
+<returncode>
+0
+<output>
+18:        "build": "nest build",
+19:        "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+30:        "test": "jest --config ./jest.unit.config.json",
+31:        "test:ci": "jest --config ./jest.unit.config.json --forceExit",
+32:        "test:watch": "jest --watch",
+33:        "test:cov": "jest --coverage",
+34:        "test:debug": "node --inspect-brk -r tsconfig-paths/register -r
+ts-node/register node_modules/.bin/jest --runInBand",
+35:        "test:e2e": "jest --config ./test/jest-e2e.json",
+36:        "test:api": "jest --config ./test/jest-api.json",
+37:        "test:db": "jest --config ./test/jest-db.json",
+===
+{
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "./src",
+    "testEnvironment": "node",
+    "transform": {
+        "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "transformIgnorePatterns": ["node_modules/(?!serialize-error/.*)"],
+    "testRegex": ".spec.ts$",
+    "preset": "ts-jest/presets/js-with-ts",
+    "globals": {
+        "ts-jest": {
+            "isolatedModules": true,
+            "tsConfig": "testTSConfig.json",
+            "useESM": true
+        }
+    },
+    "moduleNameMapper": {
+        "^(\\.\\.?\\/.+)\\.js$": "$1"
+    },
+    "extensionsToTreatAsEsm": [".ts"],
+    "maxWorkers": "20%",
+    "testTimeout": 30000
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 34, $1.18):
+Let me look at the `getInstance` signature and how `getCurrency`/`billableTotal`
+work.
+
+```
+cd /app; sed -n '759,860p' src/offering/entities/offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+    public static getInstance(
+        offeringConfig: ReadOfferingResponseData,
+        customerId: string,
+        businessID: string,
+        invoicesService: InvoicesService,
+        settings: ReadSettingsResponseData,
+        schedulerService?: SchedulerService,
+        customerService?: CustomerService,
+        freeTrialEndDate?: string,
+        usageOverrides?: AggregatedUsageResponse[],
+    ): Offering {
+        const {
+            offeringType,
+            offeringName,
+            subscriptionPrice,
+            dimensions,
+            freeTrialLength,
+            billingCycle,
+            currency,
+            minimumCharge,
+            dimensionOverrides,
+            offeringId,
+        } = offeringConfig; // TODO check input and defend from invalid input
+        switch (offeringType) {
+            case OfferingType.usageBased:
+                return new UsageBased({
+                    offeringName,
+                    businessID,
+                    customerId,
+                    invoicesService,
+                    schedulerService,
+                    customerService,
+                    dimensions,
+                    freeTrialEndDate,
+                    freeTrialLength,
+                    billingCycle,
+                    currency: currency as unknown as SupportedCurrencies,
+                    settings,
+                    minimumCharge,
+                    usageOverrides,
+                    dimensionOverrides,
+                    offeringId,
+                });
+            case OfferingType.subscription:
+                return new Subscription({
+                    subscriptionPrice,
+                    offeringName,
+                    businessID,
+                    customerId,
+                    invoicesService,
+                    schedulerService,
+                    customerService,
+                    dimensions,
+                    freeTrialEndDate,
+                    freeTrialLength,
+                    billingCycle,
+                    currency: currency as unknown as SupportedCurrencies,
+                    settings,
+                    minimumCharge,
+                    usageOverrides,
+                    dimensionOverrides,
+                    offeringId,
+                });
+        }
+    }
+    public static calculateFreeTrialEndDate(freeTrialLength: string): string {
+        const freeTrialEndDate = new Date();
+        freeTrialEndDate.setDate(freeTrialEndDate.getDate() +
+parseInt(freeTrialLength));
+        return DatetimeUtils.endOfDay(freeTrialEndDate).toISOString();
+    }
+
+    protected constructor({
+        offeringType,
+        offeringName,
+        businessID,
+        customerId,
+        invoicesService,
+        schedulerService,
+        dimensions,
+        customerService,
+        freeTrialLength,
+        freeTrialEndDate,
+        billingCycle,
+        currency,
+        settings,
+        minimumCharge,
+        discount,
+        usageOverrides,
+        dimensionOverrides,
+        offeringId,
+    }: {
+        offeringType: OfferingType;
+        offeringName: string;
+        businessID: string;
+        customerId: string;
+        invoicesService: InvoicesService;
+        schedulerService?: SchedulerService;
+        customerService?: CustomerService;
+        dimensions: ReadOfferingResponseData['dimensions'];
+        freeTrialLength?: string;
+        freeTrialEndDate?: string;
+        billingCycle: ValidBillingCycles;
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 35, $1.23):
+```
+cd /app; sed -n '860,960p' src/offering/entities/offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+        billingCycle: ValidBillingCycles;
+        currency?: SupportedCurrencies;
+        settings: ReadSettingsResponseData;
+        minimumCharge?: string;
+        discount?: CustomerContractDiscount;
+        usageOverrides?: AggregatedUsageResponse[];
+        dimensionOverrides?: DimensionOverridesDto[];
+        offeringId: string;
+    }) {
+        this.offeringType = offeringType ? offeringType :
+OfferingType.usageBased;
+        this.offeringName = offeringName;
+        this.businessID = businessID;
+        this.customerId = customerId;
+        this.schedulerService = schedulerService;
+        this.invoicesService = invoicesService;
+        this.dimensions = dimensions?.length ? dimensions : [];
+        this.customerService = customerService;
+        this.freeTrialLength = freeTrialLength;
+        this.freeTrialEndDate = freeTrialEndDate;
+        this.billingCycle = billingCycle;
+        this.currency = currency ? currency : SupportedCurrencies.USD;
+        this.settings = settings;
+        if (minimumCharge) {
+            this.minimumCharge = parseFloat(minimumCharge);
+        }
+        if (discount) {
+            this.discount = discount;
+        }
+        if (usageOverrides && usageOverrides?.length) {
+            this.usageOverrides = usageOverrides;
+        }
+        if (dimensionOverrides && dimensionOverrides?.length) {
+            this.dimensionOverrides = dimensionOverrides;
+        }
+        this.offeringId = offeringId;
+    }
+}
+
+export class Subscription extends Offering {
+    subscriptionPrice: number;
+
+    async enroll(subject: string, customer: ReadCustomerResponseData):
+Promise<void> {
+        const today: Date = new Date();
+        Offering.logger.debug(
+            `Enrolling customer ${customer.customerId} in ${this.offeringName}.
+FreeTrialEndDate: ${this.freeTrialEndDate}`,
+        );
+        if (this.freeTrialEndDate) {
+            await this.registerBillingSchedule(subject, this.freeTrialEndDate);
+        } else {
+            let offeringUprade = false;
+            if (
+                this.priorOfferingEnrollmentDate &&
+                DatetimeUtils.dateIsLessThan24HoursAgoUTC(new
+Date(this.priorOfferingEnrollmentDate))
+            ) {
+                offeringUprade = true;
+            }
+            const upfrontPaidDimensions = this.dimensions.filter(
+                (dimension) => dimension?.paymentSchedule ===
+PaymentSchedule.upfront,
+            );
+            const dimensionCopy = JSON.parse(JSON.stringify(this.dimensions));
+            if (upfrontPaidDimensions?.length) {
+                this.dimensions = upfrontPaidDimensions;
+            }
+            const { subscriptionEnd, subscriptionStart } =
+Billing.billingCycleToTimeRange(this.billingCycle);
+            await this.processBilling(
+                this.billingCycle === ValidBillingCycles.monthly ? today : new
+Date(subscriptionStart),
+                new Date(subscriptionEnd),
+                customer,
+                upfrontPaidDimensions?.length ? true : false,
+                true,
+                undefined,
+                offeringUprade,
+            );
+            this.dimensions = dimensionCopy;
+            await this.registerBillingSchedule(subject);
+        }
+    }
+
+    public calculateRemainingAmountForSubscription({
+        startDate,
+        endDate,
+        exchangeRate,
+        negative,
+        billingCycle,
+    }: {
+        startDate: Date;
+        endDate: Date;
+        exchangeRate?: number;
+        negative?: boolean;
+        billingCycle: ValidBillingCycles;
+    }): number {
+        const billingMSSeconds: number = Math.round(Math.abs(endDate.getTime() -
+startDate.getTime()));
+
+        const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+            date: startDate,
+            billingCycle,
+        });
+        if (typeof billingMSSecondsInBillingCycle === 'number') {
+            const amountDue: number =
+                Math.round(
+                    100 *
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 36, $1.29):
+Let me write a reproduction spec that runs the gatherer against the emulator.
+
+```
+cd /app; cat > src/microservices/invoiceLineGatherer/repro.spec.ts <<'EOF'
+import { InvoiceLineGathererService } from './invoiceLineGatherer.service.js';
+
+describe('repro gatherer', () => {
+    test('gather ridge', async () => {
+        const svc = new InvoiceLineGathererService();
+        const res = await svc.gatherInvoiceLines({
+            businessID: 'biz-ridge',
+            catalogueBucket: 'metering-billing-sandbox',
+            catalogueKey: 'catalogues/biz-ridge-2026-07.json',
+        });
+        for (const c of res) {
+            console.log('CUST', c.customerId, c.offeringId);
+            for (const li of c.lineItems) {
+                console.log('   LINE', li.name, 'qty=', li.quantity, 'unit=',
+li.unitCost);
+            }
+        }
+    });
+    test('gather vale', async () => {
+        const svc = new InvoiceLineGathererService();
+        const res = await svc.gatherInvoiceLines({
+            businessID: 'biz-vale',
+            catalogueBucket: 'metering-billing-sandbox',
+            catalogueKey: 'catalogues/biz-vale-2026-07.json',
+        });
+        for (const c of res) {
+            console.log('CUST', c.customerId, c.offeringId);
+            for (const li of c.lineItems) {
+                console.log('   LINE', li.name, 'qty=', li.quantity, 'unit=',
+li.unitCost);
+            }
+        }
+    });
+});
+EOF
+npx jest --config ./jest.unit.config.json
+src/microservices/invoiceLineGatherer/repro.spec.ts 2>&1 | tail -50
+```
+
+Tool:
+<returncode>
+0
+<output>
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:14:25)
+
+  console.log
+       LINE Ridge Minutes - Ridge Metered qty= 80 unit= 0.02
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:14:25)
+
+  console.log
+       LINE Ridge Scans - Ridge Metered qty= 0 unit= 0.5
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:14:25)
+
+  console.log
+       LINE Ridge Tasks - Ridge Metered qty= 70 unit= 0.1
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:14:25)
+
+[32m[Nest] 955  - [39m08/19/2026, 2:04:42 AM [32m    LOG[39m [38;5;3m[Offering]
+[39m[32mGetting currency for customer undefined, offering Vale Plan, customer
+currency undefined[39m
+[32m[Nest] 955  - [39m08/19/2026, 2:04:42 AM [32m    LOG[39m
+[38;5;3m[InvoiceLineGathererService] [39m[32mAssembled invoice lines for 1
+customers[39m
+  console.log
+    CUST cus_sample_charlie off-vale-plan
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:26:21)
+
+  console.log
+       LINE Vale Messages - Vale Plan qty= 50 unit= 0.01
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:28:25)
+
+  console.log
+       LINE Vale Hours - Vale Plan qty= 10 unit= 0
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:28:25)
+
+  console.log
+       LINE Vale Units - Vale Plan qty= 25 unit= 5
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:28:25)
+
+PASS src/microservices/invoiceLineGatherer/repro.spec.ts
+  repro gatherer
+    ✓ gather ridge (63 ms)
+    ✓ gather vale (11 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        4.731 s
+Ran all test suites matching
+/src\/microservices\/invoiceLineGatherer\/repro.spec.ts/i.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 37, $1.34):
+```
+cd /app; npx jest --config ./jest.unit.config.json
+src/microservices/invoiceLineGatherer/repro.spec.ts 2>&1 | grep "LINE\|CUST"
+```
+
+Tool:
+<returncode>
+0
+<output>
+    CUST cus_sample_alpha off-ridge-plan
+       LINE Ridge API Calls - Ridge Plan qty= 100 unit= 0.01
+       LINE Ridge Seats - Ridge Plan qty= 12 unit= 10
+       LINE Ridge Alerts - Ridge Plan qty= 5 unit= 0
+       LINE Ridge Reports - Ridge Plan qty= 7 unit= 1
+       LINE Ridge Storage - Ridge Plan qty= 40 unit= 0.2
+    CUST cus_sample_bravo off-ridge-usage
+       LINE Ridge Jobs - Ridge Metered qty= 200 unit= 0.05
+       LINE Ridge Minutes - Ridge Metered qty= 80 unit= 0.02
+       LINE Ridge Scans - Ridge Metered qty= 0 unit= 0.5
+       LINE Ridge Tasks - Ridge Metered qty= 70 unit= 0.1
+    CUST cus_sample_charlie off-vale-plan
+       LINE Vale Messages - Vale Plan qty= 50 unit= 0.01
+       LINE Vale Hours - Vale Plan qty= 10 unit= 0
+       LINE Vale Units - Vale Plan qty= 25 unit= 5
+
+────────────────────────────────────────────────────────────────────────────────
+
+User:
+Your previous response reached the output token limit (finish_reason=length)
+before you produced a tool call, so it was cut off. Respond more concisely and
+finish with exactly one bash tool call. If you need to think more, do so
+briefly.
+────────────────────────────────────────────────────────────────────────────────
+[92m02:05:37 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 39, $1.47):
+Now I understand the bug. Let me check imports and any existing tests expecting
+zero-usage priced lines before editing.
+
+```
+cd /app; grep -n "overageAllowedEnum\|import.*create-dimension\|from
+'../../dimensions" src/offering/entities/offeringPackage.entity.ts | head; echo
+"=== grep tests with 0 usage priced non-tier ==="; grep -n "value:
+'0'\|quantity: 0\|, 0, 0.\|', 0,"
+src/offering/entities/offeringPackage.entity.spec.ts | head
+```
+
+Tool:
+<returncode>
+0
+<output>
+18:import { ReadDimensionResponseData } from
+'dimensions/dto/create-dimension.dto.js';
+32:import { DimensionTierDto } from '../../dimensions/dto/dimensionTier.dto.js';
+33:import { PaymentSchedule, aggregationMethod } from
+'../../dimensions/dto/create-dimension.dto.js';
+=== grep tests with 0 usage priced non-tier ===
+
+────────────────────────────────────────────────────────────────────────────────
+[92m02:06:15 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 40, $1.59):
+I'll now implement the fix. Let me add the import and replace the non-tiered
+dimension block with allowance/overage/free-dimension logic using a Python
+script.
+
+```
+cd /app; python3 - <<'PY'
+import re
+f='src/offering/entities/offeringPackage.entity.ts'
+s=open(f).read()
+
+# 1. add overageAllowedEnum + FreeDimensionOnInvoice imports
+s=s.replace(
+"import { PaymentSchedule, aggregationMethod } from
+'../../dimensions/dto/create-dimension.dto.js';",
+"import { PaymentSchedule, aggregationMethod, overageAllowedEnum } from
+'../../dimensions/dto/create-dimension.dto.js';\nimport { FreeDimensionOnInvoice
+} from '../../setting/dto/FreeDimensionOnInvoice.js';",1)
+
+start = s.index("        Object.keys(dimensionTotals).forEach((dimensionId) =>
+{")
+end_marker = "        if (Object.keys(tieredDimensionMap).length) {"
+end = s.index(end_marker)
+old = s[start:end]
+assert "prepareLineItem" in old, "block not found"
+
+new = '''        Object.keys(dimensionTotals).forEach((dimensionId) => {
+            const dimension = nonTieredDimensionsMap[dimensionId];
+            const rawUnitPrice = parseFloat(dimension.consumptionPrice);
+            let unitCost = Number.isNaN(rawUnitPrice)
+                ? 0
+                : Number(
+                      (rawUnitPrice * exchangeRate).toFixed(
+                          Offering.getDecimalsForNumber(rawUnitPrice) === 0
+                              ? 2
+                              : Offering.getDecimalsForNumber(rawUnitPrice),
+                      ),
+                  );
+            if (dimension?.paymentSchedule === PaymentSchedule.upfront) {
+                const billingMSStartDate = proratedStartDate ? proratedStartDate
+: startDate;
+                const billingMSSeconds: number =
+Math.round(Math.abs(endDate.getTime() - billingMSStartDate.getTime()));
+                const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+                    date: billingMSStartDate,
+                    billingCycle: offeringInstance?.billingCycle,
+                }) as number;
+                unitCost = Math.round(100 * unitCost * (billingMSSeconds /
+billingMSSecondsInBillingCycle)) / 100;
+            }
+            const {
+                usageIncrement,
+                consumptionUnit: { unit, type },
+            } = dimension;
+
+            // Apply the customer's allowance and the plan's overage rule before
+deciding
+            // what, if anything, they owe on this dimension. Only usage beyond
+a finite,
+            // exhausted allowance whose overage the plan permits is billable;
+an unlimited
+            // allowance, an unexhausted allowance, or a plan that forbids
+overage all owe
+            // nothing.
+            const totalUsage = dimensionTotals[dimensionId];
+            const entitlement = dimension?.usageEntitlement;
+            let billableUsage = totalUsage;
+            if (entitlement === 'inf') {
+                billableUsage = 0;
+            } else if (entitlement !== undefined && entitlement !== null) {
+                const overagePermitted = dimension?.overageAllowed ===
+overageAllowedEnum.true;
+                if (!overagePermitted || totalUsage <= Number(entitlement)) {
+                    billableUsage = 0;
+                } else {
+                    billableUsage = totalUsage - Number(entitlement);
+                }
+            }
+
+            const owesSomething = billableUsage > 0 && unitCost > 0;
+            const pricedAtZero = unitCost === 0;
+            const hideFreeDimensions =
+                offeringInstance?.settings?.freeDimensionOnInvoice ===
+FreeDimensionOnInvoice.hide;
+
+            if (!owesSomething && !(pricedAtZero && !hideFreeDimensions)) {
+                return;
+            }
+
+            const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                total: billableUsage,
+                dimensionType: type,
+                dimensionId,
+                dimensionName: dimension.dimensionName,
+                offeringName: offeringInstance.offeringName,
+                usageIncrement: parseInt(usageIncrement),
+                dimensionUnit: unit,
+                negative,
+            });
+            lineItems.addLineItem(new InvoiceLineItem(displayName, displayTotal,
+unitCost));
+        });
+'''
+s=s[:start]+new+s[end:]
+open(f,'w').write(s)
+print("done")
+PY
+```
+
+Tool:
+<returncode>
+0
+<output>
+done
+
+────────────────────────────────────────────────────────────────────────────────
+[92m02:06:39 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 41, $1.65):
+```
+cd /app; npx jest --config ./jest.unit.config.json
+src/microservices/invoiceLineGatherer/repro.spec.ts 2>&1 | grep
+"LINE\|CUST\|Error\|FAIL\|PASS"
+```
+
+Tool:
+<returncode>
+0
+<output>
+    CUST cus_sample_alpha off-ridge-plan
+       LINE Ridge API Calls - Ridge Plan qty= 100 unit= 0.01
+       LINE Ridge Seats - Ridge Plan qty= 2 unit= 10
+    CUST cus_sample_bravo off-ridge-usage
+       LINE Ridge Jobs - Ridge Metered qty= 200 unit= 0.05
+    CUST cus_sample_charlie off-vale-plan
+       LINE Vale Messages - Vale Plan qty= 50 unit= 0.01
+       LINE Vale Hours - Vale Plan qty= 10 unit= 0
+       LINE Vale Units - Vale Plan qty= 5 unit= 5
+PASS src/microservices/invoiceLineGatherer/repro.spec.ts
+
+────────────────────────────────────────────────────────────────────────────────
+[92m02:06:44 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 42, $1.70):
+The fix works correctly. Now let me run the existing offering entity spec to
+ensure nothing broke.
+
+```
+cd /app; npx jest --config ./jest.unit.config.json
+src/offering/entities/offeringPackage.entity.spec.ts 2>&1 | tail -30
+```
+
+Tool:
+<returncode>
+0
+<output>
+      ✓ calculate expected total for annual to date subscriptions, start: 2023
+end: 2024 expected total: 49
+      ✓ calculate expected total for annual to date subscriptions, start: 2023
+end: 2024 expected total: 49
+      ✓ calculate expected total for annual to date subscriptions, start: 2024
+end: 2025 expected total: 49
+      ✓ Subscription offerings which upgrade should calculate the start time of
+the subscription to be right now, not the start of the day (1 ms)
+      ✓ Subscription Enrollment should understand upgrades when prior offering
+enrollment date is set (1 ms)
+    Usage based offering
+      ✓ FTPCOP-37: Should Create an invoice for process billing when called (1
+ms)
+      ✓ Usage based offerings with a minimum charge should use the minimum
+charge value if the current usage is below the minimum charge dollar amount (1
+ms)
+      ✓ Usage based offerings with a minimum charge should use the usage value
+if the current usage is above the minimum charge dollar amount (1 ms)
+      ✓ Usage based offerings with a minimum charge should be offering
+enrollment date aware if its set (1 ms)
+      ✓ Usage based offerings with a minimum charge should be offering
+enrollment date aware on general process billing requests (1 ms)
+      ✓ Usage based offerings with a minimum charge should have multiple line
+items if there are multiple dimensions (1 ms)
+      ✓ Usage based offerings with a minimum charge during a free trial should
+have negated the minimum charge (1 ms)
+      ✓ Unenrollments should be prorated by the number of days left in the
+current billing cycle (1 ms)
+      ✓ FTPCOP-37: Should not create an invoice immedaitely when enrolled is
+called
+      ✓ FTPCOP-5: Should use free trial date exactly when calculating usage (3
+ms)
+      ✓ Usage based offerings for unenrollment should only bill for this month
+so far (2 ms)
+      ✓ Usage Based offerings should not call the credit creation service when
+unenrollment occurs (1 ms)
+      ✓ Usage Based offerings should not call invoice creation when changing
+plans and the invoice generation state is set to per billing cycle (2 ms)
+      ✓ Usage Based offerings should consolidate invoices if the consolidate
+invoice flag is set on the offering and process billing is called
+      ✓ should apply the correct discount to the invoice (1 ms)
+      ✓ Usage based offerings should consolidate invoices and pass along the
+generated invoice as an argument to the consolidate invoice function (1 ms)
+    Billing Cycle Testing
+      ✓ annualToDate Billing cycle must be set correctly (2 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       110 passed, 110 total
+Snapshots:   0 total
+Time:        2.083 s
+Ran all test suites matching
+/src\/offering\/entities\/offeringPackage.entity.spec.ts/i.
+
+────────────────────────────────────────────────────────────────────────────────
+[92m02:06:53 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 43, $1.76):
+All 110 pass. Let me run the full unit test suite to make sure no other
+consumers broke.
+
+```
+cd /app; rm src/microservices/invoiceLineGatherer/repro.spec.ts; timeout 600 npx
+jest --config ./jest.unit.config.json 2>&1 | tail -25
+```
+
+Tool:
+<returncode>
+-1
+<output>
+
+<exception_info>
+An error occurred while executing the command: Command 'cd /app; rm
+src/microservices/invoiceLineGatherer/repro.spec.ts; timeout 600 npx jest
+--config ./jest.unit.config.json 2>&1 | tail -25' timed out after 30 seconds
+────────────────────────────────────────────────────────────────────────────────
+[92m02:07:29 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 44, $1.81):
+The harness limits command time. Let me run targeted relevant suites
+individually.
+
+```
+cd /app; npx jest --config ./jest.unit.config.json
+src/portal/portal.service.spec.ts src/invoice/invoice.services.spec.ts 2>&1 |
+tail -15
+```
+
+Tool:
+<returncode>
+0
+<output>
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is
+deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+ts-jest[backports] (WARN) "[jest-config].globals.ts-jest.tsConfig" is
+deprecated, use "[jest-config].globals.ts-jest.tsconfig" instead.
+ts-jest[backports] (WARN) Your Jest configuration is outdated. Use the CLI to
+help migrating it: ts-jest config:migrate <config-file>.
+PASS src/portal/portal.service.spec.ts
+PASS src/invoice/invoice.services.spec.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       21 passed, 21 total
+Snapshots:   0 total
+Time:        2.115 s
+Ran all test suites matching
+/src\/portal\/portal.service.spec.ts|src\/invoice\/invoice.services.spec.ts/i.
+
+────────────────────────────────────────────────────────────────────────────────
+[92m02:07:37 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 45, $1.86):
+Let me run a few more relevant suites (customer, invoice entity/controller).
+
+```
+cd /app; npx jest --config ./jest.unit.config.json
+src/customer/customer.service.spec.ts src/invoice/invoice.entity.spec.ts
+src/invoice/invoices.controller.spec.ts 2>&1 | tail -12
+```
+
+Tool:
+<returncode>
+0
+<output>
+[32m[Nest] 1185  - [39m08/19/2026, 2:07:43 AM [32m    LOG[39m
+[38;5;3m[InfluxService] [39m[32mInflux URL:
+https://us-east-1-1.aws.cloud2.influxdata.com, Influx Org: metering[39m
+[32m[Nest] 1185  - [39m08/19/2026, 2:07:43 AM [32m    LOG[39m
+[38;5;3m[InfluxService] [39m[32mInflux URL:
+https://us-east-1-1.aws.cloud2.influxdata.com, Influx Org: metering[39m
+[32m[Nest] 1185  - [39m08/19/2026, 2:07:43 AM [32m    LOG[39m
+[38;5;3m[InfluxService] [39m[32mInflux URL:
+https://us-east-1-1.aws.cloud2.influxdata.com, Influx Org: metering[39m
+[32m[Nest] 1185  - [39m08/19/2026, 2:07:43 AM [32m    LOG[39m
+[38;5;3m[InfluxService] [39m[32mInflux URL:
+https://us-east-1-1.aws.cloud2.influxdata.com, Influx Org: metering[39m
+[32m[Nest] 1185  - [39m08/19/2026, 2:07:43 AM [32m    LOG[39m
+[38;5;3m[InfluxService] [39m[32mInflux URL:
+https://us-east-1-1.aws.cloud2.influxdata.com, Influx Org: metering[39m
+PASS src/invoice/invoices.controller.spec.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       32 passed, 32 total
+Snapshots:   0 total
+Time:        2.602 s
+Ran all test suites matching
+/src\/customer\/customer.service.spec.ts|src\/invoice\/invoice.entity.spec.ts|sr
+c\/invoice\/invoices.controller.spec.ts/i.
+
+────────────────────────────────────────────────────────────────────────────────
+[92m02:07:44 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 46, $1.92):
+All tests pass. Let me verify the edited code region reads correctly and do a
+quick type-check on the file.
+
+```
+cd /app; sed -n '478,545p' src/offering/entities/offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+        Object.keys(dimensionTotals).forEach((dimensionId) => {
+            const dimension = nonTieredDimensionsMap[dimensionId];
+            const rawUnitPrice = parseFloat(dimension.consumptionPrice);
+            let unitCost = Number.isNaN(rawUnitPrice)
+                ? 0
+                : Number(
+                      (rawUnitPrice * exchangeRate).toFixed(
+                          Offering.getDecimalsForNumber(rawUnitPrice) === 0
+                              ? 2
+                              : Offering.getDecimalsForNumber(rawUnitPrice),
+                      ),
+                  );
+            if (dimension?.paymentSchedule === PaymentSchedule.upfront) {
+                const billingMSStartDate = proratedStartDate ? proratedStartDate
+: startDate;
+                const billingMSSeconds: number =
+Math.round(Math.abs(endDate.getTime() - billingMSStartDate.getTime()));
+                const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+                    date: billingMSStartDate,
+                    billingCycle: offeringInstance?.billingCycle,
+                }) as number;
+                unitCost = Math.round(100 * unitCost * (billingMSSeconds /
+billingMSSecondsInBillingCycle)) / 100;
+            }
+            const {
+                usageIncrement,
+                consumptionUnit: { unit, type },
+            } = dimension;
+
+            // Apply the customer's allowance and the plan's overage rule before
+deciding
+            // what, if anything, they owe on this dimension. Only usage beyond
+a finite,
+            // exhausted allowance whose overage the plan permits is billable;
+an unlimited
+            // allowance, an unexhausted allowance, or a plan that forbids
+overage all owe
+            // nothing.
+            const totalUsage = dimensionTotals[dimensionId];
+            const entitlement = dimension?.usageEntitlement;
+            let billableUsage = totalUsage;
+            if (entitlement === 'inf') {
+                billableUsage = 0;
+            } else if (entitlement !== undefined && entitlement !== null) {
+                const overagePermitted = dimension?.overageAllowed ===
+overageAllowedEnum.true;
+                if (!overagePermitted || totalUsage <= Number(entitlement)) {
+                    billableUsage = 0;
+                } else {
+                    billableUsage = totalUsage - Number(entitlement);
+                }
+            }
+
+            const owesSomething = billableUsage > 0 && unitCost > 0;
+            const pricedAtZero = unitCost === 0;
+            const hideFreeDimensions =
+                offeringInstance?.settings?.freeDimensionOnInvoice ===
+FreeDimensionOnInvoice.hide;
+
+            if (!owesSomething && !(pricedAtZero && !hideFreeDimensions)) {
+                return;
+            }
+
+            const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                total: billableUsage,
+                dimensionType: type,
+                dimensionId,
+                dimensionName: dimension.dimensionName,
+                offeringName: offeringInstance.offeringName,
+                usageIncrement: parseInt(usageIncrement),
+                dimensionUnit: unit,
+                negative,
+            });
+            lineItems.addLineItem(new InvoiceLineItem(displayName, displayTotal,
+unitCost));
+        });
+        if (Object.keys(tieredDimensionMap).length) {
+            Object.keys(tieredDimensionMap).forEach((tieredDimensionId) => {
+
+────────────────────────────────────────────────────────────────────────────────
+[92m02:07:53 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 47, $1.99):
+The logic is correct. Let me run a quick lint check on the modified file to
+catch any issues.
+
+```
+cd /app; npx eslint src/offering/entities/offeringPackage.entity.ts 2>&1 | head
+-20; echo "exit: $?"
+```
+
+Tool:
+<returncode>
+0
+<output>
+exit: 0
+
+────────────────────────────────────────────────────────────────────────────────
+[92m02:08:08 - LiteLLM:WARNING[0m: factory.py:4764 - Potential consecutive user/tool blocks. Trying to merge. If error occurs, please set a 'assistant_continue_message' or set 'modify_params=True' to insert a dummy assistant message for bedrock calls.
+
+mini-swe-agent (step 48, $2.06):
+The fix is complete and verified. Let me summarize what I did:
+
+## Summary
+
+**Problem:** The invoicing collector (`invoiceLineGatherer`) delegates line-item
+generation to `Offering.getLineItemsForUsage`. For non-tiered dimensions, that
+function was charging the *full* aggregated usage at the plan price and always
+emitting a line — it ignored allowances (`usageEntitlement`), overage rules
+(`overageAllowed`), and the `freeDimensionOnInvoice` setting.
+
+**Fix** (in `src/offering/entities/offeringPackage.entity.ts`, non-tiered
+dimension loop):
+- **Allowance/overage:** billable usage = usage beyond a *finite, exhausted*
+allowance only when overage is permitted (`overageAllowed === 'true'`). An
+unlimited (`'inf'`) allowance, an unexhausted allowance (`usage <=
+entitlement`), or a plan that forbids/omits overage all bill nothing.
+- **Lines:** a dimension gets a line whenever the customer owes something
+(billable > 0 and unit cost > 0); a dimension the plan prices at zero gets a
+line unless the invoice settings hide free dimensions (`freeDimensionOnInvoice
+=== 'hide'`).
+
+**Verified against the emulator catalogues:**
+- Ridge (hide free): API Calls 100@0.01, Seats overage 2@10 only; Alerts
+(free+hide), Reports (overage forbidden), Storage (inf), Minutes (unexhausted),
+Scans (inf), Tasks (overage not permitted) all correctly dropped.
+- Vale (show free): Messages 50@0.01, Hours 10@0 (free shown), Units overage
+5@5.
+
+All 110 offering-entity tests plus customer/invoice/portal suites pass, and
+ESLint is clean.
+
+```
+echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+```
+
+Tool:
+<returncode>
+-1
+<output>
+
+<exception_info>
+action was not executed
+
+Exit:
+
+Saved trajectory to '/logs/agent/mini-swe-agent.trajectory.json'

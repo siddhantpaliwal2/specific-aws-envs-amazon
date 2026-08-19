@@ -1,0 +1,165 @@
+--- a/src/utils/aws/s3.ts
++++ b/src/utils/aws/s3.ts
+@@ -1,4 +1,4 @@
+-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
++import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
+ import { Upload } from '@aws-sdk/lib-storage';
+ 
+ export const putDocument = (document, Bucket, Key) =>
+@@ -9,3 +9,20 @@
+     const { Body } = await client.send(new GetObjectCommand({ Bucket, Key }));
+     return JSON.parse(await Body.transformToString()) as T;
+ };
++
++export const listKeys = async (Bucket: string, Prefix: string): Promise<Array<string>> => {
++    const client = new S3Client({});
++    const keys: Array<string> = [];
++    let ContinuationToken: string | undefined;
++    do {
++        // eslint-disable-next-line no-await-in-loop
++        const response = await client.send(new ListObjectsV2Command({ Bucket, Prefix, ContinuationToken }));
++        (response.Contents ?? []).forEach(({ Key }) => {
++            if (Key && !Key.endsWith('/')) {
++                keys.push(Key);
++            }
++        });
++        ContinuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
++    } while (ContinuationToken);
++    return keys;
++};
+--- a/src/onboarding/entities/meteringAccounts.entity.ts
++++ b/src/onboarding/entities/meteringAccounts.entity.ts
+@@ -1,4 +1,4 @@
+-import { getDocument } from '../../utils/aws/s3.js';
++import { getDocument, listKeys } from '../../utils/aws/s3.js';
+ 
+ /**
+  * An AWS account a business has handed us for measurement.
+@@ -44,3 +44,77 @@
+         return getDocument<MeteringRegistry>(bucket, key);
+     }
+ }
++
++/**
++ * One account a customer was onboarded against.
++ */
++export class CustomerAccountLink {
++    public accountId: string;
++    /**
++     * Set when the account was stood up for this customer alone.
++     */
++    public dedicated?: boolean;
++}
++
++/**
++ * The per customer half of the onboarding record.
++ */
++export class CustomerOnboardingRecord {
++    public customerId: string;
++    public accounts: Array<CustomerAccountLink>;
++}
++
++/**
++ * The account to customer side of onboarding, indexed for lookup.
++ */
++export class TenantDirectory {
++    private readonly allowed: Record<string, Set<string>> = {};
++    private readonly dedicated: Record<string, string> = {};
++
++    constructor(records: Array<CustomerOnboardingRecord>) {
++        records.forEach(({ customerId, accounts }) => {
++            (accounts ?? []).forEach(({ accountId, dedicated }) => {
++                if (!this.allowed[accountId]) {
++                    this.allowed[accountId] = new Set<string>();
++                }
++                this.allowed[accountId].add(customerId);
++                if (dedicated) {
++                    this.dedicated[accountId] = customerId;
++                }
++            });
++        });
++    }
++
++    static async load(bucket: string, registry: MeteringRegistry): Promise<TenantDirectory> {
++        const keys = await listKeys(bucket, registry.customerRecordPrefix);
++        const records = await Promise.all(keys.map((key) => getDocument<CustomerOnboardingRecord>(bucket, key)));
++        return new TenantDirectory(records.filter((record) => record && record.customerId));
++    }
++
++    billable(accountId: string, customerId: string): boolean {
++        return Boolean(this.allowed[accountId]?.has(customerId));
++    }
++
++    standingCustomer(accountId: string): string | undefined {
++        return this.dedicated[accountId];
++    }
++
++    /**
++     * The customers that carry an account's resource, given whatever the
++     * resource itself claims. A claim we cannot honour counts for nothing, and
++     * a resource claiming nobody falls to whoever the account was stood up for.
++     */
++    owners(accountId: string, claimed: Array<string>): Array<string> {
++        const honoured: Array<string> = [];
++        claimed.forEach((customerId) => {
++            if (this.billable(accountId, customerId) && !honoured.includes(customerId)) {
++                honoured.push(customerId);
++            }
++        });
++        if (honoured.length) {
++            return honoured;
++        }
++        const standing = this.standingCustomer(accountId);
++        return standing ? [standing] : [];
++    }
++}
+--- a/src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts
++++ b/src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts
+@@ -9,7 +9,11 @@
+ import { SchedulerEntity } from '../../scheduler/entities/scheduler.entity.js';
+ import { AuditService } from '../../audit/audit.service.js';
+ import { AuditScope } from '../../audit/entities/audit.interface.js';
+-import { MeteredAccount, MeteringRegistry } from '../../onboarding/entities/meteringAccounts.entity.js';
++import {
++    MeteredAccount,
++    MeteringRegistry,
++    TenantDirectory,
++} from '../../onboarding/entities/meteringAccounts.entity.js';
+ 
+ const RUNNING_TIME_INCREMENT = 0.08333333; // TODO: make this dynamic
+ 
+@@ -64,6 +68,7 @@
+         registryKey: string;
+     }): Promise<Array<StandardMeasurementEntity>> {
+         const registry = await MeteringRegistry.load(registryBucket, registryKey);
++        const directory = await TenantDirectory.load(registryBucket, registry);
+         const collected: Array<MeteredInstance> = [];
+         for (const account of registry.accounts) {
+             // eslint-disable-next-line no-await-in-loop
+@@ -77,12 +82,22 @@
+         const runningTime: Record<string, number> = {};
+         const instanceIds: Record<string, Array<string>> = {};
+         collected.forEach((instance) => {
+-            const customerId = instance.tags.meteringCustomerId;
+-            if (!customerId) {
++            const claimed = (instance.tags.meteringCustomerId ?? '')
++                .split(',')
++                .map((value) => value.trim())
++                .filter((value) => value.length > 0);
++            const owners = directory.owners(instance.accountId, claimed);
++            if (!owners.length) {
++                Ec2InstanceDataGathererService.logger.warn(
++                    `No billable customer for ${instance.instanceId} in ${instance.accountId}`,
++                );
+                 return;
+             }
+-            runningTime[customerId] = (runningTime[customerId] ?? 0) + RUNNING_TIME_INCREMENT;
+-            instanceIds[customerId] = (instanceIds[customerId] ?? []).concat(instance.instanceId);
++            const portion = RUNNING_TIME_INCREMENT / owners.length;
++            owners.forEach((customerId) => {
++                runningTime[customerId] = (runningTime[customerId] ?? 0) + portion;
++                instanceIds[customerId] = (instanceIds[customerId] ?? []).concat(instance.instanceId);
++            });
+         });
+ 
+         return Object.keys(runningTime)

@@ -1,0 +1,36 @@
+Local AWS sandbox
+=================
+
+This box has no route to AWS. Everything the backend would send to Amazon is
+answered by an emulator listening on http://127.0.0.1:4566, which speaks the
+same wire protocols the AWS SDK uses. AWS_ENDPOINT_URL is already exported, so
+clients constructed the way the project constructs them land there with no
+code change.
+
+Credentials already in the environment belong to a bootstrap identity in the
+metering account, which is where the business keeps its onboarding material:
+
+    metering account   900000000001
+    metering bucket    metering-metering-cadence
+    onboarding record  onboarding/registry.json
+    business           biz-cadence
+    region             us-east-1
+
+The metered dimension the sandbox is set up around is dim-uptime-sandbox, and
+dim-egress-sandbox also appears on some machines.
+
+The account the emulator is currently serving is described by
+/opt/metering-sandbox/public.json. It is a small, quiet estate: two onboarded
+accounts and a handful of instances. Real businesses hand us more accounts,
+more customers and far messier tagging, so treat what you see here as the easy
+case rather than the shape of the world.
+
+To point the emulator at a different account document, restart it yourself:
+
+    pkill -f mockaws
+    PYTHONPATH=/opt/mockaws python3 -m mockaws \
+        --scenario /path/to/your.json --host 127.0.0.1 --port 4566 --seed 7 &
+
+TypeScript in this project can be run directly with tsx, for example
+
+    tsx -e "import('./src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.js').then(console.log)"

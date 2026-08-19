@@ -1,0 +1,63 @@
+Local AWS sandbox
+=================
+
+This box has no route to AWS. Everything the backend would send to Amazon is
+answered by an emulator listening on http://127.0.0.1:4566, which speaks the
+same wire protocols the AWS SDK uses. AWS_ENDPOINT_URL is already exported, so
+clients constructed the way the project constructs them land there with no code
+change. The credentials in the environment belong to a bootstrap identity in the
+sandbox account, region us-east-1.
+
+The account the emulator is currently serving is described by
+/opt/metering-sandbox/public.json. It holds the usage metrics of one small
+business, demo-labs, in the namespace the usage reader publishes to. Its
+customer cus_sandbox01 has readings for these dimensions:
+
+    dim_widgets      readings scattered over a couple of hours
+    dim_licences     a level set a fortnight ago and moved once since
+    dim_egress_gb    two metadata groups, environment production and staging
+    dim_quiet        no readings at all, so no series of its own
+
+A caller of the customer usage read hands in the offering the customer is
+enrolled in. Something like this is enough to exercise it end to end:
+
+    {
+      "offeringId": "off_sandbox",
+      "dimensions": [
+        { "dimensionId": "dim_widgets", "aggregationInterval": "hour",
+          "aggregationMethod": "sum", "sampleType": "gauge",
+          "usageIncrement": "1", "rounding": "round" },
+        { "dimensionId": "dim_licences", "aggregationInterval": "hour",
+          "aggregationMethod": "max", "sampleType": "continious",
+          "usageIncrement": "1", "rounding": "round" },
+        { "dimensionId": "dim_egress_gb", "aggregationInterval": "hour",
+          "aggregationMethod": "sum", "sampleType": "gauge",
+          "usageIncrement": "1", "rounding": "round",
+          "tiersGroupByMetadata": [ { "metadataGroups": { "environment": "production" },
+            "tiers": [ { "lowerLimit": "0", "upperLimit": "inf", "price": "0.01" } ] } ] },
+        { "dimensionId": "dim_quiet", "aggregationInterval": "day",
+          "aggregationMethod": "sum", "sampleType": "gauge",
+          "usageIncrement": "1", "rounding": "round" }
+      ]
+    }
+
+The readings sit around 2024-02-14, so a window such as 2024-02-14T00:40:00Z to
+2024-02-14T02:20:00Z has something in it for the hourly dimensions, and
+2024-02-12T00:00:00Z to 2024-02-14T00:00:00Z is a longer stretch of whole days.
+
+This is a small, quiet account: four dimensions, one customer that matters, and
+short pages on the metric APIs. Real businesses are neither small nor quiet, and
+the emulator reproduces the failure modes the CloudWatch APIs actually have,
+including pages far shorter than the answer, readings that come back in no
+useful order, and periods that have no reading to give. Treat what you see here
+as the easy case rather than the shape of the world.
+
+To point the emulator at a different account document, restart it yourself:
+
+    pkill -f mockaws
+    PYTHONPATH=/opt/mockaws python3 -m mockaws \
+        --scenario /path/to/your.json --host 127.0.0.1 --port 4566 --seed 7 &
+
+TypeScript in this project can be run directly with tsx, for example
+
+    tsx -e "import('./src/utils/aws/cloudwatchUsage.js').then(console.log)"

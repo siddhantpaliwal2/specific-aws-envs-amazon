@@ -1,0 +1,61 @@
+schema_version = "1.4"
+
+[task]
+name = "metering/usage-window-aggregation"
+version = "1.0.0"
+description = "Break a customer's metered usage into the interval buckets each dimension asks for: partition the caller's window at interval boundaries and repair its edges, carry a provisioned level forward over intervals with no readings, account for a silent dimension with empty buckets instead of an empty answer, report metadata-priced dimensions per group, and hand the buckets back oldest first."
+keywords = ["aws", "cloudwatch", "metrics", "billing", "aggregation", "windowing", "typescript", "nestjs", "time-series"]
+
+[[task.authors]]
+name = "metering-rl-envs"
+
+[metadata]
+difficulty = "hard"
+category = "aws-infrastructure"
+source = "metering-codebases"
+codebase = "metering-backend/top-up-billing-lifecycle"
+task_kind = "feature-removal"
+tags = [
+    "real-codebase",
+    "usage-aggregation",
+    "interval-bucketing",
+    "window-boundary-repair",
+    "continuous-sample-carry-forward",
+    "empty-series-padding",
+    "metadata-group-split",
+    "bucket-ordering",
+    "cloudwatch-get-metric-data",
+]
+
+[agent]
+user = "agent"
+timeout_sec = 14400
+
+[verifier]
+user = "root"
+timeout_sec = 1800
+
+[environment]
+workdir = "/app"
+build_timeout_sec = 2400
+cpus = 2
+memory_mb = 6144
+storage_mb = 20480
+network_mode = "public"
+
+[environment.env]
+TZ = "Etc/UTC"
+AWS_ENDPOINT_URL = "http://127.0.0.1:4566"
+AWS_ACCESS_KEY_ID = "AKIAMETERINGUSAGE01"
+AWS_SECRET_ACCESS_KEY = "usage-secret"
+# The SDK in this tree reads AWS_REGION only. A client built without an
+# explicit region has no other source for it inside the container.
+AWS_REGION = "us-east-1"
+AWS_DEFAULT_REGION = "us-east-1"
+
+[environment.healthcheck]
+command = "test -f /tmp/task-infra/.ready"
+interval_sec = 5
+timeout_sec = 5
+start_period_sec = 30
+retries = 12

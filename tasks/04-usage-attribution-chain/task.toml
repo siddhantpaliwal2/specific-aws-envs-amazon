@@ -1,0 +1,64 @@
+schema_version = "1.4"
+
+[task]
+name = "metering/usage-attribution-chain"
+version = "1.0.0"
+description = "Total a business' exported usage against the charge code that finally carries it: a usage line names a pocket of the estate, a pocket hands the cost on to a billing unit, an instance's tags or an alias in the parameter tree, and each of those may hand it on again until something carries it outright."
+keywords = ["aws", "s3", "ssm", "ec2", "sts", "attribution", "graph-traversal", "pagination", "multi-account", "typescript", "nestjs"]
+
+[[task.authors]]
+name = "metering-rl-envs"
+
+[metadata]
+difficulty = "hard"
+category = "aws-infrastructure"
+source = "metering-codebases"
+codebase = "metering-backend/top-up-billing-lifecycle"
+task_kind = "feature-removal"
+tags = [
+    "real-codebase",
+    "transitive-resolution",
+    "variable-depth-chains",
+    "heterogeneous-stores",
+    "indirect-references",
+    "cycle-termination",
+    "multi-account-sweep",
+    "prefix-listing-pagination",
+    "s3-get-object",
+    "ssm-get-parameter",
+    "ec2-describe-instances",
+    "sts-assume-role",
+]
+
+[agent]
+user = "agent"
+timeout_sec = 14400
+
+[verifier]
+user = "root"
+timeout_sec = 1800
+
+[environment]
+workdir = "/app"
+build_timeout_sec = 2400
+cpus = 2
+memory_mb = 6144
+storage_mb = 20480
+network_mode = "public"
+
+[environment.env]
+TZ = "Etc/UTC"
+AWS_ENDPOINT_URL = "http://127.0.0.1:4566"
+AWS_ACCESS_KEY_ID = "AKIAMETERINGATTRIB01"
+AWS_SECRET_ACCESS_KEY = "attrib-secret"
+# The SDK in this tree reads AWS_REGION only. A client built without an
+# explicit region has no other source for it inside the container.
+AWS_REGION = "us-east-1"
+AWS_DEFAULT_REGION = "us-east-1"
+
+[environment.healthcheck]
+command = "test -f /tmp/task-infra/.ready"
+interval_sec = 5
+timeout_sec = 5
+start_period_sec = 30
+retries = 12

@@ -1,0 +1,41 @@
+Local AWS sandbox
+=================
+
+This box has no route to AWS. Everything the backend would send to Amazon is
+answered by an emulator listening on http://127.0.0.1:4566, which speaks the
+same wire protocols the AWS SDK uses. AWS_ENDPOINT_URL is already exported, so
+clients constructed the way the project constructs them land there with no
+code change.
+
+Credentials already in the environment belong to a bootstrap identity in the
+metering account, which is where the business keeps its onboarding material:
+
+    metering account   800000000027
+    metering bucket    metering-metering-loomwright
+    onboarding record  onboarding/registry.json
+    business           biz-loomwright
+    region             us-east-1
+
+The account the emulator is currently serving is described by
+/opt/metering-sandbox/public.json. It is a small, quiet estate: two onboarded
+accounts, a couple of regions each, a short run of usage exports and a modest
+amount of attribution material. Real businesses hand us many more accounts,
+many more regions, and years of exports, so treat what you see here as the easy
+case rather than the shape of the world. The estate the collector is finally
+measured against is bigger in exactly those directions and in no others: it is
+built from the same record kinds, the same fields and the same reference forms
+as this one.
+
+The listing over the usage exports already comes back in pages, and the
+emulator throttles the instance describe calls from time to time, both at a
+gentler dose than production.
+
+To point the emulator at a different account document, restart it yourself:
+
+    pkill -f mockaws
+    PYTHONPATH=/opt/mockaws python3 -m mockaws \
+        --scenario /path/to/your.json --host 127.0.0.1 --port 4566 --seed 7 &
+
+TypeScript in this project can be run directly with tsx, for example
+
+    tsx -e "import('./src/microservices/usageAttribution/usageAttribution.service.js').then(console.log)"

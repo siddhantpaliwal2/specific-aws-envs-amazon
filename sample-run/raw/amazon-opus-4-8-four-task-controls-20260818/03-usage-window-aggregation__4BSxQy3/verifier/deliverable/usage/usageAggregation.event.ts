@@ -1,0 +1,349 @@
+import { ApiHideProperty, OmitType } from '@nestjs/swagger';
+import { IsISO8601, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+import { AggregationPurpose } from '../customer/dto/AggregationPurpose.js';
+import {
+    AggregatedUsageResponse,
+    BasicUsageDocument,
+    MetadataGroupedAggregatedUsageResponse,
+    UnAggregatedUsageResponse,
+    UsageResponseDocument,
+} from '../customer/dto/read-customer.dto.js';
+import {
+    aggregationInterval,
+    aggregationIntervalInMS,
+    aggregationMethod,
+    ReadDimensionResponseData,
+    SampleType,
+} from '../dimensions/dto/create-dimension.dto.js';
+import { SupportedResources } from '../measurement-config/entities/measurement-config.entity.js';
+import { ReadOfferingResponseData } from '../offering/dto/readOffering.dto.js';
+import {
+    listUsageSeries,
+    metadataOf,
+    readUsageSamples,
+    UsageSample,
+    UsageSeries,
+} from '../utils/aws/cloudwatchUsage.js';
+import { CreateUsageDto } from './dto/create-usage.dto.js';
+import { UsageDocument } from './dto/read-usage.dto.js';
+
+const { usageData } = SupportedResources;
+
+/**
+ * A level that is provisioned and then left alone stops producing readings, so
+ * a window that only holds silence still has to report the level standing over
+ * it. Reading such a dimension therefore starts long before the window does.
+ */
+const LEVEL_HISTORY_START = new Date('2020-01-01T00:00:00.000Z');
+
+/** What a dimension's aggregation method makes of a set of readings. */
+const reduceSamples = (values: number[], method: aggregationMethod): number => {
+    if (values.length === 0) {
+        return 0;
+    }
+    switch (method) {
+        case aggregationMethod.max:
+            return Math.max(...values);
+        case aggregationMethod.min:
+            return Math.min(...values);
+        case aggregationMethod.average:
+            return values.reduce((total, value) => total + value, 0) / values.length;
+        case aggregationMethod.count:
+            return values.length;
+        case aggregationMethod.last:
+            return values[values.length - 1];
+        default:
+            return values.reduce((total, value) => total + value, 0);
+    }
+};
+
+type Span = { from: number; to: number };
+
+/**
+ * The window split at every interval boundary that falls inside it. The ends
+ * of the window are boundaries of their own, so the pieces join up and cover
+ * exactly what was asked for however the window sits against the clock.
+ */
+const spansOf = (startTime: string, endTime: string, interval: aggregationInterval): Span[] => {
+    const step = aggregationIntervalInMS[interval];
+    const start = new Date(startTime).getTime();
+    const end = new Date(endTime).getTime();
+    const edges = [start];
+    for (let cursor = Math.floor(start / step) * step; cursor < end; cursor += step) {
+        if (cursor > start) {
+            edges.push(cursor);
+        }
+    }
+    edges.push(end);
+    return edges.slice(0, -1).map((from, index) => ({ from, to: edges[index + 1] }));
+};
+
+const withinSpan = (samples: UsageSample[], from: number, to: number): number[] =>
+    samples
+        .filter(({ timestamp }) => {
+            const at = new Date(timestamp).getTime();
+            return at >= from && at < to;
+        })
+        .map(({ value }) => value);
+
+/** Readings taken as they fall, with an untouched interval counting for nothing. */
+const measured = (samples: UsageSample[], spans: Span[], method: aggregationMethod): number[] =>
+    spans.map(({ from, to }) => reduceSamples(withinSpan(samples, from, to), method));
+
+/**
+ * Readings taken as a level that holds until it is next set. Intervals are
+ * walked from the first reading ever taken so that an interval nobody touched
+ * reports the level it inherited rather than nothing at all.
+ */
+const held = (
+    samples: UsageSample[],
+    spans: Span[],
+    method: aggregationMethod,
+    interval: aggregationInterval,
+): number[] => {
+    if (samples.length === 0) {
+        return spans.map(() => 0);
+    }
+    const step = aggregationIntervalInMS[interval];
+    const end = spans[spans.length - 1].to;
+    const first = Math.min(...samples.map(({ timestamp }) => new Date(timestamp).getTime()));
+    const standing = new Map<number, number>();
+    let level = 0;
+    for (let from = Math.floor(first / step) * step; from < end; from += step) {
+        const to = Math.min(from + step, end);
+        const readings = withinSpan(samples, from, to);
+        if (readings.length > 0) {
+            level = reduceSamples(readings, method);
+        }
+        standing.set(to, level);
+    }
+    return spans.map(({ to }) => standing.get(to) ?? 0);
+};
+
+type UsageBag = { metadataGroup?: Record<string, string>; samples: UsageSample[] };
+
+/**
+ * The readings behind a dimension. A dimension priced by metadata group keeps
+ * one bag per distinct group rather than one bag for the lot.
+ */
+const bagsOf = async ({
+    businessID,
+    customerId,
+    dimension,
+    startTime,
+    endTime,
+}: {
+    businessID: string;
+    customerId: string;
+    dimension: ReadDimensionResponseData;
+    startTime: Date;
+    endTime: Date;
+}): Promise<UsageBag[]> => {
+    const groupKeys = Object.keys(dimension?.tiersGroupByMetadata?.[0]?.metadataGroups ?? {});
+    const published = await listUsageSeries({
+        businessID,
+        customerId,
+        dimensionId: dimension.dimensionId,
+    });
+
+    const bags = new Map<string, UsageBag>();
+    for (const series of published as UsageSeries[]) {
+        const metadata = metadataOf(series);
+        if (groupKeys.some((key) => metadata[key] === undefined)) {
+            continue;
+        }
+        const metadataGroup = groupKeys.length
+            ? groupKeys.reduce((acc, key) => {
+                  acc[key] = metadata[key];
+                  return acc;
+              }, {} as Record<string, string>)
+            : undefined;
+        const identity = JSON.stringify(metadataGroup ?? null);
+        const samples = await readUsageSamples({ series, startTime, endTime });
+        const bag = bags.get(identity) ?? { metadataGroup, samples: [] };
+        bag.samples = bag.samples.concat(samples);
+        bags.set(identity, bag);
+    }
+    // A dimension nobody has ever sent a reading for publishes no series at
+    // all, and its window still has to be accounted for.
+    return bags.size > 0 ? [...bags.values()] : [{ samples: [] }];
+};
+
+export class UsageAggregationEvent {
+    public customerId: string;
+    public offeringDocument: ReadOfferingResponseData;
+
+    /**
+     * The unique identifier for the SaaS business
+     * @example HarperDB
+     */
+    @ApiHideProperty()
+    @IsString()
+    @IsNotEmpty()
+    public businessID: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @IsISO8601()
+    public startTime: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @IsISO8601()
+    @IsOptional()
+    public endTime: string;
+
+    public clientID: string;
+
+    public applicationId?: string;
+
+    public aggregationPurpose?: AggregationPurpose;
+
+    private static dimensionFunctionMap = {
+        [usageData]: async ({
+            businessID,
+            startTime,
+            endTime,
+            dimension,
+            customerId,
+        }: SingleUsageEvent): Promise<BasicUsageDocument[] | UsageResponseDocument[]> => {
+            const {
+                dimensionId,
+                aggregationInterval: argumentAgg,
+                aggregationMethod: argumentAggregationMethod,
+                sampleType,
+            } = dimension as ReadDimensionResponseData;
+
+            if (argumentAgg !== aggregationInterval.none) {
+                const level = sampleType === SampleType.continious;
+                const spans = spansOf(startTime, endTime, argumentAgg);
+                const bags = await bagsOf({
+                    businessID,
+                    customerId,
+                    dimension,
+                    startTime: level ? LEVEL_HISTORY_START : new Date(startTime),
+                    endTime: new Date(endTime),
+                });
+                const documents: UsageResponseDocument[] = [];
+                for (const { metadataGroup, samples } of bags) {
+                    const values = level
+                        ? held(samples, spans, argumentAggregationMethod, argumentAgg)
+                        : measured(samples, spans, argumentAggregationMethod);
+                    values.forEach((value, index) => {
+                        documents.push(
+                            new UsageDocument({
+                                value: (value ?? 0).toString(),
+                                startTime: new Date(spans[index].from).toISOString(),
+                                endTime: new Date(spans[index].to).toISOString(),
+                                metadataGroup,
+                            }),
+                        );
+                    });
+                }
+                return documents;
+            }
+
+            const published = await listUsageSeries({ businessID, customerId, dimensionId });
+            const unAggregatedResults: BasicUsageDocument[] = [];
+            for (const series of published) {
+                const samples = await readUsageSamples({
+                    series,
+                    startTime: new Date(startTime),
+                    endTime: new Date(endTime),
+                });
+                const metadata = metadataOf(series);
+                samples.forEach(({ timestamp, value }) => {
+                    unAggregatedResults.push({ timestamp, recordValue: value.toString(), metadata });
+                });
+            }
+            return unAggregatedResults as BasicUsageDocument[];
+        },
+    };
+
+    static buildAggregationQueries = async ({
+        offeringDocument,
+        ...rest
+    }: UsageAggregationEvent): Promise<
+        Array<UnAggregatedUsageResponse | AggregatedUsageResponse | MetadataGroupedAggregatedUsageResponse[]>
+    > => {
+        const results = await Promise.all(
+            offeringDocument.dimensions.map(async ({ dimensionId, ...dimensionRest }) => {
+                const usage = await UsageAggregationEvent.dimensionFunctionMap['usageData']({
+                    dimension: { ...dimensionRest, dimensionId },
+                    ...rest,
+                });
+                if (
+                    dimensionRest?.tiersGroupByMetadata?.length > 0 &&
+                    dimensionRest?.aggregationInterval !== aggregationInterval.none
+                ) {
+                    // Priced per metadata group, so reported per metadata group.
+                    const groups = (usage as UsageResponseDocument[]).reduce(
+                        (acc, { metadataGroup, ...document }) => {
+                            const identity = JSON.stringify(metadataGroup ?? {});
+                            acc[identity] = (acc[identity] ?? []).concat(document);
+                            return acc;
+                        },
+                        {} as Record<string, UsageResponseDocument[]>,
+                    );
+                    return Object.keys(groups).map(
+                        (identity): MetadataGroupedAggregatedUsageResponse => ({
+                            offeringId: offeringDocument?.offeringId,
+                            dimensionId,
+                            metadataGroup: JSON.parse(identity),
+                            usage: groups[identity],
+                        }),
+                    );
+                }
+                return {
+                    offeringId: offeringDocument?.offeringId,
+                    dimensionId,
+                    usage,
+                };
+            }),
+        );
+        return results as Array<UnAggregatedUsageResponse | AggregatedUsageResponse>;
+    };
+
+    static getAggregateUsageForDimension = async (
+        aggregateEvent: UsageAggregationEvent,
+    ): Promise<
+        AggregatedUsageResponse[] | UnAggregatedUsageResponse[] | MetadataGroupedAggregatedUsageResponse[]
+    > => {
+        const res = await UsageAggregationEvent.buildAggregationQueries(aggregateEvent);
+        if (res && res.length > 0) {
+            return res.reduce((acc, queryRes) => {
+                if (Array.isArray(queryRes)) {
+                    queryRes.forEach((row) => {
+                        //eslint-disable-next-line
+                        // @ts-ignore
+                        acc.push(row);
+                    });
+                    return acc;
+                } else {
+                    //eslint-disable-next-line
+                    // @ts-ignore
+                    acc.push(queryRes);
+                    return acc;
+                }
+            }, []) as
+                | AggregatedUsageResponse[]
+                | UnAggregatedUsageResponse[]
+                | MetadataGroupedAggregatedUsageResponse[];
+        } else {
+            return [];
+        }
+    };
+
+    public static convertCreateUsageDtoToAggregateUsageResponse(
+        CreateUsageDto: CreateUsageDto[],
+    ): AggregatedUsageResponse[] {
+        return CreateUsageDto.map(({ dimensionId, recordValue, ...rest }) => {
+            return { dimensionId, usage: [new UsageDocument({ ...rest, value: recordValue })] };
+        });
+    }
+}
+
+class SingleUsageEvent extends OmitType(UsageAggregationEvent, ['offeringDocument'] as const) {
+    public dimension: ReadDimensionResponseData;
+}

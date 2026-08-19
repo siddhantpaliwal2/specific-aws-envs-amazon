@@ -1,0 +1,3445 @@
+This is mini-swe-agent version 2.4.5.
+Check the v2 migration guide at https://klieret.short.gy/mini-v2-migration
+Loading global config from '/home/agent/.config/mini-swe-agent/.env'
+Warning: Input is not a terminal (fd=0).
+Building agent config from specs: ['mini', '/tmp/mswea-config/custom.yaml']
+
+System:
+You are a helpful assistant that can interact with a computer.
+
+User:
+Please solve this issue: Each customer's aggregated usage reaches the metric
+store by business, customer and dimension. Each business keeps a billing
+catalogue in the billing bucket with plans, dimensions, allowances, overage
+rules, invoice settings and customer assignments. The invoicing collector
+already reads both. Charge only permitted usage beyond a finite exhausted
+allowance; an unlimited or unexhausted allowance, or a plan that forbids
+overage, charges nothing. Give a dimension a line whenever the customer owes
+something on it, and give a dimension the plan prices at zero a line unless the
+invoice settings hide free dimensions. This task includes a local AWS-compatible
+emulator at the preconfigured AWS_ENDPOINT_URL. Its credentials and region are
+already in the shell, the repository's AWS SDK clients use it, and no real AWS
+account is involved. You may inspect its resources while developing and testing.
+
+
+You can execute bash commands and edit files to implement the necessary changes.
+
+## Recommended Workflow
+
+This workflow should be done step-by-step so that you can iterate on your
+changes and any possible problems.
+
+1. Analyze the codebase by finding and reading relevant files
+2. Create a script to reproduce the issue
+3. Edit the source code to resolve the issue
+4. Verify your fix works by running your script again
+5. Test edge cases to ensure your fix is robust
+6. Submit your changes and finish your work by issuing the following command:
+`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
+   Do not combine it with any other command. <important>After this command, you
+cannot continue working on this task.</important>
+
+## Command Execution Rules
+
+You are operating in an environment where
+
+1. You issue at least one command
+2. The system executes the command(s) in a subshell
+3. You see the result(s)
+4. You write your next command(s)
+
+Each response should include:
+
+1. **Reasoning text** where you explain your analysis and plan
+2. At least one tool call with your command
+
+**CRITICAL REQUIREMENTS:**
+
+- Your response SHOULD include reasoning text explaining what you're doing
+- Your response MUST include AT LEAST ONE bash tool call
+- Directory or environment variable changes are not persistent. Every action is
+executed in a new subshell.
+- However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd
+/path/to/working/dir && ...` or write/load environment variables from files
+- Submit your changes and finish your work by issuing the following command:
+`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
+  Do not combine it with any other command. <important>After this command, you
+cannot continue working on this task.</important>
+
+Example of a CORRECT response:
+<example_response>
+I need to understand the structure of the repository first. Let me check what
+files are in the current directory to get a better understanding of the
+codebase.
+
+[Makes bash tool call with {"command": "ls -la"} as arguments]
+</example_response>
+
+<system_information>
+Linux 6.8.0-101-generic #101-Ubuntu SMP PREEMPT_DYNAMIC Mon Feb  9 10:15:05 UTC
+2026 x86_64
+</system_information>
+
+## Useful command examples
+
+### Create a new file:
+
+```bash
+cat <<'EOF' > newfile.py
+import numpy as np
+hello = "world"
+print(hello)
+EOF
+```
+
+### Edit files with sed:```bash
+# Replace all occurrences
+sed -i 's/old_string/new_string/g' filename.py
+
+# Replace only first occurrence
+sed -i 's/old_string/new_string/' filename.py
+
+# Replace first occurrence on line 1
+sed -i '1s/old_string/new_string/' filename.py
+
+# Replace all occurrences in lines 1-10
+sed -i '1,10s/old_string/new_string/g' filename.py
+```
+
+### View file content:
+
+```bash
+# View specific lines with numbers
+nl -ba filename.py | sed -n '10,20p'
+```
+
+### Any other command you want to run
+
+```bash
+anything
+```
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 1, $0.01):
+I'll start by exploring the repository structure to understand the codebase.
+
+```
+ls -la && echo "---" && cat README* 2>/dev/null | head -50
+```
+
+Tool:
+<returncode>
+0
+<output>
+total 1320
+drwxr-xr-x    1 agent agent      63 Aug 18 21:15 .
+drwxr-xr-x    1 root  root      130 Aug 19 02:01 ..
+-rw-r--r--    1 agent agent      15 Jan  1  1970 .eslintignore
+-rw-r--r--    1 agent agent     760 Jan  1  1970 .eslintrc.js
+drwxr-xr-x    3 agent agent      31 Aug 18 21:15 .github
+-rw-r--r--    1 agent agent    1783 Jan  1  1970 .gitignore
+drwxr-xr-x    2 agent agent      52 Aug 18 21:15 .husky
+-rw-r--r--    1 agent agent      99 Jan  1  1970 .prettierrc.json
+drwxr-xr-x    2 agent agent      33 Aug 18 21:15 .vscode
+-rw-r--r--    1 agent agent    2064 Jan  1  1970 Dockerfile
+-rw-r--r--    1 agent agent    8358 Jan  1  1970 README.md
+drwxr-xr-x    2 agent agent    4096 Aug 18 21:15 docs
+drwxr-xr-x   16 agent agent    4096 Aug 18 21:15 integration
+-rw-r--r--    1 agent agent     641 Jan  1  1970 jest.unit.config.json
+-rw-r--r--    1 agent agent     400 Jan  1  1970 nest-cli.json
+drwxr-xr-x 1004 agent agent   28672 Aug 18 21:16 node_modules
+-rw-r--r--    1 agent agent 1224450 Aug 18 21:16 package-lock.json
+-rw-r--r--    1 agent agent    9725 Jan  1  1970 package.json
+drwxr-xr-x    4 agent agent     106 Aug 18 21:15 resources
+drwxr-xr-x   39 agent agent    4096 Aug 18 21:15 src
+drwxr-xr-x    6 agent agent     175 Aug 18 21:15 test
+-rw-r--r--    1 agent agent     770 Jan  1  1970 testTSConfig.json
+-rw-r--r--    1 agent agent     109 Jan  1  1970 tsconfig.build.json
+-rw-r--r--    1 agent agent     758 Jan  1  1970 tsconfig.json
+---
+# Metering Backend
+
+This repository serves to hold the backend infrastructure for Metering.
+Specifically it contains the code for the Private and Public API
+
+### Current Status
+
+Don't break this.
+[![CI](https://github.com/example-org/metering-backend/actions/workflows/main.yml/ba
+dge.svg)](https://github.com/example-org/metering-backend/actions/workflows/main.yml
+)
+
+# Folder Structure
+
+| .prettierrc.json - prettier formatting file
+| .eslintrc.cjs - linter configuration only comment out linting rules if there a
+good reason
+| .gitignore - ignored files for source control
+| src - source for the api application
+
+
+# Getting started with Local Development
+
+# Environment
+
+-   Latest version of [NVM](https://github.com/nvm-sh/nvm)
+-   Latest version of NodeJS 18.x `nvm install 18`
+-   Latest version of [AWS CLI](https://aws.amazon.com/cli/)
+-   Latest version of [Docker
+Desktop](https://www.docker.com/products/docker-desktop/)
+-   Assigned AWS accounts and IAM credentials
+-   [Redoc](https://github.com/Redocly/redoc#redoc-cli) for automatically
+generating html from the open api specification, see install
+[here](https://stackoverflow.com/questions/25800493/converting-swagger-specifica
+tion-json-to-html-documentation)
+-   Latest version of [Kind](https://kind.sigs.k8s.io/) for the local
+integration test enviornment, see install
+[here](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
+-   Latest version of [Helm](https://helm.sh/) see the install guild
+[here](https://helm.sh/docs/intro/install/)
+
+For the remainng item of this list, you should figure out yourself if you don't
+already know.
+
+-   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+-   A good terminal (such as [iTerm2](https://iterm2.com/index.html) +
+[ohmyzsh](https://ohmyz.sh/))
+-   A good IDE (such as [VSCode](https://code.visualstudio.com/), or
+[WebStorm](https://www.jetbrains.com/webstorm/))
+-   Helpful for command line navigation
+[z](https://facilecode.com/how-to-setup-z-jump-around/)
+
+# Setup
+
+1. Configure AWS CLI. `aws configure`. See sample config below. Use _us-east-1_
+as default region and _json_ as default output format.
+
+```bash
+aws configure
+AWS Access Key ID [None]: XXXXXXXXXXX
+AWS Secret Access Key [None]: XXXXXXXXXXXXXXXXXXXXXX
+Default region name [None]: us-east-1
+Default output format [None]: json
+```
+
+2. Clone the repository.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 2, $0.03):
+I need to find the invoicing collector. Let me search for relevant files.
+
+```
+cd /home/agent 2>/dev/null; ls; echo "==="; find . -path ./node_modules -prune
+-o -type d -iname '*invoic*' -print 2>/dev/null; echo "---files---"; find .
+-path ./node_modules -prune -o -type f -iname '*collector*' -print 2>/dev/null
+```
+
+Tool:
+<returncode>
+0
+<output>
+===
+./.local/share/uv/tools/mini-swe-agent/lib/python3.11/site-packages/botocore/dat
+a/invoicing
+./.cache/uv/archive-v0/91hssAeesxqJTY6hlmOrT/botocore/data/invoicing
+---files---
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 3, $0.04):
+```
+ls src; echo "==="; find src -type f -iname '*invoic*' 2>/dev/null; echo
+"---collect---"; find src -type f -iname '*collect*' 2>/dev/null
+```
+
+Tool:
+<returncode>
+0
+<output>
+agent-measurement
+alerts
+analytics
+app.controller.spec.ts
+app.controller.ts
+app.module.ts
+app.service.ts
+audit
+authz
+azure
+basicResponseDTO.ts
+billing
+cacheStore.ts
+contract
+cost
+credit
+customer
+customergroup
+dimensions
+genericExpressEnv.ts
+inbox
+influx
+interceptors
+invoice
+kubernetes-deployer
+ledger
+margincalc
+measurement
+measurement-config
+microservices
+offering
+onboarding
+openApiPublicSpecGenerator.ts
+openApiSpecGenerator.ts
+payment
+portal
+scheduler
+services
+setting
+tax
+token-consumer
+tracer.ts
+transformer
+usage
+users
+utils
+webhook
+===
+src/influx/entities/InvoiceInfluxTable.entity.ts
+src/invoice/dto/create-Invoices.dto.ts
+src/invoice/dto/createOffcycleInvoice.ts
+src/invoice/dto/manualInvoiceValidation.ts
+src/invoice/dto/read-invoices.dto.ts
+src/invoice/dto/update-invoices.dto.ts
+src/invoice/entities/InvoicePaymentTerm.ts
+src/invoice/entities/InvoiceStatus.ts
+src/invoice/entities/invoice.entity.ts
+src/invoice/invoice.entity.spec.ts
+src/invoice/invoice.services.spec.ts
+src/invoice/invoices.controller.spec.ts
+src/invoice/invoices.controller.ts
+src/invoice/invoices.module.ts
+src/invoice/invoices.service.ts
+src/microservices/invoiceLineGatherer/dto/invoiceLineGatherer.dto.ts
+src/microservices/invoiceLineGatherer/invoiceLineGatherer.module.ts
+src/microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts
+src/microservices/invoiceStatusChecker/dto/invoiceStatusChecker.dto.ts
+src/microservices/invoiceStatusChecker/invoiceStatusChecker.module.ts
+src/microservices/invoiceStatusChecker/invoiceStatusChecker.service.ts
+src/portal/dto/list-invoices.dto.ts
+src/portal/dto/single-invoice.dto.ts
+src/setting/dto/FreeDimensionOnInvoice.ts
+src/setting/dto/InvoiceApproval.ts
+---collect---
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 4, $0.06):
+The `invoiceLineGatherer` looks like the "invoicing collector". Let me examine
+it.
+
+```
+cd src/microservices/invoiceLineGatherer && wc -l * dto/* && echo "=== SERVICE
+===" && cat invoiceLineGatherer.service.ts
+```
+
+Tool:
+<returncode>
+1
+<output>
+wc: dto: Is a directory
+      0 dto
+     14 invoiceLineGatherer.module.ts
+    157 invoiceLineGatherer.service.ts
+     64 dto/invoiceLineGatherer.dto.ts
+    235 total
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 5, $0.07):
+```
+cd src/microservices/invoiceLineGatherer && cat invoiceLineGatherer.service.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { Logger } from '@nestjs/common';
+import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import { Job } from 'bull';
+import { SchedulerEntity } from '../../scheduler/entities/scheduler.entity.js';
+import { AuditService } from '../../audit/audit.service.js';
+import { AuditScope } from '../../audit/entities/audit.interface.js';
+import { AggregatedUsageResponse } from
+'../../customer/dto/read-customer.dto.js';
+import { InvoiceLineItems } from '../../invoice/entities/invoice.entity.js';
+import { Offering } from '../../offering/entities/offeringPackage.entity.js';
+import { ReadOfferingResponseData } from
+'../../offering/dto/readOffering.dto.js';
+import { getMetricSeries } from '../../utils/aws/cloudwatch.js';
+import { getDocument } from '../../utils/aws/s3.js';
+import { BillingCatalogue, CustomerInvoiceLines, InvoiceLineGathererDto } from
+'./dto/invoiceLineGatherer.dto.js';
+
+export const meteredInvoiceLines = 'meteredInvoiceLines';
+
+@Processor('scheduler_billing_queue')
+export class InvoiceLineGathererService {
+    private static readonly logger = new
+Logger(InvoiceLineGathererService.name);
+
+    @Process(meteredInvoiceLines)
+    async readOperationJob({ data: { scheduleParameters, businessID } }:
+Job<SchedulerEntity>) {
+        const { catalogueBucket, catalogueKey, periodStart, periodEnd } =
+scheduleParameters as InvoiceLineGathererDto;
+        InvoiceLineGathererService.logger.log(
+            `Assembling metered invoice lines for ${businessID} from
+${catalogueBucket}/${catalogueKey}`,
+        );
+        return this.gatherInvoiceLines({
+            businessID,
+            catalogueBucket,
+            catalogueKey,
+            periodStart,
+            periodEnd,
+        });
+    }
+
+    async gatherInvoiceLines({
+        businessID,
+        catalogueBucket,
+        catalogueKey,
+        periodStart,
+        periodEnd,
+    }: {
+        businessID: string;
+        catalogueBucket: string;
+        catalogueKey: string;
+        periodStart?: string;
+        periodEnd?: string;
+    }): Promise<Array<CustomerInvoiceLines>> {
+        const catalogue = await getDocument<BillingCatalogue>(catalogueBucket,
+catalogueKey);
+        const startDate = new Date(periodStart ?? catalogue.periodStart);
+        const endDate = new Date(periodEnd ?? catalogue.periodEnd);
+        const offerings = (catalogue.offerings ?? []).reduce(
+            (acc, offering) => {
+                acc[offering.offeringId] = offering;
+                return acc;
+            },
+            {} as Record<string, ReadOfferingResponseData>,
+        );
+
+        const assembled: Array<CustomerInvoiceLines> = [];
+        for (const { customerId, offeringId } of catalogue.enrolments ?? []) {
+            const offering = offerings[offeringId];
+            if (!offering) {
+                InvoiceLineGathererService.logger.warn(
+                    `Customer ${customerId} is enrolled in ${offeringId}, which
+the catalogue does not describe`,
+                );
+                continue;
+            }
+            // eslint-disable-next-line no-await-in-loop
+            const usageOverrides = await this.readUsage({ catalogue, offering,
+customerId });
+            const offeringInstance = Offering.getInstance(
+                offering,
+                customerId,
+                businessID,
+                undefined,
+                catalogue.settings,
+                undefined,
+                undefined,
+                undefined,
+                usageOverrides,
+            );
+            const lineItems = new InvoiceLineItems();
+            // eslint-disable-next-line no-await-in-loop
+            await Offering.getLineItemsForUsage({
+                startDate,
+                endDate,
+                lineItems,
+                negative: false,
+                businessID,
+                customerId,
+                customerService: undefined,
+                dimensions: offering.dimensions,
+                offeringInstance,
+            });
+            assembled.push({
+                customerId,
+                offeringId,
+                offeringName: offering.offeringName,
+                lineItems: lineItems.getLineItems(),
+            });
+        }
+        InvoiceLineGathererService.logger.log(`Assembled invoice lines for
+${assembled.length} customers`);
+        return assembled;
+    }
+
+    /**
+     * The aggregated usage the metric store holds for one customer over the
+     * invoiced period, one entry per dimension the offering carries.
+     */
+    private async readUsage({
+        catalogue,
+        offering,
+        customerId,
+    }: {
+        catalogue: BillingCatalogue;
+        offering: ReadOfferingResponseData;
+        customerId: string;
+    }): Promise<Array<AggregatedUsageResponse>> {
+        const startTime = new Date(catalogue.periodStart);
+        const endTime = new Date(catalogue.periodEnd);
+        const series: Array<AggregatedUsageResponse> = [];
+        for (const dimension of offering.dimensions ?? []) {
+            // eslint-disable-next-line no-await-in-loop
+            const readings = await getMetricSeries({
+                namespace: catalogue.usageNamespace,
+                metricName: catalogue.usageMetricName,
+                dimensions: {
+                    BusinessId: catalogue.businessID,
+                    CustomerId: customerId,
+                    DimensionId: dimension.dimensionId,
+                },
+                startTime,
+                endTime,
+                period: catalogue.usagePeriod,
+            });
+            series.push({
+                offeringId: offering.offeringId,
+                dimensionId: dimension.dimensionId,
+                usage: readings.map(({ timestamp, value }) => ({
+                    value: value.toString(),
+                    startTime: timestamp,
+                    endTime: timestamp,
+                })),
+            });
+        }
+        return series;
+    }
+
+    @OnQueueFailed({ name: meteredInvoiceLines })
+    jobFailure(job: Job) {
+        AuditService.publishEvent({
+            message: 'Failed to assemble metered invoice lines',
+            data: [job],
+            topic: AuditScope.ERROR,
+        });
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 6, $0.09):
+```
+cd src/microservices/invoiceLineGatherer && cat dto/invoiceLineGatherer.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { InvoiceLineItem } from '../../../invoice/entities/invoice.entity.js';
+import { ReadOfferingResponseData } from
+'../../../offering/dto/readOffering.dto.js';
+import { ReadSettingsResponseData } from
+'../../../setting/dto/read-setting.dto.js';
+
+/**
+ * The scheduler payload for a metered invoice run. The catalogue the run works
+ * from is kept in the business' billing bucket rather than in the payload,
+ * because the sales team edits it far more often than the schedule.
+ */
+export class InvoiceLineGathererDto {
+    public businessID: string;
+    /**
+     * The bucket holding the business' billing catalogue.
+     */
+    public catalogueBucket: string;
+    /**
+     * The key of the catalogue document inside that bucket.
+     */
+    public catalogueKey: string;
+    /**
+     * Start of the period being invoiced, ISO 8601.
+     */
+    public periodStart?: string;
+    /**
+     * End of the period being invoiced, ISO 8601.
+     */
+    public periodEnd?: string;
+}
+
+/**
+ * One customer's place in the catalogue: the offering they are on.
+ */
+export class CatalogueEnrolment {
+    public customerId: string;
+    public offeringId: string;
+}
+
+/**
+ * The billing catalogue as it is stored. `usageNamespace`, `usageMetricName`
+ * and `usagePeriod` say where in the metric store the aggregated usage for this
+ * business is published; every series there is keyed by business, customer and
+ * dimension.
+ */
+export class BillingCatalogue {
+    public businessID: string;
+    public periodStart: string;
+    public periodEnd: string;
+    public usageNamespace: string;
+    public usageMetricName: string;
+    public usagePeriod: number;
+    public settings: ReadSettingsResponseData;
+    public offerings: Array<ReadOfferingResponseData>;
+    public enrolments: Array<CatalogueEnrolment>;
+}
+
+/**
+ * What the run produces for one customer: the lines their invoice would carry.
+ */
+export class CustomerInvoiceLines {
+    public customerId: string;
+    public offeringId: string;
+    public offeringName: string;
+    public lineItems: Array<InvoiceLineItem>;
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 7, $0.10):
+Now let me look at the core logic in Offering - `getLineItemsForUsage`.
+
+```
+cd src/offering/entities && ls && echo "===" && grep -n
+"getLineItemsForUsage\|getInstance\|class Offering" offeringPackage.entity.ts |
+head
+```
+
+Tool:
+<returncode>
+0
+<output>
+OfferingType.ts
+offeringPackage.entity.spec.ts
+offeringPackage.entity.ts
+===
+36:export abstract class Offering {
+364:    static async getLineItemsForUsage({
+759:    public static getInstance(
+1048:        await Offering.getLineItemsForUsage({
+1201:                await Offering.getLineItemsForUsage({
+1219:                await Offering.getLineItemsForUsage({
+1234:            await Offering.getLineItemsForUsage({
+1449:        await Offering.getLineItemsForUsage({
+1482:        await Offering.getLineItemsForUsage({
+1537:            await Offering.getLineItemsForUsage({
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 8, $0.11):
+```
+cd src/offering/entities && sed -n '364,760p' offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output_head>
+    static async getLineItemsForUsage({
+        startDate,
+        endDate,
+        customer,
+        lineItems,
+        negative,
+        businessID,
+        customerId,
+        customerService,
+        dimensions,
+        offeringInstance,
+        proratedStartDate,
+    }: {
+        startDate: Date;
+        endDate: Date;
+        customer?: ReadCustomerResponseData;
+        lineItems: InvoiceLineItems;
+        negative?: boolean;
+        businessID: string;
+        customerId: string;
+        customerService: CustomerService;
+        dimensions: ReadOfferingResponseData['dimensions'];
+        offeringInstance: Offering;
+        proratedStartDate?: Date;
+    }): Promise<InvoiceLineItems> {
+        let usage: { data: (AggregatedUsageResponse |
+MetadataGroupedAggregatedUsageResponse)[] };
+        if (offeringInstance.usageOverrides &&
+offeringInstance.usageOverrides?.length) {
+            usage = { data: offeringInstance.usageOverrides };
+        } else {
+            const res = await customerService.findUsageForCustomer(
+                {
+                    businessID,
+                    customerId,
+                    customer,
+                },
+                {
+                    startTime: startDate.toISOString(),
+                    endTime: endDate.toISOString(),
+                },
+            );
+            usage = res as { data: (AggregatedUsageResponse |
+MetadataGroupedAggregatedUsageResponse)[] };
+        }
+
+        const aggregateUsageData = usage?.data;
+        const tieredDimensionMap: Record<string, ReadDimensionResponseData> =
+{};
+        const groupedDimensionMap: Record<string, ReadDimensionResponseData> =
+{};
+        const nonTieredDimensionsMap: Record<string, ReadDimensionResponseData>
+= {};
+        dimensions.map((dimension) => {
+            if (dimension?.tiers && dimension?.tiers?.length) {
+                tieredDimensionMap[dimension.dimensionId] = dimension;
+            } else if (dimension?.tiersGroupByMetadata) {
+                groupedDimensionMap[dimension.dimensionId] = dimension;
+            } else if (
+                (dimension?.consumptionPrice !== undefined &&
+dimension?.consumptionPrice !== null) ||
+                (dimension?.usageEntitlement !== undefined &&
+dimension?.usageEntitlement !== null)
+            ) {
+                nonTieredDimensionsMap[dimension.dimensionId] = dimension;
+            }
+        });
+        const aggreatedUsageDataDimensionMap = aggregateUsageData.reduce(
+            (acc, item) => {
+                if
+((<MetadataGroupedAggregatedUsageResponse>item)?.metadataGroup) {
+                    const keys =
+Object.keys((<MetadataGroupedAggregatedUsageResponse>item).metadataGroup);
+                    const uniqueGroupId = keys.reduce((acc, key) => {
+                        acc += key +
+(<MetadataGroupedAggregatedUsageResponse>item).metadataGroup[key];
+                        return acc;
+                    }, '');
+                    acc[uniqueGroupId] = item;
+                } else {
+                    acc[item.dimensionId] = item;
+                }
+                return acc;
+            },
+            {} as Record<string, AggregatedUsageResponse |
+MetadataGroupedAggregatedUsageResponse>,
+        );
+        const dimensionTotals = Object.keys(nonTieredDimensionsMap).reduce((acc,
+nonTieredDimensionId) => {
+            const usageElement =
+aggreatedUsageDataDimensionMap[nonTieredDimensionId];
+            const dimension = nonTieredDimensionsMap[nonTieredDimensionId];
+            let total;
+            if (dimension?.aggregationMethod === aggregationMethod.last) {
+                total = Offering.billableTotal(
+                    usageElement && usageElement?.usage?.length
+                        ? [usageElement?.usage[usageElement?.usage?.length - 1]]
+                        : [],
+                );
+            } else {
+                total = Offering.billableTotal(usageElement ? usageElement.usage
+: []);
+            }
+
+            if (acc[nonTieredDimensionId]) {
+                acc[nonTieredDimensionId] += parseFloat(total);
+                acc[nonTieredDimensionId] =
+acc[nonTieredDimensionId].toFixed(2);
+            } else {
+                acc[nonTieredDimensionId] = parseFloat(total);
+                acc[nonTieredDimensionId] =
+acc[nonTieredDimensionId].toFixed(2);
+            }
+
+            return acc;
+        }, {}) as Record<string, number>;
+        let exchangeRate = 1;
+
+        if (Offering.getCurrency({ customer, offering: offeringInstance }) !==
+SupportedCurrencies.USD) {
+            console.log('Inside exchange rate');
+            exchangeRate = await AnalyticsService.getExchangeRate({
+                currency: Offering.getCurrency({ customer, offering:
+offeringInstance }),
+            });
+            lineItems.addTerms(
+                `Invoice dynamically calculated with realtime currency exchange
+rate €${exchangeRate.toFixed(
+                    2,
+                )} = $1.00`,
+            );
+        }
+
+        Object.keys(dimen
+<output_tail>
+ate : startDate;
+                                const billingMSSeconds: number = Math.round(
+                                    Math.abs(endDate.getTime() -
+billingMSStartDate.getTime()),
+                                );
+                                const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+                                    date: billingMSStartDate,
+                                    billingCycle:
+offeringInstance?.billingCycle,
+                                }) as number;
+                                unitCost =
+                                    Math.round(100 * unitCost *
+(billingMSSeconds / billingMSSecondsInBillingCycle)) /
+                                    100;
+                            }
+                        } else {
+                            unitCost = Number(0);
+                        }
+                        if (remainingUsage - difference > 0) {
+                            usageInTier = difference;
+                            const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                                total: usageInTier,
+                                dimensionType:
+groupedDimension?.consumptionUnit?.type,
+                                dimensionId: groupedDimension?.dimensionId,
+                                dimensionName: groupedDimension?.dimensionName,
+                                offeringName: offeringInstance.offeringName,
+                                usageIncrement:
+parseInt(groupedDimension?.usageIncrement),
+                                dimensionUnit:
+groupedDimension?.consumptionUnit?.unit,
+                                negative,
+                                tieredName: tier?.tierName,
+                            });
+                            lineItems.addLineItem(new
+InvoiceLineItem(displayName, displayTotal, unitCost));
+                            remainingUsage -= difference;
+                        } else {
+                            usageInTier = remainingUsage;
+                            const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                                total: usageInTier,
+                                dimensionType:
+groupedDimension?.consumptionUnit?.type,
+                                dimensionId: groupedDimension?.dimensionId,
+                                dimensionName: groupedDimension?.dimensionName,
+                                offeringName: offeringInstance.offeringName,
+                                usageIncrement:
+parseInt(groupedDimension?.usageIncrement),
+                                dimensionUnit:
+groupedDimension?.consumptionUnit?.unit,
+                                negative,
+                                tieredName: tier?.tierName,
+                            });
+                            lineItems.addLineItem(new
+InvoiceLineItem(displayName, displayTotal, unitCost));
+                            remainingUsage = 0;
+                        }
+                        priorTier = tier;
+                    });
+                });
+            });
+        }
+
+        return lineItems;
+    }
+    static addDiscountLineItem(discount: Offering['discount'], lineItems:
+InvoiceLineItems): InvoiceLineItems {
+        // If there is a discount, loop over the line items via a  getLineItems
+call, and then a reduce, calculate the percentage discount, and then add the
+discount line item as a negative line item.
+        if (discount?.percentage) {
+            const lineItemTotal = lineItems.getTotal();
+            const discountAmount = lineItemTotal *
+(parseFloat(discount.percentage) / 100);
+            const discountQuantity = 1;
+            lineItems.addLineItem(
+                new InvoiceLineItem(`Discount - ${discount.name}`,
+discountQuantity, discountAmount * -1),
+            );
+            return lineItems;
+        } else {
+            return lineItems;
+        }
+    }
+
+    static getDecimalsForNumber(number: number): number {
+        const numberString = number.toString();
+        const decimalIndex = numberString.indexOf('.');
+        if (decimalIndex === -1) {
+            return 0;
+        }
+        return numberString.length - decimalIndex - 1;
+    }
+    abstract processFreeTrialEnd({ customer }: { customer:
+ReadCustomerResponseData }): Promise<string>;
+
+    abstract offcycleBilling({
+        startDate,
+        endDate,
+        customer,
+        invoiceDate,
+        invoicePaymentTerm,
+        isManual,
+    }: {
+        startDate: Date;
+        endDate: Date;
+        customer?: ReadCustomerResponseData;
+        invoiceDate: string;
+        invoicePaymentTerm?: InvoicePaymentTerm;
+        isManual?: boolean;
+    }): Promise<string>;
+    abstract processBilling(
+        startDate?: Date,
+        endDate?: Date,
+        customer?: ReadCustomerResponseData,
+        calculateUsage?: boolean,
+    ): Promise<string>;
+    public static getInstance(
+        offeringConfig: ReadOfferingResponseData,
+
+<elided_chars>
+10192
+<warning>
+Output too long.
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 9, $0.15):
+Let me see the middle section handling non-tiered dimensions (allowance/overage
+logic).
+
+```
+cd src/offering/entities && sed -n '478,620p' offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+            let unitCost = Number(
+                (parseFloat(nonTieredDimensionsMap[dimensionId].consumptionPrice
+) * exchangeRate).toFixed(
+                    Offering.getDecimalsForNumber(parseFloat(nonTieredDimensions
+Map[dimensionId].consumptionPrice)) ===
+                        0
+                        ? 2
+                        : Offering.getDecimalsForNumber(
+                              parseFloat(nonTieredDimensionsMap[dimensionId].con
+sumptionPrice),
+                          ),
+                ),
+            );
+            if (nonTieredDimensionsMap[dimensionId]?.paymentSchedule ===
+PaymentSchedule.upfront) {
+                const billingMSStartDate = proratedStartDate ? proratedStartDate
+: startDate;
+                const billingMSSeconds: number =
+Math.round(Math.abs(endDate.getTime() - billingMSStartDate.getTime()));
+                const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+                    date: billingMSStartDate,
+                    billingCycle: offeringInstance?.billingCycle,
+                }) as number;
+                unitCost = Math.round(100 * unitCost * (billingMSSeconds /
+billingMSSecondsInBillingCycle)) / 100;
+            }
+            const {
+                usageIncrement,
+                consumptionUnit: { unit, type },
+            } = nonTieredDimensionsMap[dimensionId];
+            // Handle currency conversion
+
+            const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                total: dimensionTotals[dimensionId],
+                dimensionType: type,
+                dimensionId,
+                dimensionName:
+nonTieredDimensionsMap[dimensionId].dimensionName,
+                offeringName: offeringInstance.offeringName,
+                usageIncrement: parseInt(usageIncrement),
+                dimensionUnit: unit,
+                negative,
+            });
+            lineItems.addLineItem(new InvoiceLineItem(displayName, displayTotal,
+unitCost));
+        });
+        if (Object.keys(tieredDimensionMap).length) {
+            Object.keys(tieredDimensionMap).forEach((tieredDimensionId) => {
+                const tieredDimension = tieredDimensionMap[tieredDimensionId];
+                const usageElement =
+aggreatedUsageDataDimensionMap[tieredDimensionId];
+                const sortedTiers = tieredDimension.tiers.sort((a, b) => {
+                    return parseFloat(a.tierPosition) -
+parseFloat(b.tierPosition);
+                });
+                let priorTier: DimensionTierDto;
+                let remainingUsage = usageElement?.usage.reduce((acc, { value })
+=> {
+                    acc += parseFloat(value);
+                    return acc;
+                }, 0);
+                sortedTiers.forEach((tier, index) => {
+                    if (!remainingUsage) {
+                        return;
+                    }
+                    const { upperBound } = tier;
+                    let lowerBound = 0;
+                    if (priorTier) {
+                        lowerBound = parseFloat(priorTier.upperBound);
+                    } else {
+                        lowerBound = 0;
+                    }
+                    let difference;
+                    if (upperBound === 'inf') {
+                        difference = remainingUsage;
+                    } else if (index === 0 && tieredDimension?.usageEntitlement)
+{
+                        if (tieredDimension?.usageEntitlement === 'inf') {
+                            difference = remainingUsage;
+                        } else {
+                            difference = (tieredDimension?.usageEntitlement as
+number) - lowerBound;
+                        }
+                    } else {
+                        difference = parseFloat(upperBound) - lowerBound;
+                    }
+                    let usageInTier;
+                    let unitCost;
+                    if (tier?.unitPrice) {
+                        unitCost = Number(
+                            (parseFloat(tier?.unitPrice) *
+exchangeRate).toFixed(
+                                Offering.getDecimalsForNumber(parseFloat(tier?.u
+nitPrice)) === 0
+                                    ? 2
+                                    :
+Offering.getDecimalsForNumber(parseFloat(tier?.unitPrice)),
+                            ),
+                        );
+                        if (tieredDimension?.paymentSchedule ===
+PaymentSchedule.upfront) {
+                            const billingMSStartDate = proratedStartDate ?
+proratedStartDate : startDate;
+                            const billingMSSeconds: number = Math.round(
+                                Math.abs(endDate.getTime() -
+billingMSStartDate.getTime()),
+                            );
+                            const billingMSSecondsInBillingCycle =
+Offering.determineBillingSecondsInBillingCycle({
+                                date: billingMSStartDate,
+                                billingCycle: offeringInstance?.billingCycle,
+                            }) as number;
+                            unitCost =
+                                Math.round(100 * unitCost * (billingMSSeconds /
+billingMSSecondsInBillingCycle)) / 100;
+                        }
+                    } else {
+                        unitCost = Number(0);
+                    }
+                    if (remainingUsage - difference > 0) {
+                        usageInTier = difference;
+                        const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                            total: usageInTier,
+                            dimensionType:
+tieredDimension?.consumptionUnit?.type,
+                            dimensionId: tieredDimensionId,
+                            dimensionName: tieredDimension?.dimensionName,
+                            offeringName: offeringInstance.offeringName,
+                            usageIncrement:
+parseInt(tieredDimension?.usageIncrement),
+                            dimensionUnit:
+tieredDimension?.consumptionUnit?.unit,
+                            negative,
+                            tieredName: tier?.tierName,
+                        });
+                        lineItems.addLineItem(new InvoiceLineItem(displayName,
+displayTotal, unitCost));
+                        remainingUsage -= difference;
+                    } else {
+                        usageInTier = remainingUsage;
+                        const { displayName, total: displayTotal } =
+InvoiceLineItem.prepareLineItem({
+                            total: usageInTier,
+                            dimensionType:
+tieredDimension?.consumptionUnit?.type,
+                            dimensionId: tieredDimensionId,
+                            dimensionName: tieredDimension?.dimensionName,
+                            offeringName: offeringInstance.offeringName,
+                            usageIncrement:
+parseInt(tieredDimension?.usageIncrement),
+                            dimensionUnit:
+tieredDimension?.consumptionUnit?.unit,
+                            negative,
+                            tieredName: tier?.tierName,
+                        });
+                        lineItems.addLineItem(new InvoiceLineItem(displayName,
+displayTotal, unitCost));
+                        remainingUsage = 0;
+                    }
+                    priorTier = tier;
+                });
+            }, {});
+        }
+        if (Object.keys(groupedDimensionMap).length) {
+            Object.keys(groupedDimensionMap).forEach((groupedDimensionId) => {
+                const groupedDimension =
+groupedDimensionMap[groupedDimensionId];
+                const tiersForMetadataGroupedDimension =
+groupedDimension?.tiersGroupByMetadata;
+                tiersForMetadataGroupedDimension.forEach((grouping) => {
+                    const uniqueGroupId =
+Object.keys(grouping?.metadataGroups).reduce((acc, key) => {
+                        acc += key + grouping.metadataGroups[key];
+                        return acc;
+                    }, '');
+                    const usageElement = aggreatedUsageDataDimensionMap[
+                        uniqueGroupId
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 10, $0.19):
+```
+cd src/offering/entities && sed -n '455,480p' offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+                acc[nonTieredDimensionId] =
+acc[nonTieredDimensionId].toFixed(2);
+            } else {
+                acc[nonTieredDimensionId] = parseFloat(total);
+                acc[nonTieredDimensionId] =
+acc[nonTieredDimensionId].toFixed(2);
+            }
+
+            return acc;
+        }, {}) as Record<string, number>;
+        let exchangeRate = 1;
+
+        if (Offering.getCurrency({ customer, offering: offeringInstance }) !==
+SupportedCurrencies.USD) {
+            console.log('Inside exchange rate');
+            exchangeRate = await AnalyticsService.getExchangeRate({
+                currency: Offering.getCurrency({ customer, offering:
+offeringInstance }),
+            });
+            lineItems.addTerms(
+                `Invoice dynamically calculated with realtime currency exchange
+rate €${exchangeRate.toFixed(
+                    2,
+                )} = $1.00`,
+            );
+        }
+
+        Object.keys(dimensionTotals).forEach((dimensionId) => {
+            let unitCost = Number(
+                (parseFloat(nonTieredDimensionsMap[dimensionId].consumptionPrice
+) * exchangeRate).toFixed(
+                    Offering.getDecimalsForNumber(parseFloat(nonTieredDimensions
+Map[dimensionId].consumptionPrice)) ===
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 11, $0.22):
+Let me check for tests related to the gatherer and understand what's expected.
+
+```
+find . -path ./node_modules -prune -o -type f -name '*.spec.ts' -print | grep -i
+gather; echo "==="; find test -type f | head -50; echo "=== git log ==="; git
+log --oneline -10
+```
+
+Tool:
+<returncode>
+128
+<output>
+===
+test/api/analytics.api-spec.ts
+test/api/customers.api-spec.ts
+test/api/dimensions.api-spec.ts
+test/api/invoices.api-spec.ts
+test/api/offerings.api-spec.ts
+test/api/portal.api-spec.ts
+test/api/settings.api-spec.ts
+test/api/usage.api-spec.ts
+test/app.e2e-spec.ts
+test/db/usage.db-spec.ts
+test/e2e/buildPdf.spec.js
+test/fixtures/data/customer.ts
+test/fixtures/data/dimension.ts
+test/fixtures/data/influx/usage.db.ts
+test/fixtures/data/invoice.ts
+test/fixtures/data/offering.ts
+test/fixtures/data/payment.ts
+test/fixtures/data/setting.ts
+test/fixtures/data/usage.ts
+test/fixtures/data/user.ts
+test/fixtures/module/mockInfluxService.ts
+test/fixtures/module/mockJwtStrategy.ts
+test/fixtures/module/mockTokenRegister.ts
+test/jest-api.json
+test/jest-db.json
+test/jest-e2e.json
+=== git log ===
+fatal: not a git repository (or any of the parent directories): .git
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 12, $0.25):
+Let me look at the dimension DTO and settings to understand allowance/overage
+fields.
+
+```
+cd src && cat dimensions/dto/read-dimension.dto.ts 2>/dev/null | head -120; echo
+"=== find readOffering ==="; sed -n '1,80p' offering/dto/readOffering.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { ApiHideProperty, ApiProperty, IntersectionType, PickType } from
+'@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { BasicResponseDTO } from '../../basicResponseDTO.js';
+
+import { ReadDimensionResponseData } from './create-dimension.dto.js';
+
+export class ReadDimensionDto {
+    /**
+     * The Unique ID associated with your specific business account
+     * @example "myCoolCorp"
+     */
+    @ApiHideProperty()
+    @IsString()
+    @IsOptional()
+    public businessID: string;
+
+    /**
+     * The unique ID for a dimension
+     * @example "12340-abcfe-asdh24-asdhfj"
+     */
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({
+        name: 'dimensionId',
+        type: String,
+        example: '8a7b5f91-3b85-4cf4-8585-dcdf17f49004',
+        description: 'The unique ID for a dimension',
+    })
+    public dimensionId: string;
+}
+
+export class ReadDimensionResponse extends BasicResponseDTO {
+    /**
+     * Array of dimensions
+     */
+    @ApiProperty({ minItems: 0 })
+    data: ReadDimensionResponseData[];
+}
+=== find readOffering ===
+import { Logger } from '@nestjs/common';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
+
+import { IsNotEmpty, IsString } from 'class-validator';
+import { BasicResponseDTO } from '../../basicResponseDTO.js';
+import { ReadDimensionResponseData } from
+'dimensions/dto/create-dimension.dto.js';
+import { CreateOfferingDTO } from './createOffering.dto.js';
+
+export class ReadPricingDTO {
+    private static readonly logger = new Logger(ReadPricingDTO.name);
+    // BusinessID used for lookup (Unique ID for business)
+    @IsString()
+    @IsNotEmpty()
+    public businessID: string;
+
+    // Client ID for the invoice used for lookup
+    @IsString()
+    @IsNotEmpty()
+    public offeringId: string;
+}
+
+export class ReadOfferingResponseData extends OmitType(CreateOfferingDTO,
+['dimensionIds', 'businessID'] as const) {
+    /**
+     * Unique identifier assigned by Metering.
+     * <br><br>
+     * Example: `539b7f74-3832-474e-a955-6d69c5df12d0`
+     *
+     * @example "539b7f74-3832-474e-a955-6d69c5df12d0"
+     */
+    public offeringId: string;
+
+    /**
+     * The list of dimensions attached to the offering.
+     *
+     */
+    public dimensions: Array<ReadDimensionResponseData>;
+}
+
+export class ReadOfferingResponseDTO extends BasicResponseDTO {
+    /**
+     * A list of offerings
+     *
+     */
+    @ApiProperty({ minItems: 0 })
+    public data: Array<ReadOfferingResponseData>;
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 13, $0.27):
+```
+cd src && grep -n
+"usageEntitlement\|allowance\|overage\|consumptionPrice\|billableMetric\|entitle
+ment" dimensions/dto/create-dimension.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+19:import { EntitlementCanbeInf, EntitlementMustBeSet, ShouldSetConsumptionPrice
+} from './entitlementValidator.js';
+193:export enum overageAllowedEnum {
+335:    @EntitlementCanbeInf('usageEntitlement')
+338:        name: 'usageEntitlement',
+356:    public usageEntitlement?: number | 'inf';
+359:     * When the usage entitlement is specified,
+362:    @IsEnum(overageAllowedEnum, {
+366:            return `overageAllowed: The value ${value} is not a valid value
+for the overageAllowed field. The correct values are: ${correctValues}`;
+371:    @EntitlementMustBeSet('overageAllowed')
+372:    public overageAllowed?: overageAllowedEnum;
+386:    @ShouldSetConsumptionPrice('consumptionPrice')
+387:    @ValidateDecimalPlace('consumptionPrice')
+388:    public consumptionPrice?: string;
+511:     * Used to more granularly define the price of a dimension. For example
+if you want to charge a customer $1 for the first 1000 API calls and $0.50 for
+every API call after that you would define two tiers, the first tier with an
+`upperLimit` of `"1000"` and `tierPosition` of `"1"` with a `unitPrice` of `"1"`
+and a second tier with an `upperLimit` of `"inf"`, `tierPosition`  of `"2"` and
+`unitPrice` of `"0.50"`. Exclusive with standard `consumptionPrice`,
+`entitlement` and `overageAllowed` fields.
+524:    // 1. If metadata groups are set then tiers or consumptionPrice, and
+overageAllowed, and entitlements must not be set
+528:     * Used to group tiers by metadata, meaning instead of grouping by the
+dimensionId for usage Metering will group requests with the metadata passed in on
+the usage request. Exclusive with standard `consumptionPrice`, `entitlement`,
+`overageAllowed` and `tiers` fields.
+550:                    overageAllowed,
+553:                    usageEntitlement,
+559:                this.overageAllowed = overageAllowed ? overageAllowed :
+undefined;
+560:                this.consumptionPrice = priceSegments[0].price;
+561:                this.usageEntitlement = usageEntitlement;
+581:                    overageAllowed,
+585:                    consumptionPrice,
+587:                    usageEntitlement,
+592:                this.overageAllowed = overageAllowed;
+596:                this.usageEntitlement = usageEntitlement;
+604:                this.consumptionPrice = consumptionPrice;
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 14, $0.29):
+```
+cd src && sed -n '185,200p;330,400p' dimensions/dto/create-dimension.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+}
+
+export enum roundingEnum {
+    round = 'round',
+    floor = 'floor',
+    ceiling = 'ceiling',
+}
+
+export enum overageAllowedEnum {
+    true = 'true',
+    false = 'false',
+}
+export class CreateDimensionResponse extends BasicResponseDTO {
+    /**
+     * The unique identifier assigned by Metering.
+     * <br><br>
+     * Used with Subscription Tier Offering type. <br>
+     * SaaS customers subscribed to a subscription tier are entitled to use the
+amount of product
+     * with regard to the dimension up to the value specified in this field.
+     * For example, a subscription tier may entitle subscribers to make up to
+1,000,000 API requests.
+     */
+    @EntitlementCanbeInf('usageEntitlement')
+    @IsOptional()
+    @ApiProperty({
+        name: 'usageEntitlement',
+        oneOf: [
+            {
+                type: 'number',
+                description:
+                    'The number of units that the customer is entitled to use,
+must be greater than or equal to 0',
+                example: 1000000,
+            },
+            {
+                type: 'string',
+                format: 'inf',
+                description: "The customer is entitled to use the product's
+dimension without any limit",
+                example: 'inf',
+            },
+        ],
+        examples: ['inf', 1000000],
+        required: false,
+    })
+    public usageEntitlement?: number | 'inf';
+    /**
+     * Used with Subscription Tier Offering type. <br>
+     * When the usage entitlement is specified,
+     * this field decides if allowing SaaS customers to use more than entitled
+amount of the product dimension.
+     */
+    @IsEnum(overageAllowedEnum, {
+        message: (args: ValidationArguments) => {
+            const { value, constraints } = args;
+            const correctValues = Object.values(constraints[0]);
+            return `overageAllowed: The value ${value} is not a valid value for
+the overageAllowed field. The correct values are: ${correctValues}`;
+        },
+        each: true,
+    })
+    @IsOptional()
+    @EntitlementMustBeSet('overageAllowed')
+    public overageAllowed?: overageAllowedEnum;
+
+    @ApiHideProperty()
+    @IsString()
+    @IsOptional()
+    public businessID?: string;
+
+    /**
+     * The unit price of dimension.
+     * Numerical values are represented as strings to avoid precision loss.
+     * <br><br>
+     *
+     * @example "20.00"
+     */
+    @ShouldSetConsumptionPrice('consumptionPrice')
+    @ValidateDecimalPlace('consumptionPrice')
+    public consumptionPrice?: string;
+
+    /**
+     *
+     * The sample type used for the data. Gauge is a value that can go up or
+down. <br>
+     * Currently set to gauge by default on all dimensions.
+     * @example "gauge"
+     */
+    @IsOptional()
+    @IsEnum(SampleType, {
+        message: (args: ValidationArguments) => {
+            const { value, constraints } = args;
+            const correctValues = Object.values(constraints[0]);
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 15, $0.33):
+```
+cd src && grep -rn
+"gatherInvoiceLines\|CustomerInvoiceLines\|invoiceLineGatherer\|InvoiceLineGathe
+rer" --include=*.ts | grep -v node_modules
+```
+
+Tool:
+<returncode>
+0
+<output>
+app.module.ts:48:import { InvoiceLineGathererModule } from
+'./microservices/invoiceLineGatherer/invoiceLineGatherer.module.js';
+app.module.ts:102:        InvoiceLineGathererModule,
+microservices/invoiceLineGatherer/dto/invoiceLineGatherer.dto.ts:10:export class
+InvoiceLineGathererDto {
+microservices/invoiceLineGatherer/dto/invoiceLineGatherer.dto.ts:59:export class
+CustomerInvoiceLines {
+microservices/invoiceLineGatherer/invoiceLineGatherer.module.ts:3:import {
+InvoiceLineGathererService } from './invoiceLineGatherer.service.js';
+microservices/invoiceLineGatherer/invoiceLineGatherer.module.ts:7:    providers:
+[InvoiceLineGathererService],
+microservices/invoiceLineGatherer/invoiceLineGatherer.module.ts:14:export class
+InvoiceLineGathererModule {}
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:13:import {
+BillingCatalogue, CustomerInvoiceLines, InvoiceLineGathererDto } from
+'./dto/invoiceLineGatherer.dto.js';
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:18:export class
+InvoiceLineGathererService {
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:19:    private
+static readonly logger = new Logger(InvoiceLineGathererService.name);
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:23:
+const { catalogueBucket, catalogueKey, periodStart, periodEnd } =
+scheduleParameters as InvoiceLineGathererDto;
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:24:
+InvoiceLineGathererService.logger.log(
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:27:
+return this.gatherInvoiceLines({
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:36:    async
+gatherInvoiceLines({
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:48:    }):
+Promise<Array<CustomerInvoiceLines>> {
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:60:
+const assembled: Array<CustomerInvoiceLines> = [];
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:64:
+InvoiceLineGathererService.logger.warn(
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts:102:
+InvoiceLineGathererService.logger.log(`Assembled invoice lines for
+${assembled.length} customers`);
+scheduler/entities/scheduler.entity.ts:12:import { InvoiceLineGathererDto } from
+'../../microservices/invoiceLineGatherer/dto/invoiceLineGatherer.dto.js';
+scheduler/entities/scheduler.entity.ts:58:        | InvoiceLineGathererDto
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 16, $0.38):
+```
+cd src && cat setting/dto/FreeDimensionOnInvoice.ts; echo "=== read-setting
+==="; grep -n "FreeDimension\|freeDimension\|class
+ReadSettingsResponseData\|hide" setting/dto/read-setting.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+export enum FreeDimensionOnInvoice {
+    show = 'show',
+    hide = 'hide',
+}
+=== read-setting ===
+11:export class ReadSettingsResponseData extends UpdateSettingsDto {
+48:            this.freeDimensionOnInvoice = entity.freeDimensionOnInvoice;
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 17, $0.40):
+```
+cd src && grep -rn "freeDimensionOnInvoice\|FreeDimensionOnInvoice"
+--include=*.ts | grep -v node_modules | grep -v spec
+```
+
+Tool:
+<returncode>
+0
+<output>
+influx/entities/settingsInfluxTable.entity.ts:14:import { FreeDimensionOnInvoice
+} from '../../setting/dto/FreeDimensionOnInvoice.js';
+influx/entities/settingsInfluxTable.entity.ts:63:    public
+freeDimensionOnInvoice?: FreeDimensionOnInvoice;
+setting/dto/FreeDimensionOnInvoice.ts:1:export enum FreeDimensionOnInvoice {
+setting/dto/read-setting.dto.ts:48:            this.freeDimensionOnInvoice =
+entity.freeDimensionOnInvoice;
+setting/dto/update-settings.dto.ts:25:import { FreeDimensionOnInvoice } from
+'./FreeDimensionOnInvoice.js';
+setting/dto/update-settings.dto.ts:414:    @IsEnum(FreeDimensionOnInvoice, {
+setting/dto/update-settings.dto.ts:424:    public freeDimensionOnInvoice?:
+FreeDimensionOnInvoice;
+setting/entities/settings.entity.ts:22:import { FreeDimensionOnInvoice } from
+'../dto/FreeDimensionOnInvoice.js';
+setting/entities/settings.entity.ts:90:    public freeDimensionOnInvoice:
+FreeDimensionOnInvoice;
+setting/entities/settings.entity.ts:131:        freeDimensionOnInvoice =
+FreeDimensionOnInvoice.show,
+setting/entities/settings.entity.ts:162:        this.freeDimensionOnInvoice =
+freeDimensionOnInvoice;
+setting/entities/settings.entity.ts:219:            freeDimensionOnInvoice,
+setting/entities/settings.entity.ts:256:        if (freeDimensionOnInvoice) {
+setting/entities/settings.entity.ts:257:
+settingPoint.tag('freeDimensionOnInvoice', freeDimensionOnInvoice);
+setting/entities/settings.entity.ts:303:            freeDimensionOnInvoice =
+FreeDimensionOnInvoice.show,
+setting/entities/settings.entity.ts:335:            freeDimensionOnInvoice,
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 18, $0.42):
+Let me see how free dimension filtering and allowance logic is done elsewhere in
+the codebase (e.g. in subscription/offering billing).
+
+```
+cd src && grep -rn
+"freeDimensionOnInvoice\|hide\|getLineItems\|filterFree\|unitCost === 0\|=== 0"
+offering/entities/offeringPackage.entity.ts invoice/entities/invoice.entity.ts |
+head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+offering/entities/offeringPackage.entity.ts:364:    static async
+getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts:541:                    } else if
+(index === 0 && tieredDimension?.usageEntitlement) {
+offering/entities/offeringPackage.entity.ts:555:
+Offering.getDecimalsForNumber(parseFloat(tier?.unitPrice)) === 0
+offering/entities/offeringPackage.entity.ts:653:
+Offering.getDecimalsForNumber(parseFloat(tier?.unitPrice)) === 0
+offering/entities/offeringPackage.entity.ts:714:        // If there is a
+discount, loop over the line items via a  getLineItems call, and then a reduce,
+calculate the percentage discount, and then add the discount line item as a
+negative line item.
+offering/entities/offeringPackage.entity.ts:1048:        await
+Offering.getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts:1201:                await
+Offering.getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts:1219:                await
+Offering.getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts🔢            await
+Offering.getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts:1343:            }, lineItems:
+${JSON.stringify(lineItems.getLineItems())}`,
+offering/entities/offeringPackage.entity.ts:1449:        await
+Offering.getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts:1482:        await
+Offering.getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts:1497:            }, lineItems:
+${JSON.stringify(lineItems.getLineItems())}`,
+offering/entities/offeringPackage.entity.ts:1537:            await
+Offering.getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts:1554:            await
+Offering.getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts:1568:        await
+Offering.getLineItemsForUsage({
+offering/entities/offeringPackage.entity.ts:1582:
+lineItems.getLineItems(),
+invoice/entities/invoice.entity.ts:236:    getLineItems() {
+invoice/entities/invoice.entity.ts:400:        if (totalAmountWithoutTax === 0
+&& invoiceLineItems && invoiceLineItems.getLineItems().length > 0) {
+invoice/entities/invoice.entity.ts:421:
+this.invoiceLineItems.getLineItems().forEach((lineItem) => {
+invoice/entities/invoice.entity.ts:511:                          .getLineItems()
+invoice/entities/invoice.entity.ts:836:
+this.invoiceLineItems.getLineItems().forEach((lineItem) => {
+invoice/entities/invoice.entity.ts:1045:            this.invoiceLineItems ?
+JSON.stringify(this.invoiceLineItems.getLineItems()) : JSON.stringify([]),
+invoice/entities/invoice.entity.ts:1074:            this.invoiceLineItems ?
+JSON.stringify(this.invoiceLineItems.getLineItems()) : JSON.stringify([]),
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 19, $0.46):
+```
+cd src && grep -rln "freeDimensionOnInvoice" --include=*.ts | grep -v
+node_modules; echo "=== offering subclasses ==="; ls offering/entities; find src
+-name '*.ts' | xargs grep -ln "extends Offering" 2>/dev/null
+```
+
+Tool:
+<returncode>
+123
+<output>
+influx/entities/settingsInfluxTable.entity.ts
+offering/entities/offeringPackage.entity.spec.ts
+setting/dto/read-setting.dto.ts
+setting/dto/update-settings.dto.ts
+setting/entities/settings.entity.ts
+=== offering subclasses ===
+OfferingType.ts
+offeringPackage.entity.spec.ts
+offeringPackage.entity.ts
+find: ‘src’: No such file or directory
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 20, $0.48):
+```
+cd src && grep -rn "freeDimensionOnInvoice"
+offering/entities/offeringPackage.entity.spec.ts | head; echo "=== usage in
+invoice.entity ==="; sed -n '230,260p' invoice/entities/invoice.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+49:    let fakeSettings = { freeDimensionOnInvoice: FreeDimensionOnInvoice.show
+} as ReadSettingsResponseData;
+=== usage in invoice.entity ===
+        this.terms = terms;
+    }
+    getTerms() {
+        return this.terms;
+    }
+
+    getLineItems() {
+        return this.lineItems;
+    }
+    getTotal() {
+        return this.lineItems.reduce((acc, curr) => acc + curr.unitCost *
+curr.quantity, 0);
+    }
+    getSnakeCaseLineItems() {
+        return this.lineItems.map(InvoiceLineItem.snakeCaseTransformUnitCost);
+    }
+}
+
+export const signedURLGenerator = async (Bucket, Key) => {
+    const client = new S3Client({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY,
+        },
+    });
+    const command = new GetObjectCommand({ Bucket, Key });
+    const url = await getSignedUrl(client, command, { expiresIn: 604800 });
+    return url;
+};
+
+export const checkIfInvoiceIsInBucket = async (Bucket, Key): Promise<boolean> =>
+{
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 21, $0.50):
+```
+cd src && grep -n
+"freeDimensionOnInvoice\|FreeDimensionOnInvoice\|settings\|getInstance"
+offering/entities/offeringPackage.entity.spec.ts | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+26:import { FreeDimensionOnInvoice } from
+'../../setting/dto/FreeDimensionOnInvoice.js';
+28:import { InvoiceGeneration } from '../../setting/dto/update-settings.dto.js';
+49:    let fakeSettings = { freeDimensionOnInvoice: FreeDimensionOnInvoice.show
+} as ReadSettingsResponseData;
+214:                offeringInstance: Offering.getInstance(
+303:                offeringInstance: Offering.getInstance(
+405:                offeringInstance: Offering.getInstance(
+571:                offeringInstance: Offering.getInstance(
+714:                offeringInstance: Offering.getInstance(
+824:                offeringInstance: Offering.getInstance(
+931:                offeringInstance: Offering.getInstance(
+1044:                offeringInstance: Offering.getInstance(
+1158:                offeringInstance: Offering.getInstance(
+1322:                offeringInstance: Offering.getInstance(
+1434:                offeringInstance: Offering.getInstance(
+1535:                offeringInstance: Offering.getInstance(
+1565:            const offering = Offering.getInstance(
+1644:            const offeringInstance = Offering.getInstance(
+1695:            const offeringInstance = Offering.getInstance(
+1708:            const offeringInstance = Offering.getInstance(
+1734:            const offeringInstance = Offering.getInstance(
+1759:            const offeringInstance = Offering.getInstance(
+1784:            const offeringInstance = Offering.getInstance(
+1798:            const offeringInstance = Offering.getInstance(
+1842:            const offeringInstance = Offering.getInstance(
+1886:            const offeringInstance = Offering.getInstance(
+1945:            const offeringInstance = Offering.getInstance(
+2013:            const offeringInstance = Offering.getInstance(
+2031:            const offeringInstance = Offering.getInstance(
+2049:            const offeringInstance = Offering.getInstance(
+2064:            const offeringInstance = Offering.getInstance(
+2078:            const offeringInstance = Offering.getInstance(
+2102:            const offeringInstance = Offering.getInstance(
+2126:            const offeringInstance = Offering.getInstance(
+2195:            const offeringInstance = Offering.getInstance(
+2263:                const offeringInstance = Offering.getInstance(
+2286:                const offeringInstance = Offering.getInstance(
+2339:                const offeringInstance = Offering.getInstance(
+2361:            const offeringInstance = Offering.getInstance(
+2396:            const offeringInstance = Offering.getInstance(
+2461:            const offeringInstance = Offering.getInstance(
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 22, $0.53):
+```
+cd src && grep -n "settings\|freeDimension\|filterLineItems\|hideFree"
+offering/entities/offeringPackage.entity.ts | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+30:import { InvoiceGeneration } from '../../setting/dto/update-settings.dto.js';
+48:    public settings: ReadSettingsResponseData;
+764:        settings: ReadSettingsResponseData,
+796:                    settings,
+816:                    settings,
+843:        settings,
+862:        settings: ReadSettingsResponseData;
+881:        this.settings = settings;
+1368:        settings,
+1386:        settings: ReadSettingsResponseData;
+1405:            settings,
+1679:            `Running Unenrollment for Customer: ${customer?.customerId},
+isChangeOfPlan: ${isChangeOfPlan}, currentBillingCycleStartTime:
+${currentBillingCycleStartTime}, settingsInvoiceGeneration:
+${this.settings?.invoiceGeneration}`,
+1683:                isChangeOfPlan && this.settings?.invoiceGeneration ===
+InvoiceGeneration.consolidatedPerBillingCycle
+1686:        if (this.settings?.invoiceGeneration ===
+InvoiceGeneration.consolidatedPerBillingCycle) {
+1689:        if (!isChangeOfPlan && this.settings?.invoiceGeneration ===
+InvoiceGeneration.consolidatedPerBillingCycle) {
+1712:        settings,
+1729:        settings: ReadSettingsResponseData;
+1748:            settings,
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 23, $0.57):
+```
+cd src && sed -n '150,240p' invoice/entities/invoice.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+            },
+            kibibyte: {
+                1024: 'mebibyte',
+                1048576: 'gibibyte',
+            },
+            mebibyte: {
+                1024: 'gibibyte',
+            },
+        };
+
+        const rawTotal = total;
+        let newDisplayUnit = dimensionUnit;
+        let displayName = dimensionName;
+        switch (dimensionType) {
+            case 'count':
+                if (rawTotal >= 1000000000 && usageIncrement / 1000000000 === 1)
+{
+                    newDisplayUnit = 'Billion ' + dimensionName;
+                } else if (rawTotal >= 1000000 && usageIncrement / 1000000 ===
+1) {
+                    newDisplayUnit = 'Million ' + dimensionName;
+                } else if (rawTotal >= 1000 && usageIncrement / 1000 === 1) {
+                    newDisplayUnit = 'Thousand';
+                } else {
+                    newDisplayUnit = undefined;
+                }
+                break;
+            case 'time':
+                if (usageIncrement === 1) {
+                    break;
+                }
+                if (!timeBasedUnits[dimensionUnit]) {
+                    newDisplayUnit = undefined;
+                    break;
+                }
+                if (!timeBasedUnits[dimensionUnit][usageIncrement]) {
+                    newDisplayUnit = undefined;
+                    break;
+                }
+                newDisplayUnit = timeBasedUnits[dimensionUnit][usageIncrement];
+                break;
+            case 'data':
+                if (usageIncrement === 1) {
+                    break;
+                }
+
+                if (!dataBasedUnits[dimensionUnit]) {
+                    newDisplayUnit = undefined;
+                    break;
+                }
+                if (!dataBasedUnits[dimensionUnit][usageIncrement]) {
+                    newDisplayUnit = undefined;
+                    break;
+                }
+                newDisplayUnit = dataBasedUnits[dimensionUnit][usageIncrement];
+                break;
+        }
+
+        displayName = newDisplayUnit
+            ? `${dimensionName} -
+${newDisplayUnit[0].toUpperCase()}${newDisplayUnit.slice(1)} - ${offeringName}`
+            : `${dimensionName} - ${offeringName}`;
+        displayName = tieredName ? `${displayName} - ${tieredName}` :
+displayName;
+        return {
+            total: negative ? (rawTotal / usageIncrement) * -1 : rawTotal /
+usageIncrement,
+            dimension: dimensionId,
+            displayName: negative ? `${displayName} - Free Trial Credit` :
+displayName,
+            unit: newDisplayUnit ? newDisplayUnit.replace(/\w/, (c) =>
+c.toUpperCase()) : undefined,
+        };
+    }
+}
+
+export class InvoiceLineItems {
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => InvoiceLineItem)
+    private lineItems: InvoiceLineItem[] = [];
+    private terms?: string;
+
+    addLineItem(lineItem: InvoiceLineItem) {
+        this.lineItems.push(lineItem);
+    }
+    addTerms(terms: string) {
+        this.terms = terms;
+    }
+    getTerms() {
+        return this.terms;
+    }
+
+    getLineItems() {
+        return this.lineItems;
+    }
+    getTotal() {
+        return this.lineItems.reduce((acc, curr) => acc + curr.unitCost *
+curr.quantity, 0);
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 24, $0.60):
+```
+cd src && sed -n '90,150p' invoice/entities/invoice.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+     */
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    description?: string;
+
+    constructor(name: string, quantity: number, unitCost: number, description?:
+string) {
+        this.name = name;
+        this.quantity = quantity;
+        this.unitCost = unitCost;
+        this.description = description;
+    }
+    static snakeCaseTransformUnitCost({ unitCost, ...rest }: InvoiceLineItem) {
+        return { unit_cost: unitCost, ...rest };
+    }
+    static prepareLineItem({
+        total,
+        dimensionType,
+        dimensionUnit,
+        dimensionName,
+        dimensionId,
+        offeringName,
+        usageIncrement,
+        negative,
+        tieredName,
+    }: {
+        total: number;
+        dimensionType: string;
+        dimensionName: string;
+        dimensionUnit: string;
+        dimensionId: string;
+        offeringName: string;
+        usageIncrement: number;
+        negative?: boolean;
+        tieredName?: string;
+    }): { total: number; dimension: string; unit?: string; displayName: string }
+{
+        const timeBasedUnits = {
+            second: {
+                60: 'minute',
+                3600: 'hour',
+                86400: 'day',
+            },
+            minute: { 60: 'hour', 1440: 'day' },
+            hour: { 24: 'day' },
+        };
+        const dataBasedUnits = {
+            byte: {
+                1024: 'kibibyte',
+                1000: 'kilobyte',
+                1048576: 'mebibyte',
+                1000000: 'megabyte',
+                1073741824: 'gibibyte',
+                1000000000: 'gigabyte',
+            },
+            kilobyte: {
+                1000: 'megabyte',
+                1000000: 'gigabyte',
+            },
+            megabyte: {
+                1000: 'gigabyte',
+            },
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 25, $0.63):
+Now let me look at the AWS utils and check emulator resources.
+
+```
+cd src && cat utils/aws/cloudwatch.js 2>/dev/null | head -60; echo "=== s3
+getDocument ==="; grep -n "getDocument" utils/aws/s3.* 2>/dev/null; find . -name
+'s3.*' | grep -v node_modules
+```
+
+Tool:
+<returncode>
+0
+<output>
+=== s3 getDocument ===
+7:export const getDocument = async <T>(Bucket: string, Key: string): Promise<T>
+=> {
+./utils/aws/s3.ts
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 26, $0.65):
+```
+cd src && cat utils/aws/cloudwatch.ts 2>/dev/null; echo "=== s3 ==="; cat
+utils/aws/s3.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { BadRequestException } from '@nestjs/common';
+import { CloudWatchClient, GetMetricDataCommand } from
+'@aws-sdk/client-cloudwatch';
+
+export type MetricReading = {
+    timestamp: string;
+    value: number;
+};
+
+/**
+ * The readings a single series published over a window, oldest first. The
+ * caller names the series by its whole dimension set, which is how the metric
+ * store keys them.
+ */
+export const getMetricSeries = async ({
+    namespace,
+    metricName,
+    dimensions,
+    startTime,
+    endTime,
+    period,
+}: {
+    namespace: string;
+    metricName: string;
+    dimensions: Record<string, string>;
+    startTime: Date;
+    endTime: Date;
+    period: number;
+}): Promise<MetricReading[]> => {
+    const cloudwatchClient = new CloudWatchClient({});
+    const readings: MetricReading[] = [];
+    let NextToken: string | undefined;
+    do {
+        const response = await cloudwatchClient.send(
+            new GetMetricDataCommand({
+                StartTime: startTime,
+                EndTime: endTime,
+                ScanBy: 'TimestampAscending',
+                NextToken,
+                MetricDataQueries: [
+                    {
+                        Id: 'series',
+                        ReturnData: true,
+                        MetricStat: {
+                            Metric: {
+                                Namespace: namespace,
+                                MetricName: metricName,
+                                Dimensions: Object.keys(dimensions).map((Name)
+=> ({
+                                    Name,
+                                    Value: dimensions[Name],
+                                })),
+                            },
+                            Period: period,
+                            Stat: 'Sum',
+                        },
+                    },
+                ],
+            }),
+        );
+        (response?.MetricDataResults ?? []).forEach((metricDataResult) => {
+            const values = metricDataResult?.Values ?? [];
+            (metricDataResult?.Timestamps ?? []).forEach((timestamp, index) => {
+                readings.push({
+                    timestamp: new Date(timestamp).toISOString(),
+                    value: Number(values[index] ?? 0),
+                });
+            });
+        });
+        NextToken = response?.NextToken;
+    } while (NextToken);
+    return readings.sort((left, right) =>
+left.timestamp.localeCompare(right.timestamp));
+};
+
+export const getEc2Egress = async (region, creds, startTime, endTime,
+instanceIds: string[]): Promise<any> => {
+    if (instanceIds.length === 0) {
+        return [];
+    }
+    try {
+        const cloudwatchClient = new CloudWatchClient({ region, credentials:
+creds });
+        let res = [];
+        for (const instanceId of instanceIds) {
+            const MetricDataQueries = [instanceId].map((instanceId) => {
+                return {
+                    Id: 'i' + instanceId.substring(2),
+                    Period: 300,
+                    Expression: `SELECT SUM(NetworkOut) FROM SCHEMA("AWS/EC2",
+InstanceId) WHERE InstanceId = '${instanceId}'`,
+                };
+            });
+            const params = {
+                StartTime: startTime,
+                EndTime: endTime,
+                MetricDataQueries,
+            };
+            let next;
+            do {
+                const response = await cloudwatchClient.send(new
+GetMetricDataCommand(params));
+                const { MetricDataResults } = response;
+                MetricDataResults.forEach((metricDataResult) => {
+                    metricDataResult.Id = 'i-' +
+metricDataResult.Id.substring(1);
+                });
+                next = response?.NextToken;
+                res = res.concat(MetricDataResults);
+            } while (next);
+        }
+        return res;
+    } catch (err) {
+        console.log('Error', err);
+        if (err.Code === 'AccessDenied') {
+            throw new BadRequestException(`Invalid IAM role or external ID`);
+        } else {
+            throw new BadRequestException(`'Error fetching cloudwatch metrics`);
+        }
+    }
+};
+=== s3 ===
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
+
+export const putDocument = (document, Bucket, Key) =>
+    new Upload({ client: new S3Client({ region: 'us-east-1' }), params: { Body:
+document, Bucket, Key } });
+
+export const getDocument = async <T>(Bucket: string, Key: string): Promise<T> =>
+{
+    const client = new S3Client({});
+    const { Body } = await client.send(new GetObjectCommand({ Bucket, Key }));
+    return JSON.parse(await Body.transformToString()) as T;
+};
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 27, $0.69):
+Let me check the AWS emulator resources.
+
+```
+env | grep -i aws; echo "=== buckets ==="; aws s3 ls 2>&1 | head; echo "=== cw
+==="; aws cloudwatch list-metrics 2>&1 | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+AWS_CONFIG_FILE=/tmp/mswea-bedrock-provider/config
+AWS_DEFAULT_REGION=us-east-1
+AWS_ENDPOINT_URL=http://127.0.0.1:4566
+AWS_SHARED_CREDENTIALS_FILE=/tmp/mswea-bedrock-provider/credentials
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=[REDACTED_AWS_ACCESS_KEY_ID]
+AWS_SECRET_ACCESS_KEY=[REDACTED_AWS_SECRET_ACCESS_KEY]
+=== buckets ===
+/bin/sh: 1: aws: not found
+=== cw ===
+/bin/sh: 1: aws: not found
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 28, $0.72):
+```
+cd src && cat <<'EOF' > /tmp/probe.mjs
+import { S3Client, ListBucketsCommand, ListObjectsV2Command, GetObjectCommand }
+from '@aws-sdk/client-s3';
+const s3 = new S3Client({});
+const b = await s3.send(new ListBucketsCommand({}));
+console.log('BUCKETS', JSON.stringify(b.Buckets));
+for (const bk of b.Buckets ?? []) {
+  const objs = await s3.send(new ListObjectsV2Command({Bucket: bk.Name}));
+  console.log('BUCKET', bk.Name, (objs.Contents??[]).map(o=>o.Key));
+}
+EOF
+node /tmp/probe.mjs 2>&1 | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+node:internal/modules/package_json_reader:314
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@aws-sdk/client-s3' imported
+from /tmp/probe.mjs
+    at Object.getPackageJSONURL
+(node:internal/modules/package_json_reader:314:9)
+    at packageResolve (node:internal/modules/esm/resolve:768:81)
+    at moduleResolve (node:internal/modules/esm/resolve:855:18)
+    at defaultResolve (node:internal/modules/esm/resolve:985:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:747:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:724:38)
+    at ModuleLoader.getModuleJobForImport
+(node:internal/modules/esm/loader:320:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:182:49) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v22.23.2
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 29, $0.76):
+```
+cd /home/agent 2>/dev/null; cp /tmp/probe.mjs $(pwd)/probe_tmp.mjs 2>/dev/null;
+ls node_modules/@aws-sdk | head; cat > probe_tmp.mjs <<'EOF'
+import { S3Client, ListBucketsCommand, ListObjectsV2Command, GetObjectCommand }
+from '@aws-sdk/client-s3';
+const s3 = new S3Client({});
+const b = await s3.send(new ListBucketsCommand({}));
+console.log('BUCKETS', JSON.stringify(b.Buckets?.map(x=>x.Name)));
+for (const bk of b.Buckets ?? []) {
+  const objs = await s3.send(new ListObjectsV2Command({Bucket: bk.Name}));
+  console.log('BUCKET', bk.Name, (objs.Contents??[]).map(o=>o.Key));
+}
+EOF
+ls
+```
+
+Tool:
+<returncode>
+0
+<output>
+ls: cannot access 'node_modules/@aws-sdk': No such file or directory
+probe_tmp.mjs
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 30, $0.79):
+```
+rm -f probe_tmp.mjs; pwd; find / -maxdepth 4 -name 'package.json' -path
+'*metering*' 2>/dev/null; find / -maxdepth 5 -type d -name invoiceLineGatherer
+2>/dev/null
+```
+
+Tool:
+<returncode>
+1
+<output>
+/app
+/app/src/microservices/invoiceLineGatherer
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 31, $0.82):
+```
+cd /app && cat > probe_tmp.mjs <<'EOF'
+import { S3Client, ListBucketsCommand, ListObjectsV2Command, GetObjectCommand }
+from '@aws-sdk/client-s3';
+const s3 = new S3Client({});
+const b = await s3.send(new ListBucketsCommand({}));
+console.log('BUCKETS', JSON.stringify(b.Buckets?.map(x=>x.Name)));
+for (const bk of b.Buckets ?? []) {
+  const objs = await s3.send(new ListObjectsV2Command({Bucket: bk.Name}));
+  for (const o of (objs.Contents??[])) {
+    console.log('OBJ', bk.Name, o.Key);
+  }
+}
+EOF
+node probe_tmp.mjs 2>&1 | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+BUCKETS ["metering-billing-sandbox"]
+OBJ metering-billing-sandbox catalogues/biz-ridge-2026-07.json
+OBJ metering-billing-sandbox catalogues/biz-vale-2026-07.json
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 32, $0.85):
+```
+cd /app && cat > probe2.mjs <<'EOF'
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+const s3 = new S3Client({});
+for (const key of
+['catalogues/biz-ridge-2026-07.json','catalogues/biz-vale-2026-07.json']) {
+  const { Body } = await s3.send(new
+GetObjectCommand({Bucket:'metering-billing-sandbox', Key:key}));
+  console.log('=====', key);
+  console.log(await Body.transformToString());
+}
+EOF
+node probe2.mjs 2>&1 | head -300
+```
+
+Tool:
+<returncode>
+0
+<output>
+===== catalogues/biz-ridge-2026-07.json
+{"businessID":"biz-ridge","periodStart":"2026-07-01T00:00:00Z","periodEnd":"2026
+-08-01T00:00:00Z","usageNamespace":"Metering/Usage","usageMetricName":"AggregatedUs
+age","usagePeriod":3600,"settings":{"businessID":"biz-ridge","invoiceGeneration"
+:"perOffering","freeDimensionOnInvoice":"hide"},"offerings":[{"offeringId":"off-
+ridge-plan","offeringName":"Ridge
+Plan","offeringType":"subscription","billingCycle":"monthly","offeringVisibility
+":"public","dimensions":[{"dimensionId":"ridge-api-calls","dimensionName":"Ridge
+ API
+Calls","consumptionPrice":"0.01","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"dimen
+sionId":"ridge-seats","dimensionName":"Ridge
+Seats","consumptionPrice":"10.00","usageIncrement":"1","rounding":"round","sampl
+eType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSc
+hedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usageE
+ntitlement":10,"overageAllowed":"true"},{"dimensionId":"ridge-alerts","dimension
+Name":"Ridge
+Alerts","consumptionPrice":"0.00","usageIncrement":"1","rounding":"round","sampl
+eType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSc
+hedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"dime
+nsionId":"ridge-reports","dimensionName":"Ridge
+Reports","consumptionPrice":"1.00","usageIncrement":"1","rounding":"round","samp
+leType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentS
+chedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usage
+Entitlement":5,"overageAllowed":"false"},{"dimensionId":"ridge-storage","dimensi
+onName":"Ridge
+Storage","consumptionPrice":"0.20","usageIncrement":"1","rounding":"round","samp
+leType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentS
+chedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usage
+Entitlement":"inf","overageAllowed":"true"}],"subscriptionPrice":0},{"offeringId
+":"off-ridge-usage","offeringName":"Ridge
+Metered","offeringType":"usage-based","billingCycle":"monthly","offeringVisibili
+ty":"public","dimensions":[{"dimensionId":"ridge-jobs","dimensionName":"Ridge
+Jobs","consumptionPrice":"0.05","usageIncrement":"1","rounding":"round","sampleT
+ype":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSche
+dule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"dimens
+ionId":"ridge-minutes","dimensionName":"Ridge
+Minutes","consumptionPrice":"0.02","usageIncrement":"1","rounding":"round","samp
+leType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentS
+chedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usage
+Entitlement":100,"overageAllowed":"true"},{"dimensionId":"ridge-scans","dimensio
+nName":"Ridge
+Scans","consumptionPrice":"0.50","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usageEn
+titlement":"inf","overageAllowed":"true"},{"dimensionId":"ridge-tasks","dimensio
+nName":"Ridge
+Tasks","consumptionPrice":"0.10","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usageEn
+titlement":50}]}],"enrolments":[{"customerId":"cus_sample_alpha","offeringId":"o
+ff-ridge-plan"},{"customerId":"cus_sample_bravo","offeringId":"off-ridge-usage"}
+]}
+===== catalogues/biz-vale-2026-07.json
+{"businessID":"biz-vale","periodStart":"2026-07-01T00:00:00Z","periodEnd":"2026-
+08-01T00:00:00Z","usageNamespace":"Metering/Usage","usageMetricName":"AggregatedUsa
+ge","usagePeriod":3600,"settings":{"businessID":"biz-vale","invoiceGeneration":"
+perOffering","freeDimensionOnInvoice":"show"},"offerings":[{"offeringId":"off-va
+le-plan","offeringName":"Vale
+Plan","offeringType":"subscription","billingCycle":"monthly","offeringVisibility
+":"public","dimensions":[{"dimensionId":"vale-messages","dimensionName":"Vale
+Messages","consumptionPrice":"0.01","usageIncrement":"1","rounding":"round","sam
+pleType":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","payment
+Schedule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"di
+mensionId":"vale-hours","dimensionName":"Vale
+Hours","consumptionPrice":"0.00","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"}},{"dimen
+sionId":"vale-units","dimensionName":"Vale
+Units","consumptionPrice":"5.00","usageIncrement":"1","rounding":"round","sample
+Type":"gauge","aggregationInterval":"hour","aggregationMethod":"sum","paymentSch
+edule":"arrear","consumptionUnit":{"type":"count","unit":"count-based"},"usageEn
+titlement":20,"overageAllowed":"true"}],"subscriptionPrice":0}],"enrolments":[{"
+customerId":"cus_sample_charlie","offeringId":"off-vale-plan"}]}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 33, $0.93):
+Now let me query the CloudWatch usage metrics.
+
+```
+cd /app && cat > probe3.mjs <<'EOF'
+import { CloudWatchClient, ListMetricsCommand, GetMetricDataCommand } from
+'@aws-sdk/client-cloudwatch';
+const cw = new CloudWatchClient({});
+const m = await cw.send(new ListMetricsCommand({Namespace:'Metering/Usage'}));
+for (const met of m.Metrics ?? []) {
+  const dims =
+Object.fromEntries((met.Dimensions??[]).map(d=>[d.Name,d.Value]));
+  const r = await cw.send(new GetMetricDataCommand({
+    StartTime: new Date('2026-07-01T00:00:00Z'), EndTime: new
+Date('2026-08-01T00:00:00Z'),
+    ScanBy:'TimestampAscending',
+    MetricDataQueries:[{Id:'s',ReturnData:true,MetricStat:{Metric:{Namespace:'Pa
+igo/Usage',MetricName:met.MetricName,Dimensions:met.Dimensions},Period:3600,Stat
+:'Sum'}}]
+  }));
+  const vals = r.MetricDataResults?.[0]?.Values ?? [];
+  const sum = vals.reduce((a,b)=>a+b,0);
+  console.log(dims.BusinessId, dims.CustomerId, dims.DimensionId,
+'points='+vals.length, 'sum='+sum);
+}
+EOF
+node probe3.mjs 2>&1 | sort
+```
+
+Tool:
+<returncode>
+0
+<output>
+biz-ridge cus_sample_alpha ridge-alerts points=3 sum=5
+biz-ridge cus_sample_alpha ridge-api-calls points=3 sum=100
+biz-ridge cus_sample_alpha ridge-reports points=3 sum=7
+biz-ridge cus_sample_alpha ridge-seats points=3 sum=12
+biz-ridge cus_sample_alpha ridge-storage points=3 sum=40
+biz-ridge cus_sample_bravo ridge-jobs points=3 sum=200
+biz-ridge cus_sample_bravo ridge-minutes points=3 sum=80
+biz-ridge cus_sample_bravo ridge-tasks points=3 sum=70
+biz-vale cus_sample_charlie vale-hours points=3 sum=10
+biz-vale cus_sample_charlie vale-messages points=3 sum=50
+biz-vale cus_sample_charlie vale-units points=3 sum=25
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 34, $1.03):
+Let me look at `billableTotal`, `aggregationMethod`, and how `getInstance` uses
+settings.
+
+```
+cd /app/src && grep -n
+"billableTotal\|aggregationMethod\|PaymentSchedule\|import"
+offering/entities/offeringPackage.entity.ts | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+1:import { Point } from '@influxdata/influxdb-client';
+2:import { Logger, NotFoundException } from '@nestjs/common';
+3:import { ApiHideProperty } from '@nestjs/swagger';
+4:import { InfluxService } from '../../influx/influx.service.js';
+5:import { OfferingVisibility, ValidBillingCycles } from
+'../dto/createOffering.dto.js';
+6:import { SupportedCurrencies } from '../dto/SupportedCurrencies.js';
+7:import { SchedulerStatus, schedulerType, SupportedMeasurementFrequencies }
+from '../../scheduler/dto/scheduler.dto.js';
+8:import { SchedulerService } from '../../scheduler/scheduler.service.js';
+9:import { InvoiceLineItem, InvoiceLineItems } from
+'../../invoice/entities/invoice.entity.js';
+10:import { InvoicesService } from '../../invoice/invoices.service.js';
+11:import { DatetimeUtils } from '../../utils/datetime.js';
+12:import { ReadOfferingResponseData } from '../dto/readOffering.dto.js';
+13:import { CustomerService } from '../../customer/customer.service.js';
+14:import {
+18:import { ReadDimensionResponseData } from
+'dimensions/dto/create-dimension.dto.js';
+19:import { Billing } from '../../billing/entities/billing.entity.js';
+20:import { ReadCustomerResponseData } from
+'../../customer/entities/customer.entity.js';
+21:import { OfferingType } from './OfferingType.js';
+22:import { CreateBillingReportDto } from
+'../../billing/dto/createBillingReport.dto.js';
+23:import { serializeError } from 'serialize-error';
+24:import { AuditScope } from '../../audit/entities/audit.interface.js';
+25:import { AuditService } from '../../audit/audit.service.js';
+26:import { InvoicePaymentTerm } from
+'../../invoice/entities/InvoicePaymentTerm.js';
+27:import { AnalyticsService } from '../../analytics/analytics.service.js';
+28:import { CreditService } from '../../credit/credit.service.js';
+29:import { ReadSettingsResponseData } from
+'../../setting/dto/read-setting.dto.js';
+30:import { InvoiceGeneration } from '../../setting/dto/update-settings.dto.js';
+31:import { CustomerContractDiscount } from
+'../../contract/dto/customerContractDiscount.js';
+32:import { DimensionTierDto } from '../../dimensions/dto/dimensionTier.dto.js';
+33:import { PaymentSchedule, aggregationMethod } from
+'../../dimensions/dto/create-dimension.dto.js';
+34:import { DimensionOverridesDto } from
+'../../contract/dto/dimensionOverrides.dto.js';
+356:    static billableTotal(usage: AggregatedUsageResponse['usage']): string {
+443:            if (dimension?.aggregationMethod === aggregationMethod.last) {
+444:                total = Offering.billableTotal(
+450:                total = Offering.billableTotal(usageElement ?
+usageElement.usage : []);
+488:            if (nonTieredDimensionsMap[dimensionId]?.paymentSchedule ===
+PaymentSchedule.upfront) {
+560:                        if (tieredDimension?.paymentSchedule ===
+PaymentSchedule.upfront) {
+658:                            if (groupedDimension?.paymentSchedule ===
+PaymentSchedule.upfront) {
+917:                (dimension) => dimension?.paymentSchedule ===
+PaymentSchedule.upfront,
+1422:            (dimension) => dimension?.paymentSchedule ===
+PaymentSchedule.upfront,
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 35, $1.09):
+```
+cd /app/src && sed -n '356,364p' offering/entities/offeringPackage.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+    static billableTotal(usage: AggregatedUsageResponse['usage']): string {
+        const total = (usage ?? []).reduce((acc, { value }) => {
+            acc += parseFloat(value);
+            return acc;
+        }, 0);
+        return total.toFixed(2).toString();
+    }
+
+    static async getLineItemsForUsage({
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 36, $1.12):
+Let me check the test setup and whether I can run a targeted spec.
+
+```
+cd /app && cat jest.unit.config.json; echo "=== scripts ==="; grep -n '"test'
+package.json
+```
+
+Tool:
+<returncode>
+0
+<output>
+{
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "./src",
+    "testEnvironment": "node",
+    "transform": {
+        "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "transformIgnorePatterns": ["node_modules/(?!serialize-error/.*)"],
+    "testRegex": ".spec.ts$",
+    "preset": "ts-jest/presets/js-with-ts",
+    "globals": {
+        "ts-jest": {
+            "isolatedModules": true,
+            "tsConfig": "testTSConfig.json",
+            "useESM": true
+        }
+    },
+    "moduleNameMapper": {
+        "^(\\.\\.?\\/.+)\\.js$": "$1"
+    },
+    "extensionsToTreatAsEsm": [".ts"],
+    "maxWorkers": "20%",
+    "testTimeout": 30000
+}
+ === scripts ===
+19:        "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+30:        "test": "jest --config ./jest.unit.config.json",
+31:        "test:ci": "jest --config ./jest.unit.config.json --forceExit",
+32:        "test:watch": "jest --watch",
+33:        "test:cov": "jest --coverage",
+34:        "test:debug": "node --inspect-brk -r tsconfig-paths/register -r
+ts-node/register node_modules/.bin/jest --runInBand",
+35:        "test:e2e": "jest --config ./test/jest-e2e.json",
+36:        "test:api": "jest --config ./test/jest-api.json",
+37:        "test:db": "jest --config ./test/jest-db.json",
+38:        "test:local:integration": "jest --config
+./integration/jest.local.config.json",
+39:        "test:ci:integration": "jest --config
+./integration/jest.ci.config.json",
+183:        "testRegex": ".*\\.spec\\.ts$",
+191:        "testEnvironment": "node"
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 37, $1.18):
+Let me write a reproduction spec that runs against the emulator.
+
+```
+cd /app && cat > src/microservices/invoiceLineGatherer/repro.spec.ts <<'EOF'
+import { InvoiceLineGathererService } from './invoiceLineGatherer.service.js';
+
+describe('repro gatherInvoiceLines', () => {
+    it('ridge', async () => {
+        const svc = new InvoiceLineGathererService();
+        const res = await svc.gatherInvoiceLines({
+            businessID: 'biz-ridge',
+            catalogueBucket: 'metering-billing-sandbox',
+            catalogueKey: 'catalogues/biz-ridge-2026-07.json',
+        });
+        console.log(JSON.stringify(res, null, 2));
+    });
+    it('vale', async () => {
+        const svc = new InvoiceLineGathererService();
+        const res = await svc.gatherInvoiceLines({
+            businessID: 'biz-vale',
+            catalogueBucket: 'metering-billing-sandbox',
+            catalogueKey: 'catalogues/biz-vale-2026-07.json',
+        });
+        console.log(JSON.stringify(res, null, 2));
+    });
+});
+EOF
+npx jest --config ./jest.unit.config.json
+src/microservices/invoiceLineGatherer/repro.spec.ts 2>&1 | tail -80
+```
+
+Tool:
+<returncode>
+0
+<output>
+            "unitCost": 1
+          },
+          {
+            "name": "Ridge Storage - Ridge Plan",
+            "quantity": 40,
+            "unitCost": 0.2
+          }
+        ]
+      },
+      {
+        "customerId": "cus_sample_bravo",
+        "offeringId": "off-ridge-usage",
+        "offeringName": "Ridge Metered",
+        "lineItems": [
+          {
+            "name": "Ridge Jobs - Ridge Metered",
+            "quantity": 200,
+            "unitCost": 0.05
+          },
+          {
+            "name": "Ridge Minutes - Ridge Metered",
+            "quantity": 80,
+            "unitCost": 0.02
+          },
+          {
+            "name": "Ridge Scans - Ridge Metered",
+            "quantity": 0,
+            "unitCost": 0.5
+          },
+          {
+            "name": "Ridge Tasks - Ridge Metered",
+            "quantity": 70,
+            "unitCost": 0.1
+          }
+        ]
+      }
+    ]
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:11:17)
+
+[32m[Nest] 1781  - [39m08/19/2026, 2:04:52 AM [32m    LOG[39m [38;5;3m[Offering]
+[39m[32mGetting currency for customer undefined, offering Vale Plan, customer
+currency undefined[39m
+[32m[Nest] 1781  - [39m08/19/2026, 2:04:52 AM [32m    LOG[39m
+[38;5;3m[InvoiceLineGathererService] [39m[32mAssembled invoice lines for 1
+customers[39m
+  console.log
+    [
+      {
+        "customerId": "cus_sample_charlie",
+        "offeringId": "off-vale-plan",
+        "offeringName": "Vale Plan",
+        "lineItems": [
+          {
+            "name": "Vale Messages - Vale Plan",
+            "quantity": 50,
+            "unitCost": 0.01
+          },
+          {
+            "name": "Vale Hours - Vale Plan",
+            "quantity": 10,
+            "unitCost": 0
+          },
+          {
+            "name": "Vale Units - Vale Plan",
+            "quantity": 25,
+            "unitCost": 5
+          }
+        ]
+      }
+    ]
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:20:17)
+
+PASS src/microservices/invoiceLineGatherer/repro.spec.ts
+  repro gatherInvoiceLines
+    ✓ ridge (64 ms)
+    ✓ vale (11 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        4.566 s
+Ran all test suites matching
+/src\/microservices\/invoiceLineGatherer\/repro.spec.ts/i.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 38, $1.28):
+The current behavior is confirmed buggy: it charges full usage for every
+dimension, ignoring allowances, overage rules, and free-dimension hiding. Now
+I'll rewrite the gatherer to implement the correct rules.
+
+```
+cd /app/src && grep -n "class AggregatedUsageResponse\|usage"
+customer/dto/read-customer.dto.ts | head
+```
+
+Tool:
+<returncode>
+0
+<output>
+17:import { UsageDocument } from '../../usage/dto/read-usage.dto.js';
+77:     * If the current offering enrollment date should be ignored for the
+response data. Enables looking at usage prior to the enrollment date.
+100:     * The usage data for the given customer. If the query parameter
+`aggregationInterval=none` is passed in the raw usage data is returned, as an
+UnAggregatedUsageResponse.
+102:     * Otherwise, the usage data is aggregated by the given
+aggregationInterval and returned as an AggregatedUsageResponse.
+114:            usage: [
+128:     * The usage record value for the given dimension and time interval.
+155:     * An optional key-value map of additional metadata to associate with
+this usage record.
+156:     * This metadata is used to group usage records together.
+158:     * or any arbitrary data to be associated with this usage record.
+166:export class AggregatedUsageResponse {
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 39, $1.33):
+```
+cd /app/src && sed -n '166,200p' customer/dto/read-customer.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+export class AggregatedUsageResponse {
+    /**
+     * The unique identifier of the offering.
+     */
+    public offeringId?: string;
+    /**
+     * The unique identifier of a dimension.
+     */
+    public dimensionId: ReadDimensionDto['dimensionId'];
+    /**
+     * Array of usage records group by aggregation time interval
+     **/
+    public usage: Array<UsageResponseDocument>;
+}
+export class MetadataGroupedAggregatedUsageResponse extends
+AggregatedUsageResponse {
+    /**
+     * An optional key-value map of additional metadata to associate with this
+usage record.
+     * This metadata is used to group usage records together.
+     * such as environment, purpose, owner, developer, contract number,
+     * or any arbitrary data to be associated with this usage record.
+     * <br><br>
+     * Example `{"environment": "staging", "purpose": "proof-of-concept",
+"owner": "John Doe"}`
+     * @example {"environment": "staging", "purpose": "proof-of-concept",
+"owner": "John Doe"}
+     **/
+    public metadataGroup?: UsageDocument['metadataGroup'];
+}
+export class BasicUsageDocument {
+    /**
+     * The timestamp of usage record in <a
+href="https://ijmacd.github.io/rfc3339-iso8601/">RFC3339</a>
+     * format with a 4-digit year.
+     * This is the time the usage occurred, or the end of the usage period.
+     * <br><br>
+     * Example: `"2023-02-08T19:24:10Z"`
+     * @example "2023-02-08T19:24:10Z"
+     *
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 40, $1.47):
+Now I'll rewrite the gatherer service with the correct charging logic.
+
+```
+cd /app/src && cat >
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts <<'EOF'
+import { Logger } from '@nestjs/common';
+import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import { Job } from 'bull';
+import { SchedulerEntity } from '../../scheduler/entities/scheduler.entity.js';
+import { AuditService } from '../../audit/audit.service.js';
+import { AuditScope } from '../../audit/entities/audit.interface.js';
+import { AggregatedUsageResponse } from
+'../../customer/dto/read-customer.dto.js';
+import { InvoiceLineItem, InvoiceLineItems } from
+'../../invoice/entities/invoice.entity.js';
+import { Offering } from '../../offering/entities/offeringPackage.entity.js';
+import { ReadOfferingResponseData } from
+'../../offering/dto/readOffering.dto.js';
+import { ReadDimensionResponseData, aggregationMethod, overageAllowedEnum } from
+'../../dimensions/dto/create-dimension.dto.js';
+import { FreeDimensionOnInvoice } from
+'../../setting/dto/FreeDimensionOnInvoice.js';
+import { getMetricSeries } from '../../utils/aws/cloudwatch.js';
+import { getDocument } from '../../utils/aws/s3.js';
+import { BillingCatalogue, CustomerInvoiceLines, InvoiceLineGathererDto } from
+'./dto/invoiceLineGatherer.dto.js';
+
+export const meteredInvoiceLines = 'meteredInvoiceLines';
+
+@Processor('scheduler_billing_queue')
+export class InvoiceLineGathererService {
+    private static readonly logger = new
+Logger(InvoiceLineGathererService.name);
+
+    @Process(meteredInvoiceLines)
+    async readOperationJob({ data: { scheduleParameters, businessID } }:
+Job<SchedulerEntity>) {
+        const { catalogueBucket, catalogueKey, periodStart, periodEnd } =
+scheduleParameters as InvoiceLineGathererDto;
+        InvoiceLineGathererService.logger.log(
+            `Assembling metered invoice lines for ${businessID} from
+${catalogueBucket}/${catalogueKey}`,
+        );
+        return this.gatherInvoiceLines({
+            businessID,
+            catalogueBucket,
+            catalogueKey,
+            periodStart,
+            periodEnd,
+        });
+    }
+
+    async gatherInvoiceLines({
+        businessID,
+        catalogueBucket,
+        catalogueKey,
+        periodStart,
+        periodEnd,
+    }: {
+        businessID: string;
+        catalogueBucket: string;
+        catalogueKey: string;
+        periodStart?: string;
+        periodEnd?: string;
+    }): Promise<Array<CustomerInvoiceLines>> {
+        const catalogue = await getDocument<BillingCatalogue>(catalogueBucket,
+catalogueKey);
+        const offerings = (catalogue.offerings ?? []).reduce(
+            (acc, offering) => {
+                acc[offering.offeringId] = offering;
+                return acc;
+            },
+            {} as Record<string, ReadOfferingResponseData>,
+        );
+
+        const hideFreeDimensions = catalogue.settings?.freeDimensionOnInvoice
+=== FreeDimensionOnInvoice.hide;
+
+        const assembled: Array<CustomerInvoiceLines> = [];
+        for (const { customerId, offeringId } of catalogue.enrolments ?? []) {
+            const offering = offerings[offeringId];
+            if (!offering) {
+                InvoiceLineGathererService.logger.warn(
+                    `Customer ${customerId} is enrolled in ${offeringId}, which
+the catalogue does not describe`,
+                );
+                continue;
+            }
+            // eslint-disable-next-line no-await-in-loop
+            const usageByDimension = await this.readUsage({ catalogue, offering,
+customerId });
+            const lineItems = new InvoiceLineItems();
+            for (const dimension of offering.dimensions ?? []) {
+                this.addDimensionLine({
+                    dimension,
+                    offering,
+                    usage: usageByDimension[dimension.dimensionId],
+                    hideFreeDimensions,
+                    lineItems,
+                });
+            }
+            assembled.push({
+                customerId,
+                offeringId,
+                offeringName: offering.offeringName,
+                lineItems: lineItems.getLineItems(),
+            });
+        }
+        InvoiceLineGathererService.logger.log(`Assembled invoice lines for
+${assembled.length} customers`);
+        return assembled;
+    }
+
+    /**
+     * Decide what, if anything, one dimension owes for the period and add its
+     * line to the invoice.
+     *
+     * Only usage permitted beyond a finite, exhausted allowance is charged. An
+     * unlimited allowance (`inf`), an allowance the customer never exhausted,
+or
+     * a plan that forbids overage all charge nothing. A dimension earns a line
+     * whenever the customer owes something on it; a dimension the plan prices
+at
+     * zero also earns a (free) line unless the invoice settings hide free
+     * dimensions.
+     */
+    private addDimensionLine({
+        dimension,
+        offering,
+        usage,
+        hideFreeDimensions,
+        lineItems,
+    }: {
+        dimension: ReadDimensionResponseData;
+        offering: ReadOfferingResponseData;
+        usage?: AggregatedUsageResponse;
+        hideFreeDimensions: boolean;
+        lineItems: InvoiceLineItems;
+    }): void {
+        const totalUsage = this.dimensionUsageTotal({ dimension, usage });
+        const chargeableQuantity = this.chargeableQuantity({ dimension,
+totalUsage });
+        const unitCost = this.dimensionUnitCost(dimension);
+        const owes = chargeableQuantity > 0 && unitCost > 0;
+        const free = unitCost === 0;
+
+        // Nothing is owed and the dimension is not free: it earns no line.
+        if (!owes && !free) {
+            return;
+        }
+        // A free dimension only earns a line when the settings do not hide
+them.
+        if (!owes && free && hideFreeDimensions) {
+            return;
+        }
+
+        const { displayName, total } = InvoiceLineItem.prepareLineItem({
+            total: chargeableQuantity,
+            dimensionType: dimension?.consumptionUnit?.type,
+            dimensionId: dimension.dimensionId,
+            dimensionName: dimension.dimensionName,
+            offeringName: offering.offeringName,
+            usageIncrement: parseInt(dimension.usageIncrement),
+            dimensionUnit: dimension?.consumptionUnit?.unit,
+            negative: false,
+        });
+        lineItems.addLineItem(new InvoiceLineItem(displayName, total,
+unitCost));
+    }
+
+    /**
+     * The billable usage total a dimension carried over the period, honouring
+     * its aggregation method.
+     */
+    private dimensionUsageTotal({
+        dimension,
+        usage,
+    }: {
+        dimension: ReadDimensionResponseData;
+        usage?: AggregatedUsageResponse;
+    }): number {
+        const readings = usage?.usage ?? [];
+        if (dimension?.aggregationMethod === aggregationMethod.last) {
+            return parseFloat(Offering.billableTotal(readings.length ?
+[readings[readings.length - 1]] : []));
+        }
+        return parseFloat(Offering.billableTotal(readings));
+    }
+
+    /**
+     * The number of units that may actually be charged for a dimension after
+     * applying its allowance and overage rules.
+     */
+    private chargeableQuantity({
+        dimension,
+        totalUsage,
+    }: {
+        dimension: ReadDimensionResponseData;
+        totalUsage: number;
+    }): number {
+        const allowance = dimension?.usageEntitlement;
+        // No allowance configured: every unit of usage is billable.
+        if (allowance === undefined || allowance === null) {
+            return totalUsage;
+        }
+        // An unlimited allowance can never be exhausted, so nothing is charged.
+        if (allowance === 'inf') {
+            return 0;
+        }
+        // A finite allowance only yields a charge when the plan permits
+overage.
+        if (dimension?.overageAllowed !== overageAllowedEnum.true) {
+            return 0;
+        }
+        const allowanceUnits = Number(allowance);
+        // Usage that did not exhaust the allowance owes nothing.
+        if (totalUsage <= allowanceUnits) {
+            return 0;
+        }
+        return totalUsage - allowanceUnits;
+    }
+
+    private dimensionUnitCost(dimension: ReadDimensionResponseData): number {
+        const price = parseFloat(dimension?.consumptionPrice ?? '0');
+        return Number.isFinite(price) ? price : 0;
+    }
+
+    /**
+     * The aggregated usage the metric store holds for one customer over the
+     * invoiced period, one entry per dimension the offering carries, keyed by
+     * dimension.
+     */
+    private async readUsage({
+        catalogue,
+        offering,
+        customerId,
+    }: {
+        catalogue: BillingCatalogue;
+        offering: ReadOfferingResponseData;
+        customerId: string;
+    }): Promise<Record<string, AggregatedUsageResponse>> {
+        const startTime = new Date(catalogue.periodStart);
+        const endTime = new Date(catalogue.periodEnd);
+        const series: Record<string, AggregatedUsageResponse> = {};
+        for (const dimension of offering.dimensions ?? []) {
+            // eslint-disable-next-line no-await-in-loop
+            const readings = await getMetricSeries({
+                namespace: catalogue.usageNamespace,
+                metricName: catalogue.usageMetricName,
+                dimensions: {
+                    BusinessId: catalogue.businessID,
+                    CustomerId: customerId,
+                    DimensionId: dimension.dimensionId,
+                },
+                startTime,
+                endTime,
+                period: catalogue.usagePeriod,
+            });
+            series[dimension.dimensionId] = {
+                offeringId: offering.offeringId,
+                dimensionId: dimension.dimensionId,
+                usage: readings.map(({ timestamp, value }) => ({
+                    value: value.toString(),
+                    startTime: timestamp,
+                    endTime: timestamp,
+                })),
+            };
+        }
+        return series;
+    }
+
+    @OnQueueFailed({ name: meteredInvoiceLines })
+    jobFailure(job: Job) {
+        AuditService.publishEvent({
+            message: 'Failed to assemble metered invoice lines',
+            data: [job],
+            topic: AuditScope.ERROR,
+        });
+    }
+}
+EOF
+echo done
+```
+
+Tool:
+<returncode>
+0
+<output>
+done
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 41, $1.53):
+```
+cd /app/src && grep -n "export enum aggregationMethod\|export enum
+overageAllowedEnum\|aggregationMethod\b" dimensions/dto/create-dimension.dto.ts
+| head
+```
+
+Tool:
+<returncode>
+0
+<output>
+85:export enum aggregationMethod {
+193:export enum overageAllowedEnum {
+458:        name: 'aggregationMethod',
+463:        enum: aggregationMethod,
+470:    @IsEnum(aggregationMethod, {
+474:            return `aggregationMethod: The value ${value} is not a valid
+value for the aggregationMethod field. The correct values are:
+${correctValues}`;
+478:    public aggregationMethod?: aggregationMethod;
+547:                    aggregationMethod: entityAggregationMethod,
+575:                if (entityAggregationMethod in aggregationMethod)
+this.aggregationMethod = entityAggregationMethod;
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 42, $1.57):
+Good. Now let's run the reproduction spec again.
+
+```
+cd /app && npx jest --config ./jest.unit.config.json
+src/microservices/invoiceLineGatherer/repro.spec.ts 2>&1 | grep -A200
+'console.log' | grep -v Nest | sed -n '1,200p'
+```
+
+Tool:
+<returncode>
+0
+<output>
+  console.log
+    [
+      {
+        "customerId": "cus_sample_alpha",
+        "offeringId": "off-ridge-plan",
+        "offeringName": "Ridge Plan",
+        "lineItems": [
+          {
+            "name": "Ridge API Calls - Ridge Plan",
+            "quantity": 100,
+            "unitCost": 0.01
+          },
+          {
+            "name": "Ridge Seats - Ridge Plan",
+            "quantity": 2,
+            "unitCost": 10
+          }
+        ]
+      },
+      {
+        "customerId": "cus_sample_bravo",
+        "offeringId": "off-ridge-usage",
+        "offeringName": "Ridge Metered",
+        "lineItems": [
+          {
+            "name": "Ridge Jobs - Ridge Metered",
+            "quantity": 200,
+            "unitCost": 0.05
+          }
+        ]
+      }
+    ]
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:11:17)
+
+  console.log
+    [
+      {
+        "customerId": "cus_sample_charlie",
+        "offeringId": "off-vale-plan",
+        "offeringName": "Vale Plan",
+        "lineItems": [
+          {
+            "name": "Vale Messages - Vale Plan",
+            "quantity": 50,
+            "unitCost": 0.01
+          },
+          {
+            "name": "Vale Hours - Vale Plan",
+            "quantity": 10,
+            "unitCost": 0
+          },
+          {
+            "name": "Vale Units - Vale Plan",
+            "quantity": 5,
+            "unitCost": 5
+          }
+        ]
+      }
+    ]
+
+      at Object.<anonymous>
+(microservices/invoiceLineGatherer/repro.spec.ts:20:17)
+
+PASS src/microservices/invoiceLineGatherer/repro.spec.ts
+  repro gatherInvoiceLines
+    ✓ ridge (59 ms)
+    ✓ vale (9 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        1.795 s, estimated 5 s
+Ran all test suites matching
+/src\/microservices\/invoiceLineGatherer\/repro.spec.ts/i.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 43, $1.63):
+All outputs match the specified rules. Let me clean up temporary files and run a
+broader test to ensure nothing else broke.
+
+```
+cd /app && rm -f probe_tmp.mjs probe2.mjs probe3.mjs
+src/microservices/invoiceLineGatherer/repro.spec.ts && ls
+src/microservices/invoiceLineGatherer && echo "=== typecheck of changed file
+===" && npx tsc --noEmit -p tsconfig.json 2>&1 | grep -i "invoiceLineGatherer" |
+head
+```
+
+Tool:
+<returncode>
+0
+<output>
+dto
+invoiceLineGatherer.module.ts
+invoiceLineGatherer.service.ts
+=== typecheck of changed file ===
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 44, $1.69):
+The fix is complete and verified. Let me do a final review of the implemented
+logic.
+
+```
+cd /app/src && sed -n '90,205p'
+microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+        InvoiceLineGathererService.logger.log(`Assembled invoice lines for
+${assembled.length} customers`);
+        return assembled;
+    }
+
+    /**
+     * Decide what, if anything, one dimension owes for the period and add its
+     * line to the invoice.
+     *
+     * Only usage permitted beyond a finite, exhausted allowance is charged. An
+     * unlimited allowance (`inf`), an allowance the customer never exhausted,
+or
+     * a plan that forbids overage all charge nothing. A dimension earns a line
+     * whenever the customer owes something on it; a dimension the plan prices
+at
+     * zero also earns a (free) line unless the invoice settings hide free
+     * dimensions.
+     */
+    private addDimensionLine({
+        dimension,
+        offering,
+        usage,
+        hideFreeDimensions,
+        lineItems,
+    }: {
+        dimension: ReadDimensionResponseData;
+        offering: ReadOfferingResponseData;
+        usage?: AggregatedUsageResponse;
+        hideFreeDimensions: boolean;
+        lineItems: InvoiceLineItems;
+    }): void {
+        const totalUsage = this.dimensionUsageTotal({ dimension, usage });
+        const chargeableQuantity = this.chargeableQuantity({ dimension,
+totalUsage });
+        const unitCost = this.dimensionUnitCost(dimension);
+        const owes = chargeableQuantity > 0 && unitCost > 0;
+        const free = unitCost === 0;
+
+        // Nothing is owed and the dimension is not free: it earns no line.
+        if (!owes && !free) {
+            return;
+        }
+        // A free dimension only earns a line when the settings do not hide
+them.
+        if (!owes && free && hideFreeDimensions) {
+            return;
+        }
+
+        const { displayName, total } = InvoiceLineItem.prepareLineItem({
+            total: chargeableQuantity,
+            dimensionType: dimension?.consumptionUnit?.type,
+            dimensionId: dimension.dimensionId,
+            dimensionName: dimension.dimensionName,
+            offeringName: offering.offeringName,
+            usageIncrement: parseInt(dimension.usageIncrement),
+            dimensionUnit: dimension?.consumptionUnit?.unit,
+            negative: false,
+        });
+        lineItems.addLineItem(new InvoiceLineItem(displayName, total,
+unitCost));
+    }
+
+    /**
+     * The billable usage total a dimension carried over the period, honouring
+     * its aggregation method.
+     */
+    private dimensionUsageTotal({
+        dimension,
+        usage,
+    }: {
+        dimension: ReadDimensionResponseData;
+        usage?: AggregatedUsageResponse;
+    }): number {
+        const readings = usage?.usage ?? [];
+        if (dimension?.aggregationMethod === aggregationMethod.last) {
+            return parseFloat(Offering.billableTotal(readings.length ?
+[readings[readings.length - 1]] : []));
+        }
+        return parseFloat(Offering.billableTotal(readings));
+    }
+
+    /**
+     * The number of units that may actually be charged for a dimension after
+     * applying its allowance and overage rules.
+     */
+    private chargeableQuantity({
+        dimension,
+        totalUsage,
+    }: {
+        dimension: ReadDimensionResponseData;
+        totalUsage: number;
+    }): number {
+        const allowance = dimension?.usageEntitlement;
+        // No allowance configured: every unit of usage is billable.
+        if (allowance === undefined || allowance === null) {
+            return totalUsage;
+        }
+        // An unlimited allowance can never be exhausted, so nothing is charged.
+        if (allowance === 'inf') {
+            return 0;
+        }
+        // A finite allowance only yields a charge when the plan permits
+overage.
+        if (dimension?.overageAllowed !== overageAllowedEnum.true) {
+            return 0;
+        }
+        const allowanceUnits = Number(allowance);
+        // Usage that did not exhaust the allowance owes nothing.
+        if (totalUsage <= allowanceUnits) {
+            return 0;
+        }
+        return totalUsage - allowanceUnits;
+    }
+
+    private dimensionUnitCost(dimension: ReadDimensionResponseData): number {
+        const price = parseFloat(dimension?.consumptionPrice ?? '0');
+        return Number.isFinite(price) ? price : 0;
+    }
+
+    /**
+     * The aggregated usage the metric store holds for one customer over the
+     * invoiced period, one entry per dimension the offering carries, keyed by
+     * dimension.
+     */
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 45, $1.76):
+The implementation is complete and verified against the emulator's real
+catalogue and usage data.
+
+## Summary
+
+The **invoice line gatherer**
+(`src/microservices/invoiceLineGatherer/invoiceLineGatherer.service.ts`) is the
+"invoicing collector" that reads aggregated usage from the metric store
+(CloudWatch) and the billing catalogue from the billing bucket (S3).
+
+**The bug:** It delegated line building to the generic
+`Offering.getLineItemsForUsage`, which billed the *full usage* for every
+dimension — ignoring allowances, overage rules, and free-dimension hiding. My
+probe confirmed it charged full seats (12 instead of overage 2), charged
+unlimited/unexhausted/overage-forbidden dimensions, and emitted hidden free
+lines.
+
+**The fix:** I rewrote the gatherer to apply the required charging rules per
+dimension:
+
+- **`chargeableQuantity`** — charges only usage permitted *beyond a finite,
+exhausted allowance*:
+  - No allowance → all usage is billable.
+  - Unlimited allowance (`inf`) → charges nothing.
+  - Plan forbids overage (`overageAllowed !== 'true'`) → charges nothing.
+  - Allowance not exhausted (`usage <= allowance`) → charges nothing.
+  - Otherwise → `usage - allowance`.
+- **Line emission** — a dimension gets a line when the customer *owes something*
+(`chargeable > 0 && price > 0`); a dimension the plan **prices at zero** also
+gets a (free) line **unless** `settings.freeDimensionOnInvoice === 'hide'`.
+
+Verified results against the emulator:
+- **biz-ridge / alpha** (hide free): API Calls (100), Seats overage (2). Alerts
+hidden, Reports (overage forbidden) & Storage (unlimited) dropped.
+- **biz-ridge / bravo** (hide free): Jobs (200) only. Minutes (unexhausted),
+Scans (unlimited), Tasks (overage unset) dropped.
+- **biz-vale / charlie** (show free): Messages (50), Hours free line (10 @ 0),
+Units overage (5).
+
+```
+echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+```
+
+Tool:
+<returncode>
+-1
+<output>
+
+<exception_info>
+action was not executed
+
+Exit:
+
+Saved trajectory to '/logs/agent/mini-swe-agent.trajectory.json'
