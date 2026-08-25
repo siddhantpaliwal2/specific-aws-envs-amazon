@@ -33,6 +33,19 @@ TASK_LABELS = {task: f"Task {index}" for index, task in enumerate(TASKS, start=1
 TASK5 = "05-iam-role-validation"
 REPORT_TASKS = [*TASKS, TASK5]
 TASK_LABELS[TASK5] = "Task 5"
+REPORT_TASK_LABELS = {
+    "01-tenant-attribution": "Task&nbsp;1:&nbsp;Tenant&nbsp;attribution",
+    "02-entitlement-overage-lines": (
+        "Task&nbsp;2:&nbsp;Entitlement&nbsp;overage&nbsp;lines"
+    ),
+    "03-usage-window-aggregation": (
+        "Task&nbsp;3:&nbsp;Usage&nbsp;window&nbsp;aggregation"
+    ),
+    "04-usage-attribution-chain": (
+        "Task&nbsp;4:&nbsp;Usage&nbsp;attribution&nbsp;chain"
+    ),
+    TASK5: "Task&nbsp;5:&nbsp;IAM&nbsp;role&nbsp;validation",
+}
 TARGET = int(COHORT["n_attempts"])
 
 
@@ -270,9 +283,10 @@ def report_matrix(cells: dict[str, dict[str, dict]], prefix: str) -> str:
             n = cell["attempts"]
             c = cell["solves"]
             values = [pass_at_k(n, c, k) for k in (1, 3, 8)]
-            row_values.extend([f"{c}/{n}", *(f"{value:.4f}" for value in values)])
+            row_values.extend([f"{c}/{n}", *(f"{value:.2f}" for value in values)])
         lines.append(
-            f"| [{TASK_LABELS[task]}]({prefix}tasks/{task}/instruction.md) | "
+            f"| [{REPORT_TASK_LABELS[task]}]"
+            f"({prefix}tasks/{task}/instruction.md) | "
             + " | ".join(row_values)
             + " |"
         )
@@ -338,9 +352,9 @@ def report_macro(cells: dict[str, dict[str, dict]]) -> str:
         metrics_by_model[model_label] = {
             "valid_solves": f"{total_passes}/{total_valid}",
             "raw_solve_rate": f"{100 * total_passes / total_valid:.1f}%",
-            "pass_at_1": f"{macro_values[0]:.4f}",
-            "pass_at_3": f"{macro_values[1]:.4f}",
-            "pass_at_8": f"{macro_values[2]:.4f}",
+            "pass_at_1": f"{macro_values[0]:.2f}",
+            "pass_at_3": f"{macro_values[1]:.2f}",
+            "pass_at_8": f"{macro_values[2]:.2f}",
         }
     for label, key in (
         ("Valid solves", "valid_solves"),

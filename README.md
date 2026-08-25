@@ -62,11 +62,11 @@ and [`sample-run/indexes/task5-trials.json`](sample-run/indexes/task5-trials.jso
 <!-- MINI_SWE_MATRIX_START -->
 | Task | Opus 4.8 `c/n` | Opus 4.8 pass@1 | Opus 4.8 pass@3 | Opus 4.8 pass@8 | Opus 5 `c/n` | Opus 5 pass@1 | Opus 5 pass@3 | Opus 5 pass@8 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| [Task 1](tasks/01-tenant-attribution/instruction.md) | 2/8 | 0.2500 | 0.6429 | 1.0000 | 7/8 | 0.8750 | 1.0000 | 1.0000 |
-| [Task 2](tasks/02-entitlement-overage-lines/instruction.md) | 3/8 | 0.3750 | 0.8214 | 1.0000 | 5/8 | 0.6250 | 0.9821 | 1.0000 |
-| [Task 3](tasks/03-usage-window-aggregation/instruction.md) | 2/8 | 0.2500 | 0.6429 | 1.0000 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
-| [Task 4](tasks/04-usage-attribution-chain/instruction.md) | 2/8 | 0.2500 | 0.6429 | 1.0000 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
-| [Task 5](tasks/05-iam-role-validation/instruction.md) | 4/8 | 0.5000 | 0.9286 | 1.0000 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
+| [Task&nbsp;1:&nbsp;Tenant&nbsp;attribution](tasks/01-tenant-attribution/instruction.md) | 2/8 | 0.25 | 0.64 | 1.00 | 7/8 | 0.88 | 1.00 | 1.00 |
+| [Task&nbsp;2:&nbsp;Entitlement&nbsp;overage&nbsp;lines](tasks/02-entitlement-overage-lines/instruction.md) | 3/8 | 0.38 | 0.82 | 1.00 | 5/8 | 0.62 | 0.98 | 1.00 |
+| [Task&nbsp;3:&nbsp;Usage&nbsp;window&nbsp;aggregation](tasks/03-usage-window-aggregation/instruction.md) | 2/8 | 0.25 | 0.64 | 1.00 | 8/8 | 1.00 | 1.00 | 1.00 |
+| [Task&nbsp;4:&nbsp;Usage&nbsp;attribution&nbsp;chain](tasks/04-usage-attribution-chain/instruction.md) | 2/8 | 0.25 | 0.64 | 1.00 | 8/8 | 1.00 | 1.00 | 1.00 |
+| [Task&nbsp;5:&nbsp;IAM&nbsp;role&nbsp;validation](tasks/05-iam-role-validation/instruction.md) | 4/8 | 0.50 | 0.93 | 1.00 | 8/8 | 1.00 | 1.00 | 1.00 |
 <!-- MINI_SWE_MATRIX_END -->
 
 *Updated run rates after the response-token limit was raised to 32,768.*
@@ -78,9 +78,9 @@ Unweighted macro-average across Tasks 1-5:
 | --- | ---: | ---: |
 | Valid solves | 13/40 | 36/40 |
 | Raw solve rate | 32.5% | 90.0% |
-| pass@1 | 0.3250 | 0.9000 |
-| pass@3 | 0.7357 | 0.9964 |
-| pass@8 | 1.0000 | 1.0000 |
+| pass@1 | 0.33 | 0.90 |
+| pass@3 | 0.74 | 1.00 |
+| pass@8 | 1.00 | 1.00 |
 <!-- MINI_SWE_MACRO_END -->
 
 The macro pass@k values average the five task-level estimates; they are not a
