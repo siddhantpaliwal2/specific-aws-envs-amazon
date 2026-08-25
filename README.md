@@ -27,37 +27,11 @@ they recorded.
 - [Reproduction](#reproduction)
 - [Evidence and controls](#evidence-and-controls)
 
-## Public snapshot
-
-This repository is a source-anonymized public snapshot. Company-specific
-identifiers and live-looking infrastructure references were replaced
-consistently across the task packages, stored trajectories, and verifier
-artifacts. The private source repository and its history are not published.
-
-Historical `task_checksum` values inside stored run results are retained as
-legacy run identifiers. Control-to-trial identity is validated with Harbor's
-authoritative `lock.json` task digest; the matching digests and control gate are
-recorded in `sample-run/indexes/execution-summary.json`. Hashes for the
-delivered, anonymized task packages are in
-`sample-run/manifests/frozen-cohort.json`; the transformation policy is in
-`sample-run/manifests/public-snapshot.json`.
-
 ## Pass@k matrix
 
 Each row contains eight valid trials. `c/n` is the observed solve count. The
 table uses `pass@k = 1 - C(n-c, k) / C(n, k)`, the estimated chance that at
 least one of `k` sampled attempts succeeds.
-
-The table below uses the updated five-task results reported for both models.
-The earlier shared Opus 4.8 cohort remains preserved at its existing raw and
-index paths, but it is not used for these updated rows. The ten report cells
-and source digest are recorded in
-[`sample-run/manifests/report-results.json`](sample-run/manifests/report-results.json).
-The 40 Opus 5 report trajectories and eight Task 5 Opus 4.8 trajectories are
-included in the same stable raw folder. The report and Task 5 indexes map each
-citation to its original Harbor trial name:
-[`sample-run/indexes/report-opus5-trials.json`](sample-run/indexes/report-opus5-trials.json)
-and [`sample-run/indexes/task5-trials.json`](sample-run/indexes/task5-trials.json).
 
 <!-- MINI_SWE_MATRIX_START -->
 | Task | Opus 4.8 `c/n` | Opus 4.8 pass@1 | Opus 4.8 pass@3 | Opus 4.8 pass@8 | Opus 5 `c/n` | Opus 5 pass@1 | Opus 5 pass@3 | Opus 5 pass@8 |
