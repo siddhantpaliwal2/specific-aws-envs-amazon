@@ -14,9 +14,10 @@ fairer to infer. The earlier raw cohort, controls, indexes, and links are kept
 intact and remain labeled as historical evidence for the prompt and run policy
 they recorded.
 
+[Download the latest trace analysis report (PDF)](amazon-trace-analysis.pdf).
+
 ## Table of contents
 
-- [Public snapshot](#public-snapshot)
 - [Pass@k matrix](#passk-matrix)
 - [AWS API surface exposed to the agent](#aws-api-surface-exposed-to-the-agent)
 - [Task inventory](#task-inventory)
