@@ -430,37 +430,43 @@ def raw_model_catalog(historical_trials: list[dict]) -> str:
     lines = [
         "# Trajectories by model",
         "",
-        "All 80 stored trajectories are grouped by model below.",
+        "Browse the 80 stored trajectories by model, task, attempt, and result.",
         "Existing trial directory names and links are unchanged.",
+        "",
+        "| Model | Stored trajectories | Evidence set |",
+        "| --- | ---: | --- |",
+        f"| {MODEL_LABEL} | 40 | Historical Tasks 1-4; matched Task 5 |",
+        f"| {REPORT_MODEL_LABEL} | 40 | Report Tasks 1-4; matched Task 5 |",
     ]
     for model_label in (MODEL_LABEL, REPORT_MODEL_LABEL):
-        lines.extend(
-            [
-                "",
-                f"## {model_label}",
-                "",
-                "| Task | Trajectories |",
-                "| --- | --- |",
-            ]
-        )
+        lines.extend(["", f"## {model_label}"])
         for task in REPORT_TASKS:
-            trial_links = []
-            for trial in sorted(
+            task_trials = sorted(
                 grouped[(model_label, task)], key=lambda item: item["attempt"]
-            ):
+            )
+            passes = sum(trial["passed"] for trial in task_trials)
+            task_label = REPORT_TASK_LABELS[task].replace("&nbsp;", " ")
+            lines.extend(
+                [
+                    "",
+                    "<details>",
+                    f'<summary><strong><a href="../../../tasks/{task}/instruction.md">'
+                    f"{task_label}</a></strong> ({passes}/{TARGET} passed)</summary>",
+                    "",
+                    "| Attempt | Result | Trajectory |",
+                    "| ---: | --- | --- |",
+                ]
+            )
+            for trial in task_trials:
                 relative_trajectory = Path(trial["trajectory"]).relative_to(
                     raw_relative
                 )
-                result = "pass" if trial["passed"] else "fail"
-                trial_links.append(
-                    f"[{trial['attempt']:02d} {result}]"
-                    f"({relative_trajectory.as_posix()})"
+                result = "Pass" if trial["passed"] else "Fail"
+                lines.append(
+                    f"| {trial['attempt']:02d} | {result} | "
+                    f"[Open trajectory]({relative_trajectory.as_posix()}) |"
                 )
-            lines.append(
-                f"| [{TASK_LABELS[task]}](../../../tasks/{task}/instruction.md) | "
-                + " ".join(trial_links)
-                + " |"
-            )
+            lines.extend(["", "</details>"])
     return "\n".join(lines) + "\n"
 
 
