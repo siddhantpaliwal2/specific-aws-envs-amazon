@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the historical cohort and render the combined Task 1-4 matrix."""
+"""Validate the historical cohort and render the combined five-task matrix."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ MACRO_START = "<!-- MINI_SWE_MACRO_START -->"
 MACRO_END = "<!-- MINI_SWE_MACRO_END -->"
 REPORT_RESULTS_PATH = ROOT / "sample-run" / "manifests" / "report-results.json"
 REPORT_OPUS5_INDEX = ROOT / "sample-run" / "indexes" / "report-opus5-trials.json"
+TASK5_INDEX = ROOT / "sample-run" / "indexes" / "task5-trials.json"
 # Both routes serve the same Claude Opus 4.8 weights.
 MODELS = (
     "bedrock/us.anthropic.claude-opus-4-8",
@@ -29,6 +30,9 @@ RAW = ROOT / "sample-run" / "raw" / COHORT["job_name"]
 CONTROLS_RAW = ROOT / "sample-run" / "raw" / CONTROLS["job_name"]
 TASKS = [Path(entry["path"]).name for entry in COHORT["tasks"]]
 TASK_LABELS = {task: f"Task {index}" for index, task in enumerate(TASKS, start=1)}
+TASK5 = "05-iam-role-validation"
+REPORT_TASKS = [*TASKS, TASK5]
+TASK_LABELS[TASK5] = "Task 5"
 TARGET = int(COHORT["n_attempts"])
 
 
@@ -130,7 +134,7 @@ def load_report_cells() -> dict[str, dict[str, dict]]:
     for cell in report.get("cells", []):
         task = cell.get("task")
         model_label = cell.get("model_label")
-        if task not in TASKS or model_label not in {MODEL_LABEL, REPORT_MODEL_LABEL}:
+        if task not in REPORT_TASKS or model_label not in {MODEL_LABEL, REPORT_MODEL_LABEL}:
             raise SystemExit(f"unexpected report cell: {cell}")
         if model_label in cells[task]:
             raise SystemExit(f"duplicate report cell for {task} {model_label}")
@@ -144,7 +148,7 @@ def load_report_cells() -> dict[str, dict[str, dict]]:
 
     missing = [
         (task, model_label)
-        for task in TASKS
+        for task in REPORT_TASKS
         for model_label in (MODEL_LABEL, REPORT_MODEL_LABEL)
         if model_label not in cells[task]
     ]
@@ -166,6 +170,22 @@ def load_report_cells() -> dict[str, dict[str, dict]]:
             or indexed_opus5_solves[task] != cell["solves"]
         ):
             raise SystemExit(f"report Opus 5 index mismatch for {task}")
+
+    task5_trials = json.loads(TASK5_INDEX.read_text())
+    indexed_task5_solves: dict[str, int] = defaultdict(int)
+    indexed_task5_attempts: dict[str, int] = defaultdict(int)
+    for trial in task5_trials:
+        model_label = trial.get("model_label")
+        if trial.get("task") == TASK5 and trial.get("valid"):
+            indexed_task5_attempts[model_label] += 1
+            indexed_task5_solves[model_label] += bool(trial.get("passed"))
+    for model_label in (MODEL_LABEL, REPORT_MODEL_LABEL):
+        cell = cells[TASK5][model_label]
+        if (
+            indexed_task5_attempts[model_label] != cell["attempts"]
+            or indexed_task5_solves[model_label] != cell["solves"]
+        ):
+            raise SystemExit(f"Task 5 index mismatch for {model_label}")
     return cells
 
 
@@ -237,21 +257,24 @@ def historical_matrix(cells: dict[str, list[dict]], prefix: str) -> str:
 def report_matrix(cells: dict[str, dict[str, dict]], prefix: str) -> str:
     lines = [
         START,
-        "| Task | Model | Solves `c/n` | pass@1 | pass@3 | pass@8 |",
-        "| --- | --- | ---: | ---: | ---: | ---: |",
+        "| Task | Opus 4.8 (`c/n`; pass@1; pass@3; pass@8) | Opus 5 (`c/n`; pass@1; pass@3; pass@8) |",
+        "| --- | ---: | ---: |",
     ]
-    for task in TASKS:
+    for task in REPORT_TASKS:
+        values_by_model = []
         for model_label in (MODEL_LABEL, REPORT_MODEL_LABEL):
             cell = cells[task][model_label]
             n = cell["attempts"]
             c = cell["solves"]
             values = [pass_at_k(n, c, k) for k in (1, 3, 8)]
-            lines.append(
-                f"| [{TASK_LABELS[task]}]({prefix}tasks/{task}/instruction.md) | "
-                f"{model_label} | {c}/{n} | "
-                + " | ".join(f"{value:.4f}" for value in values)
-                + " |"
+            values_by_model.append(
+                f"{c}/{n}; " + "; ".join(f"{value:.4f}" for value in values)
             )
+        lines.append(
+            f"| [{TASK_LABELS[task]}]({prefix}tasks/{task}/instruction.md) | "
+            + " | ".join(values_by_model)
+            + " |"
+        )
     lines.append(END)
     return "\n".join(lines)
 
@@ -290,16 +313,17 @@ def historical_macro(cells: dict[str, list[dict]]) -> str:
 def report_macro(cells: dict[str, dict[str, dict]]) -> str:
     lines = [
         MACRO_START,
-        "Unweighted macro-average across Tasks 1-4:",
+        "Unweighted macro-average across Tasks 1-5:",
         "",
-        "| Model | Valid solves | Raw solve rate | pass@1 | pass@3 | pass@8 |",
-        "| --- | ---: | ---: | ---: | ---: | ---: |",
+        f"| Metric | {MODEL_LABEL} | {REPORT_MODEL_LABEL} |",
+        "| --- | ---: | ---: |",
     ]
+    metrics_by_model = {}
     for model_label in (MODEL_LABEL, REPORT_MODEL_LABEL):
         total_valid = 0
         total_passes = 0
         per_task_pass_at_k = []
-        for task in TASKS:
+        for task in REPORT_TASKS:
             cell = cells[task][model_label]
             n = cell["attempts"]
             c = cell["solves"]
@@ -307,14 +331,26 @@ def report_macro(cells: dict[str, dict[str, dict]]) -> str:
             total_passes += c
             per_task_pass_at_k.append([pass_at_k(n, c, k) for k in (1, 3, 8)])
         macro_values = [
-            sum(row[index] for row in per_task_pass_at_k) / len(TASKS)
+            sum(row[index] for row in per_task_pass_at_k) / len(REPORT_TASKS)
             for index in range(3)
         ]
+        metrics_by_model[model_label] = {
+            "valid_solves": f"{total_passes}/{total_valid}",
+            "raw_solve_rate": f"{100 * total_passes / total_valid:.1f}%",
+            "pass_at_1": f"{macro_values[0]:.4f}",
+            "pass_at_3": f"{macro_values[1]:.4f}",
+            "pass_at_8": f"{macro_values[2]:.4f}",
+        }
+    for label, key in (
+        ("Valid solves", "valid_solves"),
+        ("Raw solve rate", "raw_solve_rate"),
+        ("pass@1", "pass_at_1"),
+        ("pass@3", "pass_at_3"),
+        ("pass@8", "pass_at_8"),
+    ):
         lines.append(
-            f"| {model_label} | {total_passes}/{total_valid} | "
-            f"{100 * total_passes / total_valid:.1f}% | "
-            + " | ".join(f"{value:.4f}" for value in macro_values)
-            + " |"
+            f"| {label} | {metrics_by_model[MODEL_LABEL][key]} | "
+            f"{metrics_by_model[REPORT_MODEL_LABEL][key]} |"
         )
     lines.append(MACRO_END)
     return "\n".join(lines)
