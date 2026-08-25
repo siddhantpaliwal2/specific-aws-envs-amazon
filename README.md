@@ -60,13 +60,13 @@ citation to its original Harbor trial name:
 and [`sample-run/indexes/task5-trials.json`](sample-run/indexes/task5-trials.json).
 
 <!-- MINI_SWE_MATRIX_START -->
-| Task | Opus 4.8 (`c/n`; pass@1; pass@3; pass@8) | Opus 5 (`c/n`; pass@1; pass@3; pass@8) |
-| --- | ---: | ---: |
-| [Task 1](tasks/01-tenant-attribution/instruction.md) | 2/8; 0.2500; 0.6429; 1.0000 | 7/8; 0.8750; 1.0000; 1.0000 |
-| [Task 2](tasks/02-entitlement-overage-lines/instruction.md) | 3/8; 0.3750; 0.8214; 1.0000 | 5/8; 0.6250; 0.9821; 1.0000 |
-| [Task 3](tasks/03-usage-window-aggregation/instruction.md) | 2/8; 0.2500; 0.6429; 1.0000 | 8/8; 1.0000; 1.0000; 1.0000 |
-| [Task 4](tasks/04-usage-attribution-chain/instruction.md) | 2/8; 0.2500; 0.6429; 1.0000 | 8/8; 1.0000; 1.0000; 1.0000 |
-| [Task 5](tasks/05-iam-role-validation/instruction.md) | 4/8; 0.5000; 0.9286; 1.0000 | 8/8; 1.0000; 1.0000; 1.0000 |
+| Task | Opus 4.8 `c/n` | Opus 4.8 pass@1 | Opus 4.8 pass@3 | Opus 4.8 pass@8 | Opus 5 `c/n` | Opus 5 pass@1 | Opus 5 pass@3 | Opus 5 pass@8 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| [Task 1](tasks/01-tenant-attribution/instruction.md) | 2/8 | 0.2500 | 0.6429 | 1.0000 | 7/8 | 0.8750 | 1.0000 | 1.0000 |
+| [Task 2](tasks/02-entitlement-overage-lines/instruction.md) | 3/8 | 0.3750 | 0.8214 | 1.0000 | 5/8 | 0.6250 | 0.9821 | 1.0000 |
+| [Task 3](tasks/03-usage-window-aggregation/instruction.md) | 2/8 | 0.2500 | 0.6429 | 1.0000 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
+| [Task 4](tasks/04-usage-attribution-chain/instruction.md) | 2/8 | 0.2500 | 0.6429 | 1.0000 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
+| [Task 5](tasks/05-iam-role-validation/instruction.md) | 4/8 | 0.5000 | 0.9286 | 1.0000 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
 <!-- MINI_SWE_MATRIX_END -->
 
 *Updated run rates after the response-token limit was raised to 32,768.*

@@ -257,22 +257,23 @@ def historical_matrix(cells: dict[str, list[dict]], prefix: str) -> str:
 def report_matrix(cells: dict[str, dict[str, dict]], prefix: str) -> str:
     lines = [
         START,
-        "| Task | Opus 4.8 (`c/n`; pass@1; pass@3; pass@8) | Opus 5 (`c/n`; pass@1; pass@3; pass@8) |",
-        "| --- | ---: | ---: |",
+        f"| Task | {MODEL_LABEL} `c/n` | {MODEL_LABEL} pass@1 | "
+        f"{MODEL_LABEL} pass@3 | {MODEL_LABEL} pass@8 | "
+        f"{REPORT_MODEL_LABEL} `c/n` | {REPORT_MODEL_LABEL} pass@1 | "
+        f"{REPORT_MODEL_LABEL} pass@3 | {REPORT_MODEL_LABEL} pass@8 |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for task in REPORT_TASKS:
-        values_by_model = []
+        row_values = []
         for model_label in (MODEL_LABEL, REPORT_MODEL_LABEL):
             cell = cells[task][model_label]
             n = cell["attempts"]
             c = cell["solves"]
             values = [pass_at_k(n, c, k) for k in (1, 3, 8)]
-            values_by_model.append(
-                f"{c}/{n}; " + "; ".join(f"{value:.4f}" for value in values)
-            )
+            row_values.extend([f"{c}/{n}", *(f"{value:.4f}" for value in values)])
         lines.append(
             f"| [{TASK_LABELS[task]}]({prefix}tasks/{task}/instruction.md) | "
-            + " | ".join(values_by_model)
+            + " | ".join(row_values)
             + " |"
         )
     lines.append(END)
