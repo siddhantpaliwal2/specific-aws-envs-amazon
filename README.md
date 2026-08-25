@@ -1,12 +1,18 @@
 # Sample RL Tasks for AWS - Amazon
 
-This repository contains four frozen AWS coding tasks and the complete evidence
-from eight independent Claude Opus 4.8 attempts per task. All four tasks meet
-the sample's recorded selection threshold of fewer than four solves in eight
-attempts. The cohort has 6 solves across 32 valid trials.
+This repository contains five packaged AWS coding tasks. The original shared
+four-task cohort remains at its existing paths with 6 solves across 32 valid
+Claude Opus 4.8 trials. The same stable raw-evidence folder now also contains
+the report's 32 Claude Opus 5 trajectories for Tasks 1-4 and Task 5's 16
+matched trajectories. All 40 Opus 5 trajectories discussed in the report are
+there, for 80 scored attempts in total.
 
-The task packages, raw trajectories, verifier artifacts, controls, and frozen
-input checksums needed to audit the results are included.
+Compared with the earlier shared sample, the model response cap was raised to
+32,768 tokens and Task 3's instruction was tweaked to state its bucket geometry
+and pre-window standing-level behavior explicitly, making the graded behavior
+fairer to infer. The earlier raw cohort, controls, indexes, and links are kept
+intact and remain labeled as historical evidence for the prompt and run policy
+they recorded.
 
 ## Table of contents
 
@@ -46,8 +52,8 @@ the endpoint is available and may be inspected. No live AWS account is used.
 | AWS service | Operations used | Tasks |
 | --- | --- | --- |
 | Amazon S3 | `GetObject`, `ListObjectsV2` | Tasks 1, 2, and 4 |
-| AWS STS | `AssumeRole` | Tasks 1, 2, and 4 |
-| Amazon EC2 | `DescribeInstances`, `DescribeRegions` | Tasks 1 and 4 |
+| AWS STS | `AssumeRole` | Tasks 1, 2, 4, and 5 |
+| Amazon EC2 | `DescribeInstances`, `DescribeRegions` | Tasks 1, 4, and 5 |
 | Amazon CloudWatch | `GetMetricData`, `ListMetrics` | Tasks 2 and 3 |
 | AWS Systems Manager Parameter Store | `GetParameter`, `GetParameters`, `GetParametersByPath` | Task 4 |
 
@@ -65,6 +71,9 @@ independently.
 Each row contains eight valid trials. `c/n` is the observed solve count. The
 table uses `pass@k = 1 - C(n-c, k) / C(n, k)`, the estimated chance that at
 least one of `k` sampled attempts succeeds.
+
+The first matrix is the earlier shared four-task cohort and is preserved so its
+existing links and claims continue to resolve.
 
 <!-- MINI_SWE_MATRIX_START -->
 | Task | Model | Solves `c/n` | pass@1 | pass@3 | pass@8 |
@@ -86,6 +95,38 @@ Unweighted macro-average across the four tasks:
 The macro pass@k values average the four task-level estimates; they are not a
 pooled trial estimator.
 
+### Opus 5 report evidence for Tasks 1-4
+
+The 32 Opus 5 trajectories analyzed in the report are included in the same
+stable raw folder. The index preserves the report's trial numbering and maps
+each citation to its original Harbor trial name.
+
+| Task | Model | Solves `c/n` | pass@1 | pass@3 | pass@8 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| [Task 1](tasks/01-tenant-attribution/instruction.md) | Opus 5 | 7/8 | 0.8750 | 1.0000 | 1.0000 |
+| [Task 2](tasks/02-entitlement-overage-lines/instruction.md) | Opus 5 | 5/8 | 0.6250 | 0.9821 | 1.0000 |
+| [Task 3](tasks/03-usage-window-aggregation/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
+| [Task 4](tasks/04-usage-attribution-chain/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
+
+These cells retain the report cohort's frozen task identities. They are not
+pooled with the earlier Opus 4.8 matrix above because that preserved cohort
+records different task digests and a different run policy. See
+[`sample-run/indexes/report-opus5-trials.json`](sample-run/indexes/report-opus5-trials.json)
+for the exact evidence and report-path mapping.
+
+### Task 5 supplement
+
+Task 5 was recorded under the raised 32,768-token cap. The two model rows share
+the same frozen task and run policy.
+
+| Task | Model | Solves `c/n` | pass@1 | pass@3 | pass@8 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| [Task 5](tasks/05-iam-role-validation/instruction.md) | Opus 4.8 | 4/8 | 0.5000 | 0.9286 | 1.0000 |
+| [Task 5](tasks/05-iam-role-validation/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
+
+These rows are not pooled into the historical four-task macro because the
+recorded policies differ.
+
 ## Task inventory
 
 <table>
@@ -93,7 +134,7 @@ pooled trial estimator.
     <tr>
       <th scope="col" width="120">Task</th>
       <th scope="col">What it tests</th>
-      <th scope="col">Opus 4.8 result</th>
+      <th scope="col">Recorded results</th>
       <th scope="col">Role in this sample</th>
     </tr>
   </thead>
@@ -101,26 +142,32 @@ pooled trial estimator.
     <tr>
       <td><a href="tasks/01-tenant-attribution/instruction.md">Task&nbsp;1</a></td>
       <td>Assign shared-account AWS usage to the right customer</td>
-      <td>2 of 8 passed</td>
+      <td>Historical Opus 4.8: 2/8; report Opus 5: 7/8</td>
       <td>Low-pass task</td>
     </tr>
     <tr>
       <td><a href="tasks/02-entitlement-overage-lines/instruction.md">Task&nbsp;2</a></td>
       <td>Separate chargeable usage from whether an invoice line is visible</td>
-      <td>3 of 8 passed</td>
+      <td>Historical Opus 4.8: 3/8; report Opus 5: 5/8</td>
       <td>In-band task</td>
     </tr>
     <tr>
       <td><a href="tasks/03-usage-window-aggregation/instruction.md">Task&nbsp;3</a></td>
       <td>Build a complete time series with carry-forward and distinct groups</td>
-      <td>1 of 8 passed</td>
-      <td>Low-pass task</td>
+      <td>Historical Opus 4.8: 1/8; report Opus 5: 8/8</td>
+      <td>Prompt clarified after the earlier cohort</td>
     </tr>
     <tr>
       <td><a href="tasks/04-usage-attribution-chain/instruction.md">Task&nbsp;4</a></td>
       <td>Follow ownership links across AWS records to a final billing code</td>
-      <td>0 of 8 passed</td>
+      <td>Historical Opus 4.8: 0/8; report Opus 5: 8/8</td>
       <td>Full-failure difficulty task</td>
+    </tr>
+    <tr>
+      <td><a href="tasks/05-iam-role-validation/instruction.md">Task&nbsp;5</a></td>
+      <td>Validate a customer IAM role before saving its settings</td>
+      <td>Opus 4.8: 4 of 8; Opus 5: 8 of 8</td>
+      <td>Matched two-model supplement</td>
     </tr>
   </tbody>
 </table>
@@ -130,7 +177,7 @@ reference solution, and a task-specific README.
 
 ## Trace-backed failure modes
 
-The analysis begins with the task contract and verifier result, then compares
+The preserved four-task analysis begins with the task contract and verifier result, then compares
 the submitted code with a successful run of the same frozen task. A trajectory
 is treated as an observable work log, not as access to hidden model reasoning.
 This mirrors tool-grounded checking methods such as
@@ -232,17 +279,22 @@ clipped edges.
 
 ## Where the trajectories are stored
 
-All 32 scored model attempts are in one folder:
+The existing raw-evidence URL is unchanged. It now contains the 32 earlier
+Opus 4.8 attempts, the report's 32 Opus 5 attempts for Tasks 1-4, and Task 5's
+16 matched trials:
 
 ```text
 sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/
 ```
 
-Each task has eight trial folders. Inside each trial, the normalized ATIF trace
+Each task-model cell has eight trial folders. Inside each trial, the normalized ATIF trace
 is `agent/trajectory.json`, the native mini-SWE-agent trace is
 `agent/mini-swe-agent.trajectory.json`, and the grading artifacts are under
-`verifier/`. [`sample-run/indexes/trials.json`](sample-run/indexes/trials.json)
-maps every matrix row to its exact stored evidence.
+`verifier/`. The historical
+[`sample-run/indexes/trials.json`](sample-run/indexes/trials.json) and additive
+[`sample-run/indexes/report-opus5-trials.json`](sample-run/indexes/report-opus5-trials.json)
+and [`sample-run/indexes/task5-trials.json`](sample-run/indexes/task5-trials.json)
+indexes map every matrix row to its exact stored evidence.
 
 ## Reproduction
 
@@ -250,6 +302,8 @@ To audit the included evidence without launching sandboxes or calling a model:
 
 ```sh
 python3 harness/summarize_cohort.py
+python3 harness/summarize_report_opus5.py
+python3 harness/summarize_task5.py
 git diff --exit-code README.md sample-run/indexes
 ```
 
@@ -262,22 +316,37 @@ agent configuration, and verifier controls.
 
 - **Harness:** Harbor 0.18.0 with mini-SWE-agent 2.4.5 in isolated Daytona
   sandboxes, at high reasoning effort.
-- **Route:** Claude Opus 4.8 through Amazon Bedrock, using frozen task images
-  and binary verifiers.
-- **Denominator:** All 32 packaged model trials are valid. Admission requires a
-  numeric reward, complete ATIF and native mini-SWE-agent trajectories, a
-  complete verifier artifact, and no Harbor exception.
+- **Routes:** The earlier cohort uses Claude Opus 4.8. The report evidence uses
+  Claude Opus 5 through Amazon Bedrock. Task 5 uses both models under a matched
+  policy. The later policy has a 32,768-token response cap and binary verifiers.
+- **Denominator:** All 80 stored trials are valid: 32 historical Opus 4.8
+  attempts, 32 report Opus 5 attempts for Tasks 1-4, and 16 matched Task 5
+  attempts. The three evidence sets retain separate indexes and are not pooled
+  across mismatched frozen identities. Admission requires a numeric reward,
+  complete ATIF and native mini-SWE-agent trajectories, a complete verifier
+  artifact, and no Harbor exception.
 - **Controls:** All four included oracle runs score `1.0`; all four no-op runs
-  score `0.0`.
+  score `0.0`. Task 5's recorded control gate is oracle `1.0` and no-op `0.0`.
 - **Raw model evidence:**
   [`sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/`](sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/)
-  contains all 32 scored attempts.
+  contains all 80 scored attempts: the original 32, the report's 32 Opus 5
+  attempts for Tasks 1-4, and Task 5's 16 matched attempts. The folder name is
+  retained so previously shared links remain stable.
 - **Raw controls:**
   [`sample-run/raw/amazon-opus-4-8-four-task-controls-20260818/`](sample-run/raw/amazon-opus-4-8-four-task-controls-20260818/)
   contains all eight control runs.
 - **Machine-readable index:**
   [`sample-run/indexes/trials.json`](sample-run/indexes/trials.json) resolves
-  every trial to its stored evidence.
+  every earlier trial to its stored evidence;
+  [`sample-run/indexes/report-opus5-trials.json`](sample-run/indexes/report-opus5-trials.json)
+  resolves the report's Opus 5 trials for Tasks 1-4 and records their report
+  source paths; and
+  [`sample-run/indexes/task5-trials.json`](sample-run/indexes/task5-trials.json)
+  resolves the Task 5 trials.
 - **Frozen inputs:**
   [`sample-run/manifests/frozen-cohort.json`](sample-run/manifests/frozen-cohort.json)
-  records task and harness checksums.
+  records the earlier task and harness checksums;
+  [`sample-run/manifests/report-opus5-results.json`](sample-run/manifests/report-opus5-results.json)
+  records the report Opus 5 cells, source commit, and frozen identities; and
+  [`sample-run/manifests/task5-results.json`](sample-run/manifests/task5-results.json)
+  records Task 5's frozen identities and control gate.
