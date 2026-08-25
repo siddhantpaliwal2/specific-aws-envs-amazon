@@ -48,47 +48,42 @@ Each row contains eight valid trials. `c/n` is the observed solve count. The
 table uses `pass@k = 1 - C(n-c, k) / C(n, k)`, the estimated chance that at
 least one of `k` sampled attempts succeeds.
 
-The first matrix is the earlier shared four-task cohort and is preserved so its
-existing links and claims continue to resolve.
+The table below uses the updated four-task results reported for both models.
+The earlier shared Opus 4.8 cohort remains preserved at its existing raw and
+index paths, but it is not used for these updated rows. The eight report cells
+and source digest are recorded in
+[`sample-run/manifests/report-results.json`](sample-run/manifests/report-results.json).
+The 32 Opus 5 report trajectories are included in the same stable raw folder,
+and
+[`sample-run/indexes/report-opus5-trials.json`](sample-run/indexes/report-opus5-trials.json)
+maps each citation to its original Harbor trial name.
 
 <!-- MINI_SWE_MATRIX_START -->
 | Task | Model | Solves `c/n` | pass@1 | pass@3 | pass@8 |
 | --- | --- | ---: | ---: | ---: | ---: |
 | [Task 1](tasks/01-tenant-attribution/instruction.md) | Opus 4.8 | 2/8 | 0.2500 | 0.6429 | 1.0000 |
+| [Task 1](tasks/01-tenant-attribution/instruction.md) | Opus 5 | 7/8 | 0.8750 | 1.0000 | 1.0000 |
 | [Task 2](tasks/02-entitlement-overage-lines/instruction.md) | Opus 4.8 | 3/8 | 0.3750 | 0.8214 | 1.0000 |
-| [Task 3](tasks/03-usage-window-aggregation/instruction.md) | Opus 4.8 | 1/8 | 0.1250 | 0.3750 | 1.0000 |
-| [Task 4](tasks/04-usage-attribution-chain/instruction.md) | Opus 4.8 | 0/8 | 0.0000 | 0.0000 | 0.0000 |
+| [Task 2](tasks/02-entitlement-overage-lines/instruction.md) | Opus 5 | 5/8 | 0.6250 | 0.9821 | 1.0000 |
+| [Task 3](tasks/03-usage-window-aggregation/instruction.md) | Opus 4.8 | 2/8 | 0.2500 | 0.6429 | 1.0000 |
+| [Task 3](tasks/03-usage-window-aggregation/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
+| [Task 4](tasks/04-usage-attribution-chain/instruction.md) | Opus 4.8 | 2/8 | 0.2500 | 0.6429 | 1.0000 |
+| [Task 4](tasks/04-usage-attribution-chain/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
 <!-- MINI_SWE_MATRIX_END -->
 
+*Updated run rates after the response-token limit was raised to 32,768.*
+
 <!-- MINI_SWE_MACRO_START -->
-Unweighted macro-average across the four tasks:
+Unweighted macro-average across Tasks 1-4:
 
 | Model | Valid solves | Raw solve rate | pass@1 | pass@3 | pass@8 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Opus 4.8 | 6/32 | 18.8% | 0.1875 | 0.4598 | 0.7500 |
+| Opus 4.8 | 9/32 | 28.1% | 0.2812 | 0.6875 | 1.0000 |
+| Opus 5 | 28/32 | 87.5% | 0.8750 | 0.9955 | 1.0000 |
 <!-- MINI_SWE_MACRO_END -->
 
 The macro pass@k values average the four task-level estimates; they are not a
 pooled trial estimator.
-
-### Opus 5 report evidence for Tasks 1-4
-
-The 32 Opus 5 trajectories analyzed in the report are included in the same
-stable raw folder. The index preserves the report's trial numbering and maps
-each citation to its original Harbor trial name.
-
-| Task | Model | Solves `c/n` | pass@1 | pass@3 | pass@8 |
-| --- | --- | ---: | ---: | ---: | ---: |
-| [Task 1](tasks/01-tenant-attribution/instruction.md) | Opus 5 | 7/8 | 0.8750 | 1.0000 | 1.0000 |
-| [Task 2](tasks/02-entitlement-overage-lines/instruction.md) | Opus 5 | 5/8 | 0.6250 | 0.9821 | 1.0000 |
-| [Task 3](tasks/03-usage-window-aggregation/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
-| [Task 4](tasks/04-usage-attribution-chain/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
-
-These cells retain the report cohort's frozen task identities. They are not
-pooled with the earlier Opus 4.8 matrix above because that preserved cohort
-records different task digests and a different run policy. See
-[`sample-run/indexes/report-opus5-trials.json`](sample-run/indexes/report-opus5-trials.json)
-for the exact evidence and report-path mapping.
 
 ### Task 5 supplement
 
@@ -100,8 +95,8 @@ the same frozen task and run policy.
 | [Task 5](tasks/05-iam-role-validation/instruction.md) | Opus 4.8 | 4/8 | 0.5000 | 0.9286 | 1.0000 |
 | [Task 5](tasks/05-iam-role-validation/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
 
-These rows are not pooled into the historical four-task macro because the
-recorded policies differ.
+These rows are shown separately because Task 5 is outside the four-task macro
+above.
 
 ## AWS API surface exposed to the agent
 
@@ -301,8 +296,8 @@ indexes map every matrix row to its exact stored evidence.
 To audit the included evidence without launching sandboxes or calling a model:
 
 ```sh
-python3 harness/summarize_cohort.py
 python3 harness/summarize_report_opus5.py
+python3 harness/summarize_cohort.py
 python3 harness/summarize_task5.py
 git diff --exit-code README.md sample-run/indexes
 ```
