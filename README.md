@@ -235,6 +235,8 @@ The existing raw-evidence URL is unchanged. It now contains the 32 earlier
 Opus 4.8 attempts, the report's 32 Opus 5 attempts for Tasks 1-4, and Task 5's
 16 matched trials:
 
+[Browse all trajectories grouped by Opus 4.8 and Opus 5](sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/README.md).
+
 ```text
 sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/
 ```
@@ -256,7 +258,8 @@ To audit the included evidence without launching sandboxes or calling a model:
 python3 harness/summarize_report_opus5.py
 python3 harness/summarize_task5.py
 python3 harness/summarize_cohort.py
-git diff --exit-code README.md sample-run/indexes
+git diff --exit-code README.md sample-run/indexes \
+  sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/README.md
 ```
 
 To sample a new stochastic cohort, follow

@@ -371,6 +371,99 @@ def report_macro(cells: dict[str, dict[str, dict]]) -> str:
     return "\n".join(lines)
 
 
+def raw_model_catalog(historical_trials: list[dict]) -> str:
+    catalog_trials = []
+    raw_relative = RAW.relative_to(ROOT)
+
+    for task in TASKS:
+        task_trials = sorted(
+            (
+                trial
+                for trial in historical_trials
+                if trial["valid"] and trial["task"] == task
+            ),
+            key=lambda trial: trial["trial_dir"],
+        )
+        for attempt, trial in enumerate(task_trials, start=1):
+            catalog_trials.append(
+                {
+                    "task": task,
+                    "model_label": MODEL_LABEL,
+                    "attempt": attempt,
+                    "passed": trial["passed"],
+                    "trajectory": trial["trajectory"],
+                }
+            )
+
+    for index_path in (REPORT_OPUS5_INDEX, TASK5_INDEX):
+        for trial in json.loads(index_path.read_text()):
+            if not trial.get("valid"):
+                continue
+            catalog_trials.append(
+                {
+                    "task": trial["task"],
+                    "model_label": trial["model_label"],
+                    "attempt": trial["attempt"],
+                    "passed": trial["passed"],
+                    "trajectory": trial["trajectory"],
+                }
+            )
+
+    grouped: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    seen_trajectories = set()
+    for trial in catalog_trials:
+        trajectory = trial["trajectory"]
+        if trajectory in seen_trajectories:
+            raise SystemExit(f"duplicate trajectory in model catalog: {trajectory}")
+        seen_trajectories.add(trajectory)
+        grouped[(trial["model_label"], trial["task"])].append(trial)
+
+    expected = {
+        (model_label, task)
+        for model_label in (MODEL_LABEL, REPORT_MODEL_LABEL)
+        for task in REPORT_TASKS
+    }
+    counts = {key: len(grouped[key]) for key in expected}
+    if set(grouped) != expected or any(count != TARGET for count in counts.values()):
+        raise SystemExit(f"model catalog cell mismatch: {counts}")
+
+    lines = [
+        "# Trajectories by model",
+        "",
+        "All 80 stored trajectories are grouped by model below.",
+        "Existing trial directory names and links are unchanged.",
+    ]
+    for model_label in (MODEL_LABEL, REPORT_MODEL_LABEL):
+        lines.extend(
+            [
+                "",
+                f"## {model_label}",
+                "",
+                "| Task | Trajectories |",
+                "| --- | --- |",
+            ]
+        )
+        for task in REPORT_TASKS:
+            trial_links = []
+            for trial in sorted(
+                grouped[(model_label, task)], key=lambda item: item["attempt"]
+            ):
+                relative_trajectory = Path(trial["trajectory"]).relative_to(
+                    raw_relative
+                )
+                result = "pass" if trial["passed"] else "fail"
+                trial_links.append(
+                    f"[{trial['attempt']:02d} {result}]"
+                    f"({relative_trajectory.as_posix()})"
+                )
+            lines.append(
+                f"| [{TASK_LABELS[task]}](../../../tasks/{task}/instruction.md) | "
+                + " ".join(trial_links)
+                + " |"
+            )
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     trials = load_trials()
     report_cells = load_report_cells()
@@ -440,6 +533,7 @@ def main() -> None:
     (index_dir / "pass-rate-matrix.md").write_text(
         index_matrix + "\n\n" + historical_macro_table + "\n"
     )
+    (RAW / "README.md").write_text(raw_model_catalog(trials))
     readme_path = ROOT / "README.md"
     readme = readme_path.read_text()
     if START not in readme or END not in readme:
