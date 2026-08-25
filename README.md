@@ -17,8 +17,8 @@ they recorded.
 ## Table of contents
 
 - [Public snapshot](#public-snapshot)
-- [AWS API surface exposed to the agent](#aws-api-surface-exposed-to-the-agent)
 - [Pass@k matrix](#passk-matrix)
+- [AWS API surface exposed to the agent](#aws-api-surface-exposed-to-the-agent)
 - [Task inventory](#task-inventory)
 - [Trace-backed failure modes](#trace-backed-failure-modes)
   - [1. Free-line visibility was confused with billable quantity](#1-free-line-visibility-was-confused-with-billable-quantity)
@@ -41,30 +41,6 @@ recorded in `sample-run/indexes/execution-summary.json`. Hashes for the
 delivered, anonymized task packages are in
 `sample-run/manifests/frozen-cohort.json`; the transformation policy is in
 `sample-run/manifests/public-snapshot.json`.
-
-## AWS API surface exposed to the agent
-
-Each Daytona sandbox exposes one task-local AWS-compatible endpoint at
-`http://127.0.0.1:4566`. The task image sets `AWS_ENDPOINT_URL`, the `us-east-1`
-region, and emulator credentials. Every task instruction tells the agent that
-the endpoint is available and may be inspected. No live AWS account is used.
-
-| AWS service | Operations used | Tasks |
-| --- | --- | --- |
-| Amazon S3 | `GetObject`, `ListObjectsV2` | Tasks 1, 2, and 4 |
-| AWS STS | `AssumeRole` | Tasks 1, 2, 4, and 5 |
-| Amazon EC2 | `DescribeInstances`, `DescribeRegions` | Tasks 1, 4, and 5 |
-| Amazon CloudWatch | `GetMetricData`, `ListMetrics` | Tasks 2 and 3 |
-| AWS Systems Manager Parameter Store | `GetParameter`, `GetParameters`, `GetParametersByPath` | Task 4 |
-
-The endpoint speaks the wire protocols expected by the AWS SDK and implements
-the pagination, role-trust, throttling, and transient-fault cases used by the
-tasks. At task start it serves a deterministic development scenario that the
-agent can inspect. During grading, `tests/test.sh` replaces it with a
-root-owned held-out scenario containing the same record kinds and fields but
-different identifiers and scale. The verifier calls the submitted
-implementation's public entry point and derives the expected result
-independently.
 
 ## Pass@k matrix
 
@@ -126,6 +102,30 @@ the same frozen task and run policy.
 
 These rows are not pooled into the historical four-task macro because the
 recorded policies differ.
+
+## AWS API surface exposed to the agent
+
+Each Daytona sandbox exposes one task-local AWS-compatible endpoint at
+`http://127.0.0.1:4566`. The task image sets `AWS_ENDPOINT_URL`, the `us-east-1`
+region, and emulator credentials. Every task instruction tells the agent that
+the endpoint is available and may be inspected. No live AWS account is used.
+
+| AWS service | Operations used | Tasks |
+| --- | --- | --- |
+| Amazon S3 | `GetObject`, `ListObjectsV2` | Tasks 1, 2, and 4 |
+| AWS STS | `AssumeRole` | Tasks 1, 2, 4, and 5 |
+| Amazon EC2 | `DescribeInstances`, `DescribeRegions` | Tasks 1, 4, and 5 |
+| Amazon CloudWatch | `GetMetricData`, `ListMetrics` | Tasks 2 and 3 |
+| AWS Systems Manager Parameter Store | `GetParameter`, `GetParameters`, `GetParametersByPath` | Task 4 |
+
+The endpoint speaks the wire protocols expected by the AWS SDK and implements
+the pagination, role-trust, throttling, and transient-fault cases used by the
+tasks. At task start it serves a deterministic development scenario that the
+agent can inspect. During grading, `tests/test.sh` replaces it with a
+root-owned held-out scenario containing the same record kinds and fields but
+different identifiers and scale. The verifier calls the submitted
+implementation's public entry point and derives the expected result
+independently.
 
 ## Task inventory
 
