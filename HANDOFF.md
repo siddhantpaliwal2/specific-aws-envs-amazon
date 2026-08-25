@@ -6,7 +6,7 @@
 - Python 3 and Git
 - Daytona access for isolated sandboxes
 - Amazon Bedrock credentials authorized for the configured Claude Opus 4.8
-  inference profile, plus Claude Opus 5 when reproducing the Task 14 comparison
+  inference profile, plus Claude Opus 5 when reproducing the Task 5 comparison
 
 Keep credentials outside Git and export them in the shell that launches Harbor:
 
@@ -23,7 +23,7 @@ The model route is `bedrock/us.anthropic.claude-opus-4-8`. It uses stock
 mini-SWE-agent 2.4.5 at high reasoning effort plus the repository's Bedrock
 credential-separation adapter.
 
-The additive Task 14 configuration uses that route and
+The additive Task 5 configuration uses that route and
 `bedrock/us.anthropic.claude-opus-5` under the same policy. The shared model
 configuration sets a 32,768-token response cap.
 
@@ -35,9 +35,9 @@ emulator's buckets; a wrong endpoint or credential stops the trial before it
 can enter the scored cohort.
 
 These commands sample a new stochastic cohort; they cannot reproduce the exact
-stored model outputs. The recorded attempts are complete under
-`sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/` and
-`sample-run/raw/amazon-task14-two-opus-cohort-20260824/`.
+stored model outputs. All 48 recorded attempts are complete under the existing
+`sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/` path: 32 historical
+four-task trials and 16 matched Task 5 trials.
 
 ## Audit the stored evidence without model calls
 
@@ -46,7 +46,7 @@ verifier results:
 
 ```sh
 python3 harness/summarize_cohort.py
-python3 harness/summarize_task14.py
+python3 harness/summarize_task5.py
 git diff --exit-code README.md sample-run/indexes
 ```
 
@@ -69,11 +69,11 @@ The cohort configuration requests 32 concurrent attempts: eight attempts for
 each of the four tasks. No provider preflight or infrastructure failure enters
 the scored denominator.
 
-To run Task 14's oracle/no-op controls and matched two-model cohort separately:
+To run Task 5's oracle/no-op controls and matched two-model cohort separately:
 
 ```sh
-harbor run --config harness/task14-controls.json --yes
-harbor run --config harness/task14-two-opus.json --yes
+harbor run --config harness/task5-controls.json --yes
+harbor run --config harness/task5-two-opus.json --yes
 ```
 
 Before committing new evidence, redact credentials and rebuild the index and
@@ -82,6 +82,7 @@ README matrix from raw verifier outputs:
 ```sh
 python3 harness/redact_artifacts.py
 python3 harness/summarize_cohort.py
+python3 harness/summarize_task5.py
 ```
 
 A valid trial requires a numeric verifier reward, both trajectory formats, a

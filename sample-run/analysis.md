@@ -1,22 +1,22 @@
 # Cohort selection and interpretation
 
-## Task 14 matched supplement
+## Task 5 matched supplement
 
-Task 14 adds eight valid trials per model without changing or pooling the
+Task 5 adds eight valid trials per model without changing or pooling the
 earlier four-task denominator.
 
 | Task | Model | Solves | Interpretation |
 | --- | --- | ---: | --- |
-| [Task 14: IAM role validation](../tasks/14-iam-role-validation/instruction.md) | Opus 4.8 | 4/8 | Four solves and four failures under one frozen task |
-| [Task 14: IAM role validation](../tasks/14-iam-role-validation/instruction.md) | Opus 5 | 8/8 | Consistent solving comparator under the same policy |
+| [Task 5: IAM role validation](../tasks/05-iam-role-validation/instruction.md) | Opus 4.8 | 4/8 | Four solves and four failures under one frozen task |
+| [Task 5: IAM role validation](../tasks/05-iam-role-validation/instruction.md) | Opus 5 | 8/8 | Consistent solving comparator under the same policy |
 
 All 16 trials have numeric rewards, both trajectory formats, readable
 transcripts, lock and result records, complete verifier artifacts, and no Harbor
 exception. The recorded control gate is oracle `1.0` and no-op `0.0`. The exact
 evidence map is in
-[`indexes/task14-trials.json`](indexes/task14-trials.json).
+[`indexes/task5-trials.json`](indexes/task5-trials.json).
 
-Task 14 should not be added to the historical four-task macro: its trials use
+Task 5 should not be added to the historical four-task macro: its trials use
 the later 32,768-token response cap, and Task 3's current prompt was separately
 clarified for fairness after the earlier cohort was recorded.
 

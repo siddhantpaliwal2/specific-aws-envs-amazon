@@ -2,8 +2,8 @@
 
 This repository contains five packaged AWS coding tasks. The original shared
 four-task cohort remains at its existing paths with 6 solves across 32 valid
-Claude Opus 4.8 trials. Task 14 is added with eight valid Claude Opus 4.8 trials
-and eight valid Claude Opus 5 trials.
+Claude Opus 4.8 trials. Task 5 adds eight valid Claude Opus 4.8 trials and eight
+valid Claude Opus 5 trials in that same raw-evidence folder.
 
 Compared with the earlier shared sample, the model response cap was raised to
 32,768 tokens and Task 3's instruction was tweaked to state its bucket geometry
@@ -93,15 +93,15 @@ Unweighted macro-average across the four tasks:
 The macro pass@k values average the four task-level estimates; they are not a
 pooled trial estimator.
 
-### Task 14 supplement
+### Task 5 supplement
 
-Task 14 was recorded under the raised 32,768-token cap. The two model rows share
+Task 5 was recorded under the raised 32,768-token cap. The two model rows share
 the same frozen task and run policy.
 
 | Task | Model | Solves `c/n` | pass@1 | pass@3 | pass@8 |
 | --- | --- | ---: | ---: | ---: | ---: |
-| [Task 14](tasks/14-iam-role-validation/instruction.md) | Opus 4.8 | 4/8 | 0.5000 | 0.9286 | 1.0000 |
-| [Task 14](tasks/14-iam-role-validation/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
+| [Task 5](tasks/05-iam-role-validation/instruction.md) | Opus 4.8 | 4/8 | 0.5000 | 0.9286 | 1.0000 |
+| [Task 5](tasks/05-iam-role-validation/instruction.md) | Opus 5 | 8/8 | 1.0000 | 1.0000 | 1.0000 |
 
 These rows are not pooled into the historical four-task macro because the
 recorded policies differ.
@@ -143,7 +143,7 @@ recorded policies differ.
       <td>Full-failure difficulty task</td>
     </tr>
     <tr>
-      <td><a href="tasks/14-iam-role-validation/instruction.md">Task&nbsp;14</a></td>
+      <td><a href="tasks/05-iam-role-validation/instruction.md">Task&nbsp;5</a></td>
       <td>Validate a customer IAM role before saving its settings</td>
       <td>Opus 4.8: 4 of 8; Opus 5: 8 of 8</td>
       <td>Matched two-model supplement</td>
@@ -258,16 +258,11 @@ clipped edges.
 
 ## Where the trajectories are stored
 
-The 32 earlier scored model attempts remain in their original folder:
+The existing raw-evidence URL is unchanged. It now contains the 32 earlier
+scored model attempts plus Task 5's 16 matched trials:
 
 ```text
 sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/
-```
-
-Task 14's 16 matched trials are stored separately without changing that path:
-
-```text
-sample-run/raw/amazon-task14-two-opus-cohort-20260824/
 ```
 
 Each task-model cell has eight trial folders. Inside each trial, the normalized ATIF trace
@@ -275,7 +270,7 @@ is `agent/trajectory.json`, the native mini-SWE-agent trace is
 `agent/mini-swe-agent.trajectory.json`, and the grading artifacts are under
 `verifier/`. The historical
 [`sample-run/indexes/trials.json`](sample-run/indexes/trials.json) and additive
-[`sample-run/indexes/task14-trials.json`](sample-run/indexes/task14-trials.json)
+[`sample-run/indexes/task5-trials.json`](sample-run/indexes/task5-trials.json)
 map every matrix row to its exact stored evidence.
 
 ## Reproduction
@@ -284,7 +279,7 @@ To audit the included evidence without launching sandboxes or calling a model:
 
 ```sh
 python3 harness/summarize_cohort.py
-python3 harness/summarize_task14.py
+python3 harness/summarize_task5.py
 git diff --exit-code README.md sample-run/indexes
 ```
 
@@ -297,30 +292,29 @@ agent configuration, and verifier controls.
 
 - **Harness:** Harbor 0.18.0 with mini-SWE-agent 2.4.5 in isolated Daytona
   sandboxes, at high reasoning effort.
-- **Routes:** The earlier cohort uses Claude Opus 4.8. The Task 14 supplement
+- **Routes:** The earlier cohort uses Claude Opus 4.8. The Task 5 supplement
   uses Claude Opus 4.8 and Claude Opus 5 through Amazon Bedrock, with a
   32,768-token response cap and binary verifiers.
-- **Denominator:** All 32 packaged model trials are valid. Admission requires a
-  numeric reward, complete ATIF and native mini-SWE-agent trajectories, a
-  complete verifier artifact, and no Harbor exception.
+- **Denominator:** All 32 historical trials and all 16 Task 5 trials are valid.
+  Admission requires a numeric reward, complete ATIF and native mini-SWE-agent
+  trajectories, a complete verifier artifact, and no Harbor exception.
 - **Controls:** All four included oracle runs score `1.0`; all four no-op runs
-  score `0.0`. Task 14's recorded control gate is oracle `1.0` and no-op `0.0`.
+  score `0.0`. Task 5's recorded control gate is oracle `1.0` and no-op `0.0`.
 - **Raw model evidence:**
   [`sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/`](sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/)
-  contains all 32 scored attempts.
+  contains all 48 scored attempts: the original 32 plus Task 5's 16 matched
+  attempts. The folder name is retained so previously shared links remain
+  stable.
 - **Raw controls:**
   [`sample-run/raw/amazon-opus-4-8-four-task-controls-20260818/`](sample-run/raw/amazon-opus-4-8-four-task-controls-20260818/)
   contains all eight control runs.
-- **Task 14 raw evidence:**
-  [`sample-run/raw/amazon-task14-two-opus-cohort-20260824/`](sample-run/raw/amazon-task14-two-opus-cohort-20260824/)
-  contains all 16 matched attempts.
 - **Machine-readable index:**
   [`sample-run/indexes/trials.json`](sample-run/indexes/trials.json) resolves
   every earlier trial to its stored evidence;
-  [`sample-run/indexes/task14-trials.json`](sample-run/indexes/task14-trials.json)
-  resolves the Task 14 trials.
+  [`sample-run/indexes/task5-trials.json`](sample-run/indexes/task5-trials.json)
+  resolves the Task 5 trials.
 - **Frozen inputs:**
   [`sample-run/manifests/frozen-cohort.json`](sample-run/manifests/frozen-cohort.json)
   records the earlier task and harness checksums;
-  [`sample-run/manifests/task14-results.json`](sample-run/manifests/task14-results.json)
-  records Task 14's frozen identities and control gate.
+  [`sample-run/manifests/task5-results.json`](sample-run/manifests/task5-results.json)
+  records Task 5's frozen identities and control gate.
