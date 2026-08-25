@@ -92,7 +92,6 @@ independently.
       <th scope="col" width="120">Task</th>
       <th scope="col">What it tests</th>
       <th scope="col">Recorded results</th>
-      <th scope="col">Role in this sample</th>
     </tr>
   </thead>
   <tbody>
@@ -100,31 +99,26 @@ independently.
       <td><a href="tasks/01-tenant-attribution/instruction.md">Task&nbsp;1</a></td>
       <td>Assign shared-account AWS usage to the right customer</td>
       <td>Historical Opus 4.8: 2/8; report Opus 5: 7/8</td>
-      <td>Low-pass task</td>
     </tr>
     <tr>
       <td><a href="tasks/02-entitlement-overage-lines/instruction.md">Task&nbsp;2</a></td>
       <td>Separate chargeable usage from whether an invoice line is visible</td>
       <td>Historical Opus 4.8: 3/8; report Opus 5: 5/8</td>
-      <td>In-band task</td>
     </tr>
     <tr>
       <td><a href="tasks/03-usage-window-aggregation/instruction.md">Task&nbsp;3</a></td>
       <td>Build a complete time series with carry-forward and distinct groups</td>
       <td>Historical Opus 4.8: 1/8; report Opus 5: 8/8</td>
-      <td>Prompt clarified after the earlier cohort</td>
     </tr>
     <tr>
       <td><a href="tasks/04-usage-attribution-chain/instruction.md">Task&nbsp;4</a></td>
       <td>Follow ownership links across AWS records to a final billing code</td>
       <td>Historical Opus 4.8: 0/8; report Opus 5: 8/8</td>
-      <td>Full-failure difficulty task</td>
     </tr>
     <tr>
       <td><a href="tasks/05-iam-role-validation/instruction.md">Task&nbsp;5</a></td>
       <td>Validate a customer IAM role before saving its settings</td>
       <td>Opus 4.8: 4 of 8; Opus 5: 8 of 8</td>
-      <td>Matched two-model supplement</td>
     </tr>
   </tbody>
 </table>
