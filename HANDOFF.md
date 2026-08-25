@@ -49,8 +49,8 @@ verifier results:
 
 ```sh
 python3 harness/summarize_report_opus5.py
-python3 harness/summarize_cohort.py
 python3 harness/summarize_task5.py
+python3 harness/summarize_cohort.py
 git diff --exit-code README.md sample-run/indexes
 ```
 
@@ -86,8 +86,8 @@ README matrix from raw verifier outputs:
 ```sh
 python3 harness/redact_artifacts.py
 python3 harness/summarize_report_opus5.py
-python3 harness/summarize_cohort.py
 python3 harness/summarize_task5.py
+python3 harness/summarize_cohort.py
 ```
 
 A valid trial requires a numeric verifier reward, both trajectory formats, a
