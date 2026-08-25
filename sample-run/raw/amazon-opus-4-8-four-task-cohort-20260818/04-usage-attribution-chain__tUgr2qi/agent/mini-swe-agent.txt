@@ -1,0 +1,3569 @@
+This is mini-swe-agent version 2.4.5.
+Check the v2 migration guide at https://klieret.short.gy/mini-v2-migration
+Loading global config from '/home/agent/.config/mini-swe-agent/.env'
+Warning: Input is not a terminal (fd=0).
+Building agent config from specs: ['mini', '/tmp/mswea-config/custom.yaml']
+
+System:
+You are a helpful assistant that can interact with a computer.
+
+User:
+Please solve this issue: The spend report books each exported usage line against
+its first attribution code even when that code passes the cost through a chain 
+to another owner. Produce one row for every code that ultimately carries spend, 
+with its metered quantity, money and contributing line count. Place every amount
+under exactly one final code rather than an intermediate code. If a chain 
+repeats, use the charge code shared by that cycle. The onboarding record in the 
+metering bucket identifies readable accounts and the locations of exports and 
+attribution material. This task includes a local AWS-compatible emulator at the 
+preconfigured AWS_ENDPOINT_URL. Its credentials and region are already in the 
+shell, the repository's AWS SDK clients use it, and no real AWS account is 
+involved. You may inspect its resources while developing and testing.
+
+
+You can execute bash commands and edit files to implement the necessary changes.
+
+## Recommended Workflow
+
+This workflow should be done step-by-step so that you can iterate on your 
+changes and any possible problems.
+
+1. Analyze the codebase by finding and reading relevant files
+2. Create a script to reproduce the issue
+3. Edit the source code to resolve the issue
+4. Verify your fix works by running your script again
+5. Test edge cases to ensure your fix is robust
+6. Submit your changes and finish your work by issuing the following command: 
+`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
+   Do not combine it with any other command. <important>After this command, you 
+cannot continue working on this task.</important>
+
+## Command Execution Rules
+
+You are operating in an environment where
+
+1. You issue at least one command
+2. The system executes the command(s) in a subshell
+3. You see the result(s)
+4. You write your next command(s)
+
+Each response should include:
+
+1. **Reasoning text** where you explain your analysis and plan
+2. At least one tool call with your command
+
+**CRITICAL REQUIREMENTS:**
+
+- Your response SHOULD include reasoning text explaining what you're doing
+- Your response MUST include AT LEAST ONE bash tool call
+- Directory or environment variable changes are not persistent. Every action is 
+executed in a new subshell.
+- However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd 
+/path/to/working/dir && ...` or write/load environment variables from files
+- Submit your changes and finish your work by issuing the following command: 
+`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
+  Do not combine it with any other command. <important>After this command, you 
+cannot continue working on this task.</important>
+
+Example of a CORRECT response:
+<example_response>
+I need to understand the structure of the repository first. Let me check what 
+files are in the current directory to get a better understanding of the 
+codebase.
+
+[Makes bash tool call with {"command": "ls -la"} as arguments]
+</example_response>
+
+<system_information>
+Linux 6.8.0-101-generic #101-Ubuntu SMP PREEMPT_DYNAMIC Mon Feb  9 10:15:05 UTC 
+2026 x86_64
+</system_information>
+
+## Useful command examples
+
+### Create a new file:
+
+```bash
+cat <<'EOF' > newfile.py
+import numpy as np
+hello = "world"
+print(hello)
+EOF
+```
+
+### Edit files with sed:```bash
+# Replace all occurrences
+sed -i 's/old_string/new_string/g' filename.py
+
+# Replace only first occurrence
+sed -i 's/old_string/new_string/' filename.py
+
+# Replace first occurrence on line 1
+sed -i '1s/old_string/new_string/' filename.py
+
+# Replace all occurrences in lines 1-10
+sed -i '1,10s/old_string/new_string/g' filename.py
+```
+
+### View file content:
+
+```bash
+# View specific lines with numbers
+nl -ba filename.py | sed -n '10,20p'
+```
+
+### Any other command you want to run
+
+```bash
+anything
+```
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 1, $0.02):
+I'll start by exploring the repository structure and the AWS emulator resources.
+
+```
+ls -la; echo "---"; env | grep -i aws
+```
+
+```
+find . -type f -name "*.md" | head -50
+```
+
+Tool:
+<returncode>
+0
+<output>
+total 1320
+drwxr-xr-x    1 agent agent      63 Aug 24 04:30 .
+drwxr-xr-x    1 root  root      130 Aug 24 04:44 ..
+-rw-r--r--    1 agent agent      15 Jan  1  1970 .eslintignore
+-rw-r--r--    1 agent agent     760 Jan  1  1970 .eslintrc.js
+drwxr-xr-x    3 agent agent      31 Aug 24 04:30 .github
+-rw-r--r--    1 agent agent    1783 Jan  1  1970 .gitignore
+drwxr-xr-x    2 agent agent      52 Aug 24 04:30 .husky
+-rw-r--r--    1 agent agent      99 Jan  1  1970 .prettierrc.json
+drwxr-xr-x    2 agent agent      33 Aug 24 04:30 .vscode
+-rw-r--r--    1 agent agent    2064 Jan  1  1970 Dockerfile
+-rw-r--r--    1 agent agent    8358 Jan  1  1970 README.md
+drwxr-xr-x    2 agent agent    4096 Aug 24 04:30 docs
+drwxr-xr-x   16 agent agent    4096 Aug 24 04:30 integration
+-rw-r--r--    1 agent agent     641 Jan  1  1970 jest.unit.config.json
+-rw-r--r--    1 agent agent     400 Jan  1  1970 nest-cli.json
+drwxr-xr-x 1004 agent agent   28672 Aug 24 04:31 node_modules
+-rw-r--r--    1 agent agent 1224450 Aug 24 04:31 package-lock.json
+-rw-r--r--    1 agent agent    9725 Jan  1  1970 package.json
+drwxr-xr-x    4 agent agent     130 Aug 24 04:30 resources
+drwxr-xr-x   39 agent agent    4096 Aug 24 04:30 src
+drwxr-xr-x    6 agent agent     175 Aug 24 04:30 test
+-rw-r--r--    1 agent agent     770 Jan  1  1970 testTSConfig.json
+-rw-r--r--    1 agent agent     109 Jan  1  1970 tsconfig.build.json
+-rw-r--r--    1 agent agent     758 Jan  1  1970 tsconfig.json
+---
+AWS_CONFIG_FILE=/tmp/mswea-bedrock-provider/config
+AWS_DEFAULT_REGION=us-east-1
+AWS_ENDPOINT_URL=http://127.0.0.1:4566
+AWS_SHARED_CREDENTIALS_FILE=/tmp/mswea-bedrock-provider/credentials
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=[REDACTED_AWS_ACCESS_KEY_ID]
+AWS_SECRET_ACCESS_KEY=[REDACTED_AWS_SECRET_ACCESS_KEY]
+
+
+Tool:
+<returncode>
+0
+<output>
+./node_modules/@aashutoshrathi/word-wrap/README.md
+./node_modules/@ampproject/remapping/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/client-sso/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/credential-provider-env
+/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/client-sts/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/credential-provider-ini
+/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/credential-provider-nod
+e/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/credential-provider-pro
+cess/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/hash-node/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/credential-provider-sso
+/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/middleware-logger/READM
+E.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/middleware-recursion-de
+tection/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/credential-provider-web
+-identity/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/middleware-sdk-sts/READ
+ME.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/middleware-signing/READ
+ME.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/middleware-user-agent/R
+EADME.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/middleware-host-header/
+README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/protocol-http/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/types/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/util-user-agent-node/RE
+ADME.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/url-parser/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/util-endpoints/README.m
+d
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/token-providers/README.
+md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/util-user-agent-browser
+/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/util-utf8-browser/CHANG
+ELOG.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-sdk/util-utf8-browser/READM
+E.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/sha256-browser/node_
+modules/tslib/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/sha256-browser/CHANG
+ELOG.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/sha256-browser/READM
+E.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/supports-web-crypto/
+node_modules/tslib/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/supports-web-crypto/
+CHANGELOG.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/supports-web-crypto/
+README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/sha256-js/node_modul
+es/tslib/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/sha256-js/CHANGELOG.
+md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/sha256-js/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/util/node_modules/ts
+lib/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/util/CHANGELOG.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/util/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/ie11-detection/node_
+modules/tslib/README.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/ie11-detection/CHANG
+ELOG.md
+./node_modules/@aws-sdk/client-ses/node_modules/@aws-crypto/ie11-detection/READM
+E.md
+./node_modules/@aws-sdk/client-ses/node_modules/fast-xml-parser/CHANGELOG.md
+./node_modules/@aws-sdk/client-ses/node_modules/fast-xml-parser/README.md
+./node_modules/@aws-sdk/client-ses/README.md
+./node_modules/@aws-sdk/client-cloudtrail/README.md
+./node_modules/@aws-sdk/client-sso-oidc/node_modules/@aws-crypto/sha256-browser/
+node_modules/tslib/README.md
+./node_modules/@aws-sdk/client-sso-oidc/node_modules/@aws-crypto/sha256-browser/
+CHANGELOG.md
+./node_modules/@aws-sdk/client-sso-oidc/node_modules/@aws-crypto/sha256-browser/
+README.md
+./node_modules/@aws-sdk/client-sso-oidc/node_modules/@aws-crypto/sha256-js/node_
+modules/tslib/README.md
+./node_modules/@aws-sdk/client-sso-oidc/node_modules/@aws-crypto/sha256-js/CHANG
+ELOG.md
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 2, $0.05):
+Let me look at the source structure and the emulator's S3 buckets.
+
+```
+ls src; echo "---"; cat package.json | head -60
+```
+
+```
+aws s3 ls 2>&1 | head -30; echo "---"; aws dynamodb list-tables 2>&1 | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+agent-measurement
+alerts
+analytics
+app.controller.spec.ts
+app.controller.ts
+app.module.ts
+app.service.ts
+audit
+authz
+azure
+basicResponseDTO.ts
+billing
+cacheStore.ts
+contract
+cost
+credit
+customer
+customergroup
+dimensions
+genericExpressEnv.ts
+inbox
+influx
+interceptors
+invoice
+kubernetes-deployer
+ledger
+margincalc
+measurement
+measurement-config
+microservices
+offering
+onboarding
+openApiPublicSpecGenerator.ts
+openApiSpecGenerator.ts
+payment
+portal
+scheduler
+services
+setting
+tax
+token-consumer
+tracer.ts
+transformer
+usage
+users
+utils
+webhook
+---
+{
+    "name": "paigo-backend",
+    "version": "1.0.0",
+    "description": "",
+    "scripts": {
+        "start:influx": "sudo docker start influxdb",
+        "pre-commit": "npm run lint",
+        "pre-push": "npm run build && npm run test",
+        "stop:influx": "sudo docker stop influxdb",
+        "setup:influx": "sudo docker pull influxdb:2.6.0 && sudo docker run 
+--name influxdb -p 8086:8086 influxdb:2.6.0",
+        "setup:redis": "sudo docker run --name bullmq-redis -p 6379:6379 -d 
+redis redis-server --save 60 1 --loglevel warning",
+        "stop:redis": "sudo docker stop bullmq-redis",
+        "start:redis": "sudo docker start bullmq-redis",
+        "start:dev": "nest start --watch --entryFile genericExpressEnv",
+        "prebuild": "rimraf dist",
+        "cleanup": "kind delete cluster && docker image rm 
+paigo-agent-transformer:local",
+        "cleanup:integration": "npm run stop:influx && npm run stop:redis",
+        "build": "nest build",
+        "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+        "deploy:dev": "sls deploy --stage=dev",
+        "deploy:prod": "sls deploy --stage=prod",
+        "start:generic": "node dist/genericExpressEnv",
+        "start:lambda": "node dist/lambda",
+        "generate:private:specification": "node dist/openApiSpecGenerator && 
+redoc-cli bundle -o ./docs/private_api.html ./docs/open-api-private-spec.json",
+        "generate:public:specification": "node dist/openApiPublicSpecGenerator 
+&& redoc-cli bundle --options.theme.shape.borderRadius=0 
+--options.hideDownloadButton=true --options.theme.typography.fontSize=14px -o 
+./docs/public_api.html ./docs/open-api-public-spec.json",
+        "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --quiet",
+        "prepare": "husky install",
+        "prepare:integration": "npm run start:influx && npm run start:redis",
+        "prepare:kindcluster": "kind create cluster --config 
+./resources/kind-config.yaml && kubectl apply -f 
+https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/pr
+ovider/kind/deploy.yaml &&  kubectl wait --namespace ingress-nginx 
+--for=condition=ready pod --selector=app.kubernetes.io/component=controller 
+--timeout=90s&& helm repo add bitnami https://charts.bitnami.com/bitnami && helm
+install my-release bitnami/redis && export REDIS_PASSWORD=$(kubectl get secret 
+--namespace default my-release-redis -o jsonpath=\"{.data.redis-password}\" | 
+base64 -d) && npm run build-docker-integration && sed -i 
+\"s/REDIS_PASSWORD=.*/REDIS_PASSWORD=$REDIS_PASSWORD/\" .env && kind load 
+docker-image paigo-agent-transformer:local && kubectl apply -f 
+./resources/local/deployment_local.yml && export POD=$(kubectl get pod -l 
+app=paigo-agent-transformer -o jsonpath=\"{.items[0].metadata.name}\") ",
+        "test": "jest --config ./jest.unit.config.json",
+        "test:ci": "jest --config ./jest.unit.config.json --forceExit",
+        "test:watch": "jest --watch",
+        "test:cov": "jest --coverage",
+        "test:debug": "node --inspect-brk -r tsconfig-paths/register -r 
+ts-node/register node_modules/.bin/jest --runInBand",
+        "test:e2e": "jest --config ./test/jest-e2e.json",
+        "test:api": "jest --config ./test/jest-api.json",
+        "test:db": "jest --config ./test/jest-db.json",
+        "test:local:integration": "jest --config 
+./integration/jest.local.config.json",
+        "test:ci:integration": "jest --config 
+./integration/jest.ci.config.json",
+        "deploy:specification": "node docs/deployDocument.js",
+        "build-docker": "docker build -t paigo-agent-transformer --no-cache .",
+        "build-docker-integration": "docker build -t 
+paigo-agent-transformer:local --no-cache .",
+        "development:refresh:integration": "npm run build-docker-integration && 
+kind load docker-image paigo-agent-transformer:local && kubectl rollout restart 
+deployment paigo-agent-transformer",
+        "run-docker": "docker run -p 3000:3000 paigo-agent-transformer",
+        "push-image-dev": "docker tag paigo-agent-transformer 
+[REDACTED_AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/paigo-agent-transformer:latest && 
+docker push 
+[REDACTED_AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/paigo-agent-transformer:latest",
+        "push-image-prod": "docker tag paigo-agent-transformer 
+[REDACTED_AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/paigo-agent-transformer:prod && 
+docker push 
+[REDACTED_AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/paigo-agent-transformer:prod"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@aws-sdk/client-cloudtrail": "^3.437.0",
+        "@aws-sdk/client-cloudwatch": "^3.437.0",
+        "@aws-sdk/client-cost-explorer": "^3.437.0",
+        "@aws-sdk/client-ec2": "^3.437.0",
+        "@aws-sdk/client-iam": "^3.437.0",
+        "@aws-sdk/client-pricing": "^3.437.0",
+        "@aws-sdk/client-s3": "^3.437.0",
+        "@aws-sdk/client-ses": "^3.245.0",
+        "@aws-sdk/client-ssm": "^3.437.0",
+
+
+Tool:
+<returncode>
+0
+<output>
+/bin/sh: 1: aws: not found
+---
+/bin/sh: 1: aws: not found
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 3, $0.08):
+No AWS CLI; I'll use the Node SDK to inspect the emulator.
+
+```
+cd /app 2>/dev/null || cd $(pwd); cat > /tmp/ls.js <<'EOF'
+const {S3Client, ListBucketsCommand, ListObjectsV2Command} = 
+require('@aws-sdk/client-s3');
+const c = new S3Client({endpoint: process.env.AWS_ENDPOINT_URL, forcePathStyle: 
+true});
+(async()=>{
+  const b = await c.send(new ListBucketsCommand({}));
+  for (const bk of b.Buckets) {
+    console.log('BUCKET', bk.Name);
+    const o = await c.send(new ListObjectsV2Command({Bucket: bk.Name, MaxKeys: 
+50}));
+    (o.Contents||[]).forEach(x=>console.log('   ', x.Key, x.Size));
+    if (o.IsTruncated) console.log('   ...truncated');
+  }
+})();
+EOF
+node /tmp/ls.js
+```
+
+Tool:
+<returncode>
+1
+<output>
+node:internal/modules/cjs/loader:1433
+  throw err;
+  ^
+
+Error: Cannot find module '@aws-sdk/client-s3'
+Require stack:
+- /tmp/ls.js
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    at Function._load (node:internal/modules/cjs/loader:1216:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (/tmp/ls.js:1:62)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/tmp/ls.js' ]
+}
+
+Node.js v22.23.2
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 4, $0.10):
+```
+pwd; cp /tmp/ls.js ./ls.js && node ls.js
+```
+
+Tool:
+<returncode>
+0
+<output>
+/app
+BUCKET paigo-metering-loomwright
+    attribution/pools.json 1500
+    attribution/units/amberly.json 55
+   ...truncated
+BUCKET paigo-usage-loomwright-platform
+    usage/310000000012/2026-01-01-sweep-be15b2a5.json 657
+    usage/310000000012/2026-02-02-sweep-fb01eb17.json 656
+   ...truncated
+BUCKET paigo-usage-loomwright-analytics
+    usage/310000000028/2026-01-01-sweep-335c8328.json 676
+    usage/310000000028/2026-02-02-sweep-7e6e66ac.json 676
+   ...truncated
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 5, $0.12):
+```
+cd /app && cat > ls2.js <<'EOF'
+const {S3Client, ListObjectsV2Command, GetObjectCommand} = 
+require('@aws-sdk/client-s3');
+const c = new S3Client({endpoint: process.env.AWS_ENDPOINT_URL, forcePathStyle: 
+true});
+const 
+buckets=['paigo-metering-loomwright','paigo-usage-loomwright-platform','paigo-us
+age-loomwright-analytics'];
+(async()=>{
+ for(const b of buckets){
+  console.log('==== '+b);
+  let tok;
+  do{
+   const o = await c.send(new ListObjectsV2Command({Bucket:b, 
+ContinuationToken:tok}));
+   (o.Contents||[]).forEach(x=>console.log(' ', x.Key, x.Size));
+   tok = o.NextContinuationToken;
+  }while(tok);
+ }
+})();
+EOF
+node ls2.js
+```
+
+Tool:
+<returncode>
+0
+<output>
+==== paigo-metering-loomwright
+  attribution/pools.json 1500
+  attribution/units/amberly.json 55
+  attribution/units/coppice.json 114
+  attribution/units/ember.json 51
+  attribution/units/fernlea.json 55
+  attribution/units/girder.json 55
+  attribution/units/hollow.json 119
+  attribution/units/jetstream.json 117
+  attribution/units/marlin.json 53
+  attribution/units/northgate.json 85
+  attribution/units/onyx.json 114
+  attribution/units/pinehurst.json 84
+  attribution/units/sable.json 54
+  attribution/units/stonegate.json 121
+  attribution/units/umber.json 80
+  attribution/units/yarrow.json 116
+  onboarding/registry.json 489
+==== paigo-usage-loomwright-platform
+  usage/310000000012/2026-01-01-sweep-be15b2a5.json 657
+  usage/310000000012/2026-02-02-sweep-fb01eb17.json 656
+  usage/310000000012/2026-03-03-sweep-4ed68524.json 658
+  usage/310000000012/2026-04-04-sweep-6ce86e66.json 656
+  usage/310000000012/2026-05-05-sweep-ec07195b.json 223
+==== paigo-usage-loomwright-analytics
+  usage/310000000028/2026-01-01-sweep-335c8328.json 676
+  usage/310000000028/2026-02-02-sweep-7e6e66ac.json 676
+  usage/310000000028/2026-03-03-sweep-9097a4fd.json 677
+  usage/310000000028/2026-04-04-sweep-ae6d5858.json 681
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 6, $0.14):
+```
+cd /app && cat > get.js <<'EOF'
+const {S3Client, GetObjectCommand} = require('@aws-sdk/client-s3');
+const c = new S3Client({endpoint: process.env.AWS_ENDPOINT_URL, forcePathStyle: 
+true});
+(async()=>{
+ const [b,...keys]=process.argv.slice(2);
+ for(const k of keys){
+  const r= await c.send(new GetObjectCommand({Bucket:b,Key:k}));
+  console.log('--- '+k);
+  console.log(await r.Body.transformToString());
+ }
+})();
+EOF
+node get.js paigo-metering-loomwright onboarding/registry.json 
+attribution/pools.json
+```
+
+Tool:
+<returncode>
+0
+<output>
+--- onboarding/registry.json
+{"businessID":"biz-loomwright","usageExportPrefix":"usage/","attributionPrefix":
+"attribution/","accounts":[{"accountId":"310000000012","roleArn":"arn:aws:iam::3
+10000000012:role/paigo-metering","externalId":"loomwright-a1-3d92","region":"us-
+east-1","usageBucket":"paigo-usage-loomwright-platform"},{"accountId":"310000000
+028","roleArn":"arn:aws:iam::310000000028:role/paigo-metering","externalId":"loo
+mwright-a2-7c41","region":"us-east-1","usageBucket":"paigo-usage-loomwright-anal
+ytics"}]}
+--- attribution/pools.json
+{"revision":"2026-01-09.3","pools":{"aurora":{"chargeCode":"cc-platform-core"},"
+basalt":{"chargeCode":"cc-data-pipeline"},"brindle":{"chargeCode":"cc-blob-gc","
+rollsUpTo":"alias/westmoor"},"cinder":{"chargeCode":"cc-edge-delivery"},"dovetai
+l":{"chargeCode":"cc-queue-runners","rollsUpTo":"unit/ember"},"elmwood":{"charge
+Code":"cc-crawler-farm","rollsUpTo":"unit/fernlea"},"fathom":{"chargeCode":"cc-a
+sset-store","rollsUpTo":"unit/girder"},"glenrow":{"chargeCode":"cc-queue-runners
+","rollsUpTo":"unit/hollow"},"harrow":{"chargeCode":"cc-session-cache","rollsUpT
+o":"node/310000000012/us-east-1/i-0400ee3cde46dc4d7"},"juniper":{"chargeCode":"c
+c-api-gateway","rollsUpTo":"node/310000000012/eu-west-1/i-0344388be2ca905c3"},"l
+antern":{"chargeCode":"cc-log-shipping","rollsUpTo":"alias/upwell"},"larkspur":{
+"chargeCode":"cc-identity-svc"},"mossgate":{"chargeCode":"cc-batch-scoring","rol
+lsUpTo":"unit/northgate"},"nimbus":{"chargeCode":"cc-thumbnailer","rollsUpTo":"u
+nit/onyx"},"oakfield":{"chargeCode":"cc-thumbnailer","rollsUpTo":"unit/pinehurst
+"},"quarry":{"chargeCode":"cc-config-svc","rollsUpTo":"node/310000000028/ap-sout
+heast-1/i-0d53307986efdea6e"},"quillon":{"chargeCode":"cc-content-index","rollsU
+pTo":"unit/pinehurst"},"redbourne":{"chargeCode":"cc-feature-flags","rollsUpTo":
+"unit/stonegate"},"thornby":{"chargeCode":"cc-email-relay","rollsUpTo":"unit/yar
+row"},"tundra":{"chargeCode":"cc-sms-fanout","rollsUpTo":"unit/umber"},"willow":
+{"chargeCode":"cc-nightly-jobs","rollsUpTo":"unit/yarrow"}}}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 7, $0.16):
+```
+cd /app && node get.js paigo-metering-loomwright 
+attribution/units/{amberly,coppice,ember,fernlea,girder,hollow,jetstream,marlin,
+northgate,onyx,pinehurst,sable,stonegate,umber,yarrow}.json
+```
+
+```
+cd /app && node get.js paigo-usage-loomwright-platform 
+usage/310000000012/2026-01-01-sweep-be15b2a5.json 
+usage/310000000012/2026-05-05-sweep-ec07195b.json && node get.js 
+paigo-usage-loomwright-analytics 
+usage/310000000028/2026-01-01-sweep-335c8328.json
+```
+
+Tool:
+<returncode>
+1
+<output>
+/app/node_modules/@aws-sdk/client-s3/dist-cjs/protocols/Aws_restXml.js:6082
+    const exception = new models_0_1.NoSuchKey({
+                      ^
+
+NoSuchKey: The specified key does not exist: 
+attribution/units/{amberly,coppice,ember,fernlea,girder,hollow,jetstream,marlin,
+northgate,onyx,pinehurst,sable,stonegate,umber,yarrow}.json
+    at de_NoSuchKeyRes 
+(/app/node_modules/@aws-sdk/client-s3/dist-cjs/protocols/Aws_restXml.js:6082:23)
+    at de_GetObjectCommandError 
+(/app/node_modules/@aws-sdk/client-s3/dist-cjs/protocols/Aws_restXml.js:4327:25)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:103:5)
+    at async 
+/app/node_modules/@smithy/middleware-serde/dist-cjs/deserializerMiddleware.js:7:
+24
+    at async 
+/app/node_modules/@aws-sdk/middleware-signing/dist-cjs/awsAuthMiddleware.js:14:2
+0
+    at async 
+/app/node_modules/@smithy/middleware-retry/dist-cjs/retryMiddleware.js:27:46
+    at async 
+/app/node_modules/@aws-sdk/middleware-flexible-checksums/dist-cjs/flexibleChecks
+umsMiddleware.js:63:20
+    at async 
+/app/node_modules/@aws-sdk/client-s3/node_modules/@aws-sdk/middleware-sdk-s3/dis
+t-cjs/region-redirect-endpoint-middleware.js:14:24
+    at async 
+/app/node_modules/@aws-sdk/client-s3/node_modules/@aws-sdk/middleware-sdk-s3/dis
+t-cjs/region-redirect-middleware.js:9:20
+    at async 
+/app/node_modules/@aws-sdk/middleware-logger/dist-cjs/loggerMiddleware.js:7:26 {
+  '$fault': 'client',
+  '$metadata': {
+    httpStatusCode: 404,
+    requestId: 'mockaws-request',
+    extendedRequestId: undefined,
+    cfId: undefined,
+    attempts: 1,
+    totalRetryDelay: 0
+  },
+  Code: 'NoSuchKey',
+  Resource: 
+'attribution/units/{amberly,coppice,ember,fernlea,girder,hollow,jetstream,marlin
+,northgate,onyx,pinehurst,sable,stonegate,umber,yarrow}.json',
+  RequestId: 'mockaws-request'
+}
+
+Node.js v22.23.2
+
+
+Tool:
+<returncode>
+0
+<output>
+--- usage/310000000012/2026-01-01-sweep-be15b2a5.json
+{"batchId":"2026-01-01-sweep-be15b2a5","coveringDate":"2026-01-01","lines":[{"li
+neId":"ln-4d88f9dbf996","resourceId":"i-05a4f8f4c3690fc62","region":"us-east-1",
+"quantity":251.0,"amount":91.11,"attribution":"pool/aurora"},{"lineId":"ln-faf81
+17abf92","resourceId":"i-0092ad3f9e73ef4a3","region":"us-east-1","quantity":171.
+0,"amount":43.78,"attribution":"pool/aurora"},{"lineId":"ln-a3eb7a9f7f72","resou
+rceId":"i-0dabc9703bd822408","region":"us-east-1","quantity":226.0,"amount":65.7
+7,"attribution":"pool/basalt"},{"lineId":"ln-dfaef7f0b71d","resourceId":"i-05861
+f5a0b01f70c0","region":"us-east-1","quantity":260.0,"amount":48.36,"attribution"
+:"pool/cinder"}]}
+--- usage/310000000012/2026-05-05-sweep-ec07195b.json
+{"batchId":"2026-05-05-sweep-ec07195b","coveringDate":"2026-05-05","lines":[{"li
+neId":"ln-a63e4d7f84b5","resourceId":"i-0037ed12aa0d08c3a","region":"us-east-1",
+"quantity":180.0,"amount":55.98,"attribution":"pool/thornby"}]}
+--- usage/310000000028/2026-01-01-sweep-335c8328.json
+{"batchId":"2026-01-01-sweep-335c8328","coveringDate":"2026-01-01","lines":[{"li
+neId":"ln-dd3736a27f18","resourceId":"i-050f28dbf476d8fa9","region":"ap-southeas
+t-1","quantity":168.0,"amount":52.25,"attribution":"pool/aurora"},{"lineId":"ln-
+a37c2787ac57","resourceId":"i-0d1aafbf557cf41fe","region":"ap-southeast-1","quan
+tity":265.0,"amount":63.6,"attribution":"pool/basalt"},{"lineId":"ln-ab457ecaca9
+e","resourceId":"i-0df54063541859265","region":"ap-southeast-1","quantity":214.0
+,"amount":60.78,"attribution":"pool/basalt"},{"lineId":"ln-59eaceee916a","resour
+ceId":"i-0c8328da9dafeffe9","region":"ap-southeast-1","quantity":158.0,"amount":
+34.44,"attribution":"pool/cinder"}]}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 8, $0.19):
+```
+cd /app && for u in amberly coppice ember fernlea girder hollow jetstream marlin
+northgate onyx pinehurst sable stonegate umber yarrow; do node get.js 
+paigo-metering-loomwright attribution/units/$u.json; done
+```
+
+Tool:
+<returncode>
+0
+<output>
+--- attribution/units/amberly.json
+{"unitId":"bu-amberly","chargeCode":"cc-warehouse-etl"}
+--- attribution/units/coppice.json
+{"unitId":"bu-coppice","chargeCode":"cc-price-feed","parentRef":"node/3100000000
+28/us-east-1/i-0611273b6cde1ce84"}
+--- attribution/units/ember.json
+{"unitId":"bu-ember","chargeCode":"cc-ml-training"}
+--- attribution/units/fernlea.json
+{"unitId":"bu-fernlea","chargeCode":"cc-observability"}
+--- attribution/units/girder.json
+{"unitId":"bu-girder","chargeCode":"cc-shared-tooling"}
+--- attribution/units/hollow.json
+{"unitId":"bu-hollow","chargeCode":"cc-asset-store","parentRef":"node/3100000000
+28/ap-southeast-1/i-07a4fdcc632f31a48"}
+--- attribution/units/jetstream.json
+{"unitId":"bu-jetstream","chargeCode":"cc-api-gateway","parentRef":"node/3100000
+00012/us-east-1/i-0adc26bbd8b7cccad"}
+--- attribution/units/marlin.json
+{"unitId":"bu-marlin","chargeCode":"cc-media-encode"}
+--- attribution/units/northgate.json
+{"unitId":"bu-northgate","chargeCode":"cc-batch-scoring","parentRef":"pool/mossg
+ate"}
+--- attribution/units/onyx.json
+{"unitId":"bu-onyx","chargeCode":"cc-feature-flags","parentRef":"node/3100000000
+28/us-east-1/i-06e9b1c504ab8b1d0"}
+--- attribution/units/pinehurst.json
+{"unitId":"bu-pinehurst","chargeCode":"cc-content-index","parentRef":"alias/zirc
+on"}
+--- attribution/units/sable.json
+{"unitId":"bu-sable","chargeCode":"cc-mobile-backend"}
+--- attribution/units/stonegate.json
+{"unitId":"bu-stonegate","chargeCode":"cc-config-svc","parentRef":"node/31000000
+0028/ap-southeast-1/i-07a4fdcc632f31a48"}
+--- attribution/units/umber.json
+{"unitId":"bu-umber","chargeCode":"cc-graph-store","parentRef":"alias/valeside"}
+--- attribution/units/yarrow.json
+{"unitId":"bu-yarrow","chargeCode":"cc-report-render","parentRef":"node/31000000
+0012/eu-west-1/i-0a557d8990b5d604f"}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 9, $0.21):
+```
+cd /app && grep -rln "rollsUpTo\|chargeCode\|attributionPrefix\|spend" src 
+integration test docs | head -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/microservices/usageAttribution/entities/attributedSpend.entity.ts
+src/microservices/usageAttribution/usageAttribution.service.ts
+src/onboarding/entities/attributionDirectory.entity.ts
+src/onboarding/entities/meteringAccounts.entity.ts
+docs/private_api.html
+docs/public_api.html
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 10, $0.23):
+```
+cd /app && ls -R src/microservices/usageAttribution src/onboarding | head -60; 
+echo ====; cat src/microservices/usageAttribution/usageAttribution.service.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/microservices/usageAttribution:
+dto
+entities
+usageAttribution.module.ts
+usageAttribution.service.ts
+
+src/microservices/usageAttribution/dto:
+usageAttribution.dto.ts
+
+src/microservices/usageAttribution/entities:
+attributedSpend.entity.ts
+
+src/onboarding:
+dto
+entities
+onboarding.controller.spec.ts
+onboarding.controller.ts
+onboarding.module.ts
+onboarding.service.spec.ts
+onboarding.service.ts
+
+src/onboarding/dto:
+onboarding.dto.ts
+
+src/onboarding/entities:
+attributionDirectory.entity.ts
+meteringAccounts.entity.ts
+onboarding.entity.ts
+usageExport.entity.ts
+====
+import { BadRequestException, Inject, Logger, forwardRef } from 
+'@nestjs/common';
+import { InfluxService } from '../../influx/influx.service.js';
+import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
+import { AttributedSpendEntity } from './entities/attributedSpend.entity.js';
+import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import { infrastructureType } from 
+'../../dimensions/dto/create-dimension.dto.js';
+import { SchedulerEntity } from '../../scheduler/entities/scheduler.entity.js';
+import { Job } from 'bull';
+import { Point } from '@influxdata/influxdb-client';
+import { AuditScope } from '../../audit/entities/audit.interface.js';
+import { AuditService } from '../../audit/audit.service.js';
+import { MeteredAccount, MeteringRegistry } from 
+'../../onboarding/entities/meteringAccounts.entity.js';
+import { AttributionDirectory } from 
+'../../onboarding/entities/attributionDirectory.entity.js';
+import { UsageExport } from '../../onboarding/entities/usageExport.entity.js';
+
+const credentialsForAccount = (account: MeteredAccount) =>
+    fromTemporaryCredentials({
+        params: {
+            RoleArn: account.roleArn,
+            ExternalId: account.externalId ? account.externalId : undefined,
+        },
+        clientConfig: { region: 'us-east-1' },
+    });
+
+@Processor('scheduler_queue')
+export class UsageAttributionService {
+    private static readonly logger = new Logger(UsageAttributionService.name);
+    constructor(@Inject(forwardRef(() => InfluxService)) readonly InfluxService:
+InfluxService) {}
+
+    @Process('attributedSpend')
+    async getAttributedSpend({ data: { scheduleParameters, businessID, subject, 
+rate } }: Job<SchedulerEntity>) {
+        if (!('registryBucket' in scheduleParameters)) {
+            throw new BadRequestException('Metering registry location not 
+found');
+        }
+        const { registryBucket, registryKey } = scheduleParameters;
+        UsageAttributionService.logger.log(
+            'Processing Automated spend attribution event, logging inputs',
+            JSON.stringify({ rate, businessID, registryBucket, subject }),
+        );
+        const attributed = await this.attributeSpend({ businessID, 
+registryBucket, registryKey });
+        const points = attributed.map((entity): Point => 
+AttributedSpendEntity.transformer(entity, this.InfluxService));
+        const { loadPoints } = this.InfluxService;
+        UsageAttributionService.logger.log('Loading Attributed Spend Points into
+Influx', points.length);
+        return loadPoints(`${process.env.STAGE}-usage-data`, 
+process.env.INFLUX_ORG, points);
+    }
+
+    /**
+     * Reads every usage export the business' accounts have written and returns
+     * one row per charge code the exported lines are attributed to.
+     */
+    async attributeSpend({
+        businessID,
+        registryBucket,
+        registryKey,
+    }: {
+        businessID: string;
+        registryBucket: string;
+        registryKey: string;
+    }): Promise<Array<AttributedSpendEntity>> {
+        const registry = await MeteringRegistry.load(registryBucket, 
+registryKey);
+        const directory = await AttributionDirectory.load(registryBucket, 
+registry.attributionPrefix);
+        const totals: Record<string, AttributedSpendEntity> = {};
+
+        for (const account of registry.accounts) {
+            // eslint-disable-next-line no-await-in-loop
+            const lines = await UsageExport.linesForAccount(
+                account.usageBucket,
+                registry.usageExportPrefix,
+                account.accountId,
+                credentialsForAccount(account),
+            );
+            lines.forEach((line) => {
+                const chargeCode = directory.chargeCodeFor(line.attribution);
+                if (!chargeCode) {
+                    return;
+                }
+                const running =
+                    totals[chargeCode] ??
+                    new AttributedSpendEntity({ businessID, chargeCode, 
+quantity: 0, amount: 0, lineCount: 0 });
+                running.quantity += Number(line.quantity ?? 0);
+                running.amount += Number(line.amount ?? 0);
+                running.lineCount += 1;
+                totals[chargeCode] = running;
+            });
+        }
+
+        const codes = Object.keys(totals).sort();
+        UsageAttributionService.logger.log(
+            `Attributed spend across ${codes.length} charge codes for 
+${registry.accounts.length} accounts`,
+        );
+        return codes.map((code) => totals[code]);
+    }
+
+    @OnQueueFailed({ name: infrastructureType.podCPUHours })
+    jobFailure(job: Job) {
+        AuditService.publishEvent({
+            message: 'Failed to attribute usage for account',
+            data: job.data,
+            topic: AuditScope.ERROR,
+        });
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 11, $0.26):
+```
+cd /app && cat src/onboarding/entities/attributionDirectory.entity.ts 
+src/onboarding/entities/meteringAccounts.entity.ts 
+src/onboarding/entities/usageExport.entity.ts 
+src/microservices/usageAttribution/entities/attributedSpend.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { getDocument } from '../../utils/aws/s3.js';
+
+const POOL_REFERENCE = 'pool/';
+
+/**
+ * One pocket of a business' estate. The finance system rewrites the whole set
+ * whenever a team moves, so the pools are kept together in a single document
+ * rather than one object each.
+ */
+export class AttributionPool {
+    /** The code spend sitting on this pool is booked to. */
+    public chargeCode: string;
+}
+
+export class AttributionPoolDocument {
+    public revision: string;
+    public pools: Record<string, AttributionPool>;
+}
+
+/**
+ * The attribution material a business keeps beside its onboarding record.
+ */
+export class AttributionDirectory {
+    private readonly pools: Record<string, AttributionPool>;
+
+    private constructor(pools: Record<string, AttributionPool>) {
+        this.pools = pools;
+    }
+
+    static async load(bucket: string, prefix: string): 
+Promise<AttributionDirectory> {
+        const document = await getDocument<AttributionPoolDocument>(bucket, 
+`${prefix}pools.json`);
+        return new AttributionDirectory(document?.pools ?? {});
+    }
+
+    /**
+     * The charge code named by the attribution reference a usage line carries.
+     */
+    chargeCodeFor(reference: string): string {
+        if (!reference || !reference.startsWith(POOL_REFERENCE)) {
+            return undefined;
+        }
+        return this.pools[reference.slice(POOL_REFERENCE.length)]?.chargeCode;
+    }
+}
+import { getDocument } from '../../utils/aws/s3.js';
+
+/**
+ * An AWS account a business has handed us for measurement.
+ */
+export class MeteredAccount {
+    /**
+     * The account the metering role lives in.
+     * @example "445566778899"
+     */
+    public accountId: string;
+    /**
+     * The role we assume to read the account.
+     * @example "arn:aws:iam::445566778899:role/paigo-metering"
+     */
+    public roleArn: string;
+    /**
+     * The external id the role's trust policy asks for, when it asks for one.
+     */
+    public externalId?: string;
+    /**
+     * The region the business named as the account's home when it onboarded.
+     * @example "us-east-1"
+     */
+    public region: string;
+    /**
+     * The bucket the account's own collectors write their usage exports to.
+     * @example "paigo-usage-loomwright-platform"
+     */
+    public usageBucket: string;
+}
+
+/**
+ * The onboarding record a business keeps in its metering bucket. It is written
+ * by the onboarding flow and read by every collector that has to sweep more
+ * than one account.
+ */
+export class MeteringRegistry {
+    public businessID: string;
+    /**
+     * Key prefix the usage exports sit under inside each account's usage
+     * bucket, one folder per account and one object per export.
+     * @example "usage/"
+     */
+    public usageExportPrefix: string;
+    /**
+     * Key prefix the business' attribution material sits under in the metering
+     * bucket itself.
+     * @example "attribution/"
+     */
+    public attributionPrefix: string;
+    public accounts: Array<MeteredAccount>;
+
+    static async load(bucket: string, key: string): Promise<MeteringRegistry> {
+        return getDocument<MeteringRegistry>(bucket, key);
+    }
+}
+import { getDocument, listDocumentKeys } from '../../utils/aws/s3.js';
+
+/**
+ * One metered line as the account's collector wrote it out.
+ */
+export class UsageExportLine {
+    public lineId: string;
+    /**
+     * The resource the collector measured.
+     * @example "i-0a3f19c2d4e5b6708"
+     */
+    public resourceId: string;
+    /**
+     * The region the resource was measured in.
+     * @example "eu-west-1"
+     */
+    public region: string;
+    /** How much of the dimension the line carries. */
+    public quantity: number;
+    /** What the line came to in the reporting currency. */
+    public amount: number;
+    /**
+     * Where in the business' attribution material this line starts.
+     * @example "pool/aurora-ci"
+     */
+    public attribution: string;
+}
+
+/**
+ * One usage export. A collector drops an export into its account's usage
+ * bucket every time it finishes a sweep, so an account accumulates one object
+ * per sweep and a single export may cover several regions at once.
+ */
+export class UsageExportBatch {
+    public batchId: string;
+    public coveringDate: string;
+    public lines: Array<UsageExportLine>;
+}
+
+export class UsageExport {
+    /**
+     * Every metered line an account has exported.
+     */
+    static async linesForAccount(
+        bucket: string,
+        prefix: string,
+        accountId: string,
+        credentials = undefined,
+    ): Promise<Array<UsageExportLine>> {
+        const keys = await listDocumentKeys(bucket, `${prefix}${accountId}/`, 
+credentials);
+        const batches = await Promise.all(keys.map((key) => 
+getDocument<UsageExportBatch>(bucket, key, credentials)));
+        const lines: Array<UsageExportLine> = [];
+        batches.forEach((batch) => {
+            (batch?.lines ?? []).forEach((line) => lines.push(line));
+        });
+        return lines;
+    }
+}
+import { Point } from '@influxdata/influxdb-client';
+import { InfluxService } from '../../../influx/influx.service.js';
+
+/**
+ * What one charge code ended up carrying once every metered line the business
+ * exported had been attributed.
+ */
+export class AttributedSpendEntity {
+    public static _measurement = 'AttributedSpendData';
+
+    public businessID: string;
+    /**
+     * The code the spend is booked to.
+     * @example "cc-platform-core"
+     */
+    public chargeCode: string;
+    /** How much of the metered dimension sits under the code. */
+    public quantity: number;
+    /** What that came to in the reporting currency. */
+    public amount: number;
+    /** How many exported lines make up the two figures above. */
+    public lineCount: number;
+
+    constructor({ businessID, chargeCode, quantity, amount, lineCount }: 
+AttributedSpendEntity) {
+        this.businessID = businessID;
+        this.chargeCode = chargeCode;
+        this.quantity = quantity;
+        this.amount = amount;
+        this.lineCount = lineCount;
+    }
+
+    public static transformer(entity: AttributedSpendEntity, influxService: 
+InfluxService): Point {
+        const { businessID, chargeCode, quantity, amount, lineCount } = entity;
+
+        const point = 
+influxService.getPoint(AttributedSpendEntity._measurement);
+        point.tag('businessID', businessID);
+        point.tag('chargeCode', chargeCode);
+        point.floatField('quantity', quantity);
+        point.floatField('amount', amount);
+        point.intField('lineCount', lineCount);
+
+        return point;
+    }
+
+    public static dbModelToEntity(dbModel: any): AttributedSpendEntity {
+        const { businessID, chargeCode, _value, amount, lineCount } = dbModel;
+
+        return new AttributedSpendEntity({
+            businessID,
+            chargeCode,
+            quantity: _value,
+            amount,
+            lineCount,
+        });
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 12, $0.31):
+```
+cd /app && ls src/utils/aws && cat src/utils/aws/s3.ts
+```
+
+```
+cd /app && cat > svc.js <<'EOF'
+(async()=>{
+const {EC2Client, DescribeInstancesCommand, DescribeTagsCommand} = 
+require('@aws-sdk/client-ec2');
+const cfg={endpoint:process.env.AWS_ENDPOINT_URL, region:'us-east-1'};
+try{
+const e=new EC2Client(cfg);
+const r=await e.send(new DescribeInstancesCommand({}));
+console.log(JSON.stringify(r.Reservations,null,1).slice(0,4000));
+}catch(err){console.log('ec2 err', err.name, err.message);}
+try{
+const {SSMClient, DescribeParametersCommand}=require('@aws-sdk/client-ssm');
+const s=new SSMClient(cfg);
+const p=await s.send(new DescribeParametersCommand({}));
+console.log('SSM', JSON.stringify(p.Parameters));
+}catch(err){console.log('ssm err',err.name,err.message);}
+})();
+EOF
+node svc.js
+```
+
+Tool:
+<returncode>
+0
+<output>
+awsCloutrail.ts
+awsEc2.ts
+awsPricing.ts
+awsSSM.ts
+cloudwatch.ts
+costExplorer.ts
+s3.ts
+ses.ts
+import { GetObjectCommand, ListObjectsV2Command, S3Client } from 
+'@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
+
+export const putDocument = (document, Bucket, Key) =>
+    new Upload({ client: new S3Client({ region: 'us-east-1' }), params: { Body: 
+document, Bucket, Key } });
+
+export const getDocument = async <T>(Bucket: string, Key: string, credentials = 
+undefined): Promise<T> => {
+    const client = new S3Client(credentials ? { credentials } : {});
+    const { Body } = await client.send(new GetObjectCommand({ Bucket, Key }));
+    return JSON.parse(await Body.transformToString()) as T;
+};
+
+export const listDocumentKeys = async (
+    Bucket: string,
+    Prefix: string,
+    credentials = undefined,
+): Promise<Array<string>> => {
+    const client = new S3Client(credentials ? { credentials } : {});
+    const keys: Array<string> = [];
+    let ContinuationToken: string;
+    do {
+        // Need to do this for pagination
+        // eslint-disable-next-line no-await-in-loop
+        const response = await client.send(new ListObjectsV2Command({ Bucket, 
+Prefix, ContinuationToken }));
+        ContinuationToken = response?.NextContinuationToken;
+        (response?.Contents ?? []).forEach(({ Key }) => {
+            if (Key && !Key.endsWith('/')) {
+                keys.push(Key);
+            }
+        });
+    } while (ContinuationToken);
+    return keys;
+};
+
+
+Tool:
+<returncode>
+0
+<output>
+[]
+ssm err InvalidAction Only GetParameter, GetParameters and GetParametersByPath 
+are supported
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 13, $0.36):
+```
+cd /app && cat > svc2.js <<'EOF'
+const cfg={endpoint:process.env.AWS_ENDPOINT_URL, region:'us-east-1'};
+(async()=>{
+const {SSMClient, GetParametersByPathCommand}=require('@aws-sdk/client-ssm');
+const s=new SSMClient(cfg);
+for(const p of ['/','/paigo','/paigo/','/attribution','/alias']){
+ try{const r=await s.send(new GetParametersByPathCommand({Path:p, 
+Recursive:true}));console.log(p, 
+JSON.stringify(r.Parameters));}catch(e){console.log(p,'err',e.name,e.message);}
+}
+const {STSClient, AssumeRoleCommand, 
+GetCallerIdentityCommand}=require('@aws-sdk/client-sts');
+const st=new STSClient(cfg);
+try{
+const r=await st.send(new 
+AssumeRoleCommand({RoleArn:'arn:aws:iam::310000000012:role/paigo-metering', 
+RoleSessionName:'x', ExternalId:'loomwright-a1-3d92'}));
+console.log('assume', JSON.stringify(r.Credentials));
+const {EC2Client, DescribeInstancesCommand}=require('@aws-sdk/client-ec2');
+const creds={accessKeyId:r.Credentials.AccessKeyId, 
+secretAccessKey:r.Credentials.SecretAccessKey, 
+sessionToken:r.Credentials.SessionToken};
+for(const region of ['us-east-1','eu-west-1','ap-southeast-1']){
+ const e=new EC2Client({...cfg, region, credentials:creds});
+ const d=await e.send(new DescribeInstancesCommand({}));
+ console.log(region, JSON.stringify(d.Reservations));
+}
+}catch(e){console.log('sts err',e.name,e.message);}
+})();
+EOF
+node svc2.js
+```
+
+Tool:
+<returncode>
+0
+<output>
+/ 
+[{"ARN":"arn:aws:ssm:us-east-1::parameter/paigo/attribution/alias/upwell","DataT
+ype":"text","Name":"/paigo/attribution/alias/upwell","Type":"String","Value":"un
+it/marlin","Version":1},{"ARN":"arn:aws:ssm:us-east-1::parameter/paigo/attributi
+on/alias/valeside","DataType":"text","Name":"/paigo/attribution/alias/valeside",
+"Type":"String","Value":"node/310000000012/us-east-1/i-071374007a3c5af16","Versi
+on":1},{"ARN":"arn:aws:ssm:us-east-1::parameter/paigo/attribution/alias/westmoor
+","DataType":"text","Name":"/paigo/attribution/alias/westmoor","Type":"String","
+Value":"unit/coppice","Version":1},{"ARN":"arn:aws:ssm:us-east-1::parameter/paig
+o/attribution/alias/yewtree","DataType":"text","Name":"/paigo/attribution/alias/
+yewtree","Type":"String","Value":"unit/jetstream","Version":1},{"ARN":"arn:aws:s
+sm:us-east-1::parameter/paigo/attribution/alias/zircon","DataType":"text","Name"
+:"/paigo/attribution/alias/zircon","Type":"String","Value":"pool/quillon","Versi
+on":1}]
+/paigo 
+[{"ARN":"arn:aws:ssm:us-east-1::parameter/paigo/attribution/alias/upwell","DataT
+ype":"text","Name":"/paigo/attribution/alias/upwell","Type":"String","Value":"un
+it/marlin","Version":1},{"ARN":"arn:aws:ssm:us-east-1::parameter/paigo/attributi
+on/alias/valeside","DataType":"text","Name":"/paigo/attribution/alias/valeside",
+"Type":"String","Value":"node/310000000012/us-east-1/i-071374007a3c5af16","Versi
+on":1},{"ARN":"arn:aws:ssm:us-east-1::parameter/paigo/attribution/alias/westmoor
+","DataType":"text","Name":"/paigo/attribution/alias/westmoor","Type":"String","
+Value":"unit/coppice","Version":1},{"ARN":"arn:aws:ssm:us-east-1::parameter/paig
+o/attribution/alias/yewtree","DataType":"text","Name":"/paigo/attribution/alias/
+yewtree","Type":"String","Value":"unit/jetstream","Version":1},{"ARN":"arn:aws:s
+sm:us-east-1::parameter/paigo/attribution/alias/zircon","DataType":"text","Name"
+:"/paigo/attribution/alias/zircon","Type":"String","Value":"pool/quillon","Versi
+on":1}]
+/paigo/ 
+[{"ARN":"arn:aws:ssm:us-east-1::parameter/paigo/attribution/alias/upwell","DataT
+ype":"text","Name":"/paigo/attribution/alias/upwell","Type":"String","Value":"un
+it/marlin","Version":1},{"ARN":"arn:aws:ssm:us-east-1::parameter/paigo/attributi
+on/alias/valeside","DataType":"text","Name":"/paigo/attribution/alias/valeside",
+"Type":"String","Value":"node/310000000012/us-east-1/i-071374007a3c5af16","Versi
+on":1},{"ARN":"arn:aws:ssm:us-east-1::parameter/paigo/attribution/alias/westmoor
+","DataType":"text","Name":"/paigo/attribution/alias/westmoor","Type":"String","
+Value":"unit/coppice","Version":1},{"ARN":"arn:aws:ssm:us-east-1::parameter/paig
+o/attribution/alias/yewtree","DataType":"text","Name":"/paigo/attribution/alias/
+yewtree","Type":"String","Value":"unit/jetstream","Version":1},{"ARN":"arn:aws:s
+sm:us-east-1::parameter/paigo/attribution/alias/zircon","DataType":"text","Name"
+:"/paigo/attribution/alias/zircon","Type":"String","Value":"pool/quillon","Versi
+on":1}]
+/attribution []
+/alias []
+assume 
+{"AccessKeyId":"[REDACTED_AWS_ACCESS_KEY_ID]","SecretAccessKey":"EC7E7A7BE99916D2C3FF88E
+4","SessionToken":"tok-250A55B7F4ACF639EC7E7A7BE99916D2C3FF88E4","Expiration":"2
+026-08-24T05:45:51.000Z"}
+us-east-1 
+[{"Instances":[{"InstanceId":"i-0400ee3cde46dc4d7","InstanceType":"t3.medium","L
+aunchTime":"2026-01-01T00:00:00.000Z","Placement":{"AvailabilityZone":"us-east-1
+b"},"PrivateDnsName":"ip-10-0-0-10.ec2.internal","PrivateIpAddress":"10.0.0.10",
+"State":{"Name":"running"},"Tags":[{"Key":"Name","Value":"loomwright-platform-6d
+c4d7"},{"Key":"paigoChargeCode","Value":"cc-customer-apps"}],"CpuOptions":{"Core
+Count":2,"ThreadsPerCore":2},"PlatformDetails":"Linux/UNIX"}],"OwnerId":"3100000
+00012","ReservationId":"r-0400ee3cde46dc4d7"},{"Instances":[{"InstanceId":"i-071
+374007a3c5af16","InstanceType":"m6i.large","LaunchTime":"2026-01-01T00:00:00.000
+Z","Placement":{"AvailabilityZone":"us-east-1b"},"PrivateDnsName":"ip-10-0-0-10.
+ec2.internal","PrivateIpAddress":"10.0.0.10","State":{"Name":"running"},"Tags":[
+{"Key":"Name","Value":"loomwright-platform-c5af16"},{"Key":"paigoChargeCode","Va
+lue":"cc-partner-api"}],"CpuOptions":{"CoreCount":2,"ThreadsPerCore":2},"Platfor
+mDetails":"Linux/UNIX"}],"OwnerId":"310000000012","ReservationId":"r-071374007a3
+c5af16"},{"Instances":[{"InstanceId":"i-0adc26bbd8b7cccad","InstanceType":"r6i.l
+arge","LaunchTime":"2026-01-01T00:00:00.000Z","Placement":{"AvailabilityZone":"u
+s-east-1a"},"PrivateDnsName":"ip-10-0-0-10.ec2.internal","PrivateIpAddress":"10.
+0.0.10","State":{"Name":"running"},"Tags":[{"Key":"Name","Value":"loomwright-pla
+tform-7cccad"},{"Key":"paigoChargeCode","Value":"cc-log-shipping"},{"Key":"paigo
+RollsInto","Value":"pool/larkspur"}],"CpuOptions":{"CoreCount":2,"ThreadsPerCore
+":2},"PlatformDetails":"Linux/UNIX"}],"OwnerId":"310000000012","ReservationId":"
+r-0adc26bbd8b7cccad"},{"Instances":[{"InstanceId":"i-0b7140ffdfdbedd5a","Instanc
+eType":"m5.large","LaunchTime":"2026-01-01T00:00:00.000Z","Placement":{"Availabi
+lityZone":"us-east-1a"},"PrivateDnsName":"ip-10-0-0-10.ec2.internal","PrivateIpA
+ddress":"10.0.0.10","State":{"Name":"running"},"Tags":[{"Key":"Name","Value":"lo
+omwright-platform-bedd5a"}],"CpuOptions":{"CoreCount":2,"ThreadsPerCore":2},"Pla
+tformDetails":"Linux/UNIX"}],"OwnerId":"310000000012","ReservationId":"r-0b7140f
+fdfdbedd5a"},{"Instances":[{"InstanceId":"i-0bd10a2da9e6325d8","InstanceType":"t
+3.large","LaunchTime":"2026-01-01T00:00:00.000Z","Placement":{"AvailabilityZone"
+:"us-east-1c"},"PrivateDnsName":"ip-10-0-0-10.ec2.internal","PrivateIpAddress":"
+10.0.0.10","State":{"Name":"running"},"Tags":[{"Key":"Name","Value":"loomwright-
+platform-6325d8"}],"CpuOptions":{"CoreCount":2,"ThreadsPerCore":2},"PlatformDeta
+ils":"Linux/UNIX"}],"OwnerId":"310000000012","ReservationId":"r-0bd10a2da9e6325d
+8"}]
+eu-west-1 
+[{"Instances":[{"InstanceId":"i-0344388be2ca905c3","InstanceType":"t3.large","La
+unchTime":"2026-01-01T00:00:00.000Z","Placement":{"AvailabilityZone":"eu-west-1c
+"},"PrivateDnsName":"ip-10-0-0-10.ec2.internal","PrivateIpAddress":"10.0.0.10","
+State":{"Name":"running"},"Tags":[{"Key":"Name","Value":"loomwright-platform-a90
+5c3"},{"Key":"paigoChargeCode","Value":"cc-search-serving"}],"CpuOptions":{"Core
+Count":2,"ThreadsPerCore":2},"PlatformDetails":"Linux/UNIX"}],"OwnerId":"3100000
+00012","ReservationId":"r-0344388be2ca905c3"},{"Instances":[{"InstanceId":"i-04f
+05637db30e00ed","InstanceType":"m5.large","LaunchTime":"2026-01-01T00:00:00.000Z
+","Placement":{"AvailabilityZone":"eu-west-1b"},"PrivateDnsName":"ip-10-0-0-10.e
+c2.internal","PrivateIpAddress":"10.0.0.10","State":{"Name":"running"},"Tags":[{
+"Key":"Name","Value":"loomwright-platform-0e00ed"}],"CpuOptions":{"CoreCount":2,
+"ThreadsPerCore":2},"PlatformDetails":"Linux/UNIX"}],"OwnerId":"310000000012","R
+eservationId":"r-04f05637db30e00ed"},{"Instances":[{"InstanceId":"i-0a557d8990b5
+d604f","InstanceType":"m5.large","LaunchTime":"2026-01-01T00:00:00.000Z","Placem
+ent":{"AvailabilityZone":"eu-west-1a"},"PrivateDnsName":"ip-10-0-0-10.ec2.intern
+al","PrivateIpAddress":"10.0.0.10","State":{"Name":"running"},"Tags":[{"Key":"Na
+me","Value":"loomwright-platform-5d604f"},{"Key":"paigoChargeCode","Value":"cc-s
+chema-svc"},{"Key":"paigoRollsInto","Value":"unit/amberly"}],"CpuOptions":{"Core
+Count":2,"ThreadsPerCore":2},"PlatformDetails":"Linux/UNIX"}],"OwnerId":"3100000
+00012","ReservationId":"r-0a557d8990b5d604f"},{"Instances":[{"InstanceId":"i-0d6
+a8edde89f6cf68","InstanceType":"m6i.large","LaunchTime":"2026-01-01T00:00:00.000
+Z","Placement":{"AvailabilityZone":"eu-west-1b"},"PrivateDnsName":"ip-10-0-0-10.
+ec2.internal","PrivateIpAddress":"10.0.0.10","State":{"Name":"running"},"Tags":[
+{"Key":"Name","Value":"loomwright-platform-f6cf68"}],"CpuOptions":{"CoreCount":2
+,"ThreadsPerCore":2},"PlatformDetails":"Linux/UNIX"}],"OwnerId":"310000000012","
+ReservationId":"r-0d6a8edde89f6cf68"}]
+ap-southeast-1 []
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 14, $0.48):
+```
+cd /app && grep -rn "attributeSpend\|usageAttribution\|AttributedSpend" 
+--include=*.ts src test integration | grep -v node_modules
+```
+
+```
+cd /app && cat > svc3.js <<'EOF'
+const cfg={endpoint:process.env.AWS_ENDPOINT_URL};
+(async()=>{
+const {STSClient, AssumeRoleCommand}=require('@aws-sdk/client-sts');
+const st=new STSClient({...cfg,region:'us-east-1'});
+const r=await st.send(new 
+AssumeRoleCommand({RoleArn:'arn:aws:iam::310000000028:role/paigo-metering', 
+RoleSessionName:'x', ExternalId:'loomwright-a2-7c41'}));
+const creds={accessKeyId:r.Credentials.AccessKeyId, 
+secretAccessKey:r.Credentials.SecretAccessKey, 
+sessionToken:r.Credentials.SessionToken};
+const {EC2Client, DescribeInstancesCommand}=require('@aws-sdk/client-ec2');
+for(const region of ['us-east-1','eu-west-1','ap-southeast-1']){
+ const e=new EC2Client({...cfg, region, credentials:creds});
+ const d=await e.send(new DescribeInstancesCommand({}));
+ (d.Reservations||[]).forEach(res=>res.Instances.forEach(i=>console.log(region, 
+i.InstanceId, JSON.stringify(i.Tags))));
+}
+})();
+EOF
+node svc3.js
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/app.module.ts:41:import { UsageAttributionModule } from 
+'./microservices/usageAttribution/usageAttribution.module.js';
+src/microservices/usageAttribution/entities/attributedSpend.entity.ts:8:export 
+class AttributedSpendEntity {
+src/microservices/usageAttribution/entities/attributedSpend.entity.ts:9:    
+public static _measurement = 'AttributedSpendData';
+src/microservices/usageAttribution/entities/attributedSpend.entity.ts:24:    
+constructor({ businessID, chargeCode, quantity, amount, lineCount }: 
+AttributedSpendEntity) {
+src/microservices/usageAttribution/entities/attributedSpend.entity.ts:32:    
+public static transformer(entity: AttributedSpendEntity, influxService: 
+InfluxService): Point {
+src/microservices/usageAttribution/entities/attributedSpend.entity.ts:35:       
+const point = influxService.getPoint(AttributedSpendEntity._measurement);
+src/microservices/usageAttribution/entities/attributedSpend.entity.ts:45:    
+public static dbModelToEntity(dbModel: any): AttributedSpendEntity {
+src/microservices/usageAttribution/entities/attributedSpend.entity.ts:48:       
+return new AttributedSpendEntity({
+src/microservices/usageAttribution/usageAttribution.module.ts:3:import { 
+UsageAttributionService } from './usageAttribution.service.js';
+src/microservices/usageAttribution/usageAttribution.service.ts:4:import { 
+AttributedSpendEntity } from './entities/attributedSpend.entity.js';
+src/microservices/usageAttribution/usageAttribution.service.ts:31:    async 
+getAttributedSpend({ data: { scheduleParameters, businessID, subject, rate } }: 
+Job<SchedulerEntity>) {
+src/microservices/usageAttribution/usageAttribution.service.ts:40:        const 
+attributed = await this.attributeSpend({ businessID, registryBucket, registryKey
+});
+src/microservices/usageAttribution/usageAttribution.service.ts:41:        const 
+points = attributed.map((entity): Point => 
+AttributedSpendEntity.transformer(entity, this.InfluxService));
+src/microservices/usageAttribution/usageAttribution.service.ts:51:    async 
+attributeSpend({
+src/microservices/usageAttribution/usageAttribution.service.ts:59:    }): 
+Promise<Array<AttributedSpendEntity>> {
+src/microservices/usageAttribution/usageAttribution.service.ts:62:        const 
+totals: Record<string, AttributedSpendEntity> = {};
+src/microservices/usageAttribution/usageAttribution.service.ts:79:              
+new AttributedSpendEntity({ businessID, chargeCode, quantity: 0, amount: 0, 
+lineCount: 0 });
+src/scheduler/entities/scheduler.entity.ts:10:import { UsageAttributionDto } 
+from '../../microservices/usageAttribution/dto/usageAttribution.dto.js';
+
+
+Tool:
+<returncode>
+0
+<output>
+us-east-1 i-00d1d6cba7c2d3ccb 
+[{"Key":"Name","Value":"loomwright-analytics-2d3ccb"}]
+us-east-1 i-02cdd7531b2443e5f 
+[{"Key":"Name","Value":"loomwright-analytics-443e5f"}]
+us-east-1 i-0611273b6cde1ce84 
+[{"Key":"Name","Value":"loomwright-analytics-e1ce84"},{"Key":"paigoChargeCode","
+Value":"cc-consent-svc"},{"Key":"paigoRollsInto","Value":"pool/elmwood"}]
+us-east-1 i-06e9b1c504ab8b1d0 
+[{"Key":"Name","Value":"loomwright-analytics-b8b1d0"},{"Key":"paigoChargeCode","
+Value":"cc-fraud-review"}]
+ap-southeast-1 i-07a4fdcc632f31a48 
+[{"Key":"Name","Value":"loomwright-analytics-f31a48"},{"Key":"paigoChargeCode","
+Value":"cc-session-cache"},{"Key":"paigoRollsInto","Value":"alias/yewtree"}]
+ap-southeast-1 i-0b4bec278c86f3617 
+[{"Key":"Name","Value":"loomwright-analytics-6f3617"}]
+ap-southeast-1 i-0d53307986efdea6e 
+[{"Key":"Name","Value":"loomwright-analytics-fdea6e"},{"Key":"paigoChargeCode","
+Value":"cc-email-relay"},{"Key":"paigoRollsInto","Value":"unit/sable"}]
+ap-southeast-1 i-0dbda8455635566cb 
+[{"Key":"Name","Value":"loomwright-analytics-5566cb"}]
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 15, $0.56):
+```
+cd /app && cat > lines.js <<'EOF'
+const {S3Client, ListObjectsV2Command, 
+GetObjectCommand}=require('@aws-sdk/client-s3');
+const c=new S3Client({endpoint:process.env.AWS_ENDPOINT_URL, 
+forcePathStyle:true});
+(async()=>{
+const g=async(b,k)=>JSON.parse(await (await c.send(new 
+GetObjectCommand({Bucket:b,Key:k}))).Body.transformToString());
+const reg=await g('paigo-metering-loomwright','onboarding/registry.json');
+const counts={};
+for(const a of reg.accounts){
+ const l=await c.send(new 
+ListObjectsV2Command({Bucket:a.usageBucket,Prefix:reg.usageExportPrefix+a.accoun
+tId+'/'}));
+ for(const o of l.Contents){
+  const b=await g(a.usageBucket,o.Key);
+  for(const ln of b.lines){ 
+counts[ln.attribution]=(counts[ln.attribution]||[0,0,0]); 
+counts[ln.attribution][0]+=ln.quantity; counts[ln.attribution][1]+=ln.amount; 
+counts[ln.attribution][2]+=1;}
+ }
+}
+Object.keys(counts).sort().forEach(k=>console.log(k, counts[k][0], 
+counts[k][1].toFixed(2), counts[k][2]));
+EOF
+echo "})();" >> lines.js && node lines.js
+```
+
+Tool:
+<returncode>
+0
+<output>
+pool/aurora 590 187.14 3
+pool/basalt 705 190.15 3
+pool/cinder 494 110.54 3
+pool/dovetail 111 34.12 2
+pool/fathom 155 47.48 2
+pool/harrow 147 39.86 2
+pool/juniper 262 67.86 1
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 16, $0.61):
+```
+cd /app && cat > lines2.js <<'EOF'
+const {S3Client, ListObjectsV2Command, 
+GetObjectCommand}=require('@aws-sdk/client-s3');
+const c=new S3Client({endpoint:process.env.AWS_ENDPOINT_URL, 
+forcePathStyle:true});
+(async()=>{
+const g=async(b,k)=>JSON.parse(await (await c.send(new 
+GetObjectCommand({Bucket:b,Key:k}))).Body.transformToString());
+const reg=await g('paigo-metering-loomwright','onboarding/registry.json');
+for(const a of reg.accounts){
+ const l=await c.send(new 
+ListObjectsV2Command({Bucket:a.usageBucket,Prefix:reg.usageExportPrefix+a.accoun
+tId+'/'}));
+ for(const o of l.Contents){
+  const b=await g(a.usageBucket,o.Key);
+  console.log(a.accountId,o.Key);
+  b.lines.forEach(ln=>console.log('   ',ln.attribution, ln.quantity, 
+ln.amount));
+ }
+}
+})();
+EOF
+node lines2.js
+```
+
+Tool:
+<returncode>
+0
+<output>
+310000000012 usage/310000000012/2026-01-01-sweep-be15b2a5.json
+    pool/aurora 251 91.11
+    pool/aurora 171 43.78
+    pool/basalt 226 65.77
+    pool/cinder 260 48.36
+310000000012 usage/310000000012/2026-02-02-sweep-fb01eb17.json
+    pool/cinder 76 27.74
+    pool/dovetail 65 19.95
+    pool/fathom 65 24.89
+    pool/harrow 116 31.09
+310000000028 usage/310000000028/2026-01-01-sweep-335c8328.json
+    pool/aurora 168 52.25
+    pool/basalt 265 63.6
+    pool/basalt 214 60.78
+    pool/cinder 158 34.44
+310000000028 usage/310000000028/2026-02-02-sweep-7e6e66ac.json
+    pool/dovetail 46 14.17
+    pool/fathom 90 22.59
+    pool/harrow 31 8.77
+    pool/juniper 262 67.86
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 17, $0.66):
+```
+cd /app && cat > lines3.js <<'EOF'
+const {S3Client, ListObjectsV2Command, 
+GetObjectCommand}=require('@aws-sdk/client-s3');
+const c=new S3Client({endpoint:process.env.AWS_ENDPOINT_URL, 
+forcePathStyle:true});
+const g=async(b,k)=>JSON.parse(await (await c.send(new 
+GetObjectCommand({Bucket:b,Key:k}))).Body.transformToString());
+const listAll=async(b,p)=>{let t,ks=[];do{const r=await c.send(new 
+ListObjectsV2Command({Bucket:b,Prefix:p,ContinuationToken:t}));(r.Contents||[]).
+forEach(x=>ks.push(x.Key));t=r.NextContinuationToken;}while(t);return ks;};
+(async()=>{
+const reg=await g('paigo-metering-loomwright','onboarding/registry.json');
+const all=[];
+for(const a of reg.accounts){
+ for(const k of await listAll(a.usageBucket, 
+reg.usageExportPrefix+a.accountId+'/')){
+  const b=await g(a.usageBucket,k);
+  console.log(k); b.lines.forEach(ln=>{console.log('   
+',ln.attribution,ln.quantity,ln.amount); all.push(ln);});
+ }
+}
+console.log('total lines', all.length);
+const per={};
+all.forEach(l=>{per[l.attribution]=per[l.attribution]||[0,0,0]; 
+per[l.attribution][0]+=l.quantity;per[l.attribution][1]+=l.amount;per[l.attribut
+ion][2]++;});
+Object.keys(per).sort().forEach(k=>console.log(k,per[k][0],per[k][1].toFixed(2),
+per[k][2]));
+})();
+EOF
+node lines3.js
+```
+
+Tool:
+<returncode>
+0
+<output>
+usage/310000000012/2026-01-01-sweep-be15b2a5.json
+    pool/aurora 251 91.11
+    pool/aurora 171 43.78
+    pool/basalt 226 65.77
+    pool/cinder 260 48.36
+usage/310000000012/2026-02-02-sweep-fb01eb17.json
+    pool/cinder 76 27.74
+    pool/dovetail 65 19.95
+    pool/fathom 65 24.89
+    pool/harrow 116 31.09
+usage/310000000012/2026-03-03-sweep-4ed68524.json
+    pool/juniper 123 28.04
+    pool/lantern 141 53.58
+    pool/nimbus 93 26.32
+    pool/quarry 104 22.78
+usage/310000000012/2026-04-04-sweep-6ce86e66.json
+    pool/tundra 244 46.12
+    pool/willow 68 21.08
+    pool/glenrow 89 30.7
+    pool/oakfield 59 12.15
+usage/310000000012/2026-05-05-sweep-ec07195b.json
+    pool/thornby 180 55.98
+usage/310000000028/2026-01-01-sweep-335c8328.json
+    pool/aurora 168 52.25
+    pool/basalt 265 63.6
+    pool/basalt 214 60.78
+    pool/cinder 158 34.44
+usage/310000000028/2026-02-02-sweep-7e6e66ac.json
+    pool/dovetail 46 14.17
+    pool/fathom 90 22.59
+    pool/harrow 31 8.77
+    pool/juniper 262 67.86
+usage/310000000028/2026-03-03-sweep-9097a4fd.json
+    pool/lantern 213 74.55
+    pool/nimbus 204 33.66
+    pool/quarry 125 20.5
+    pool/tundra 274 77.54
+usage/310000000028/2026-04-04-sweep-ae6d5858.json
+    pool/willow 224 33.6
+    pool/brindle 175 44.1
+    pool/mossgate 135 46.84
+    pool/redbourne 128 30.72
+total lines 33
+pool/aurora 590 187.14 3
+pool/basalt 705 190.15 3
+pool/brindle 175 44.10 1
+pool/cinder 494 110.54 3
+pool/dovetail 111 34.12 2
+pool/fathom 155 47.48 2
+pool/glenrow 89 30.70 1
+pool/harrow 147 39.86 2
+pool/juniper 385 95.90 2
+pool/lantern 354 128.13 2
+pool/mossgate 135 46.84 1
+pool/nimbus 297 59.98 2
+pool/oakfield 59 12.15 1
+pool/quarry 229 43.28 2
+pool/redbourne 128 30.72 1
+pool/thornby 180 55.98 1
+pool/tundra 518 123.66 2
+pool/willow 292 54.68 2
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 18, $0.74):
+```
+cd /app && cat src/utils/aws/awsSSM.ts; echo ===; sed -n 1,60p 
+src/utils/aws/awsEc2.ts; echo ===; grep -n "DescribeInstances" -r src 
+--include=*.ts | head
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+
+export const getRegionNameFromCode = async (region) => {
+    const client = new SSMClient({});
+    const regionURL = 
+`/aws/service/global-infrastructure/regions/${region}/longName`;
+    const { Parameter } = await client.send(new GetParameterCommand({ Name: 
+regionURL }));
+    return Parameter?.Value;
+};
+===
+import {
+    EC2Client,
+    DescribeInstancesCommand,
+    DescribeInstanceTypesCommand,
+    DescribeRegionsCommand,
+    DescribeVolumesCommand,
+    DescribeSnapshotsCommand,
+    DescribeReservedInstancesCommand,
+    Filter,
+    Volume,
+    Snapshot,
+    _InstanceType,
+} from '@aws-sdk/client-ec2';
+import flattenDeep from 'lodash.flattendeep';
+import { BadRequestException } from '@nestjs/common';
+
+export const getInstanceWithFilters = async (region, creds, filters = []): 
+Promise<any> => {
+    try {
+        const ec2Client = new EC2Client({ region, credentials: creds });
+        let instances = [];
+        let next;
+        do {
+            const response = await ec2Client.send(new DescribeInstancesCommand({
+NextToken: next, Filters: filters }));
+            next = response?.NextToken;
+            const { Reservations } = response;
+            Reservations.forEach((reservation) => {
+                const { Instances } = reservation;
+                instances = instances.concat(Instances);
+            });
+        } while (next);
+        return instances;
+    } catch (err) {
+        console.log('Error', err);
+        if (err.Code === 'AccessDenied') {
+            throw new BadRequestException('Invalid IAM role or external ID');
+        } else {
+            throw new BadRequestException('Error fetching instances');
+        }
+    }
+};
+
+export const getAllInstanceIDs = async (
+    region,
+    creds,
+    tagList = [],
+): Promise<
+    Array<{
+        InstanceId: string;
+        State: string;
+        Tags: Array<string>;
+        Memory: string;
+        LaunchTime: string;
+        CpuCores: string;
+        PrivateDnsName: string;
+        InstanceType: string;
+        region: string;
+    }>
+> => {
+    try {
+        const ec2Client = new EC2Client({ region, credentials: creds });
+===
+src/utils/aws/awsEc2.ts:3:    DescribeInstancesCommand,
+src/utils/aws/awsEc2.ts:23:            const response = await ec2Client.send(new
+DescribeInstancesCommand({ NextToken: next, Filters: filters }));
+src/utils/aws/awsEc2.ts:68:            const response = await ec2Client.send(new
+DescribeInstancesCommand({ NextToken: next, Filters: tagList }));
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 19, $0.80):
+```
+cd /app && cat > t.js <<'EOF'
+const {S3Client, ListBucketsCommand}=require('@aws-sdk/client-s3');
+const {EC2Client, DescribeInstancesCommand}=require('@aws-sdk/client-ec2');
+const {SSMClient, GetParameterCommand}=require('@aws-sdk/client-ssm');
+(async()=>{
+ console.log((await new S3Client({}).send(new 
+ListBucketsCommand({}))).Buckets.map(b=>b.Name));
+ console.log((await new EC2Client({region:'us-east-1'}).send(new 
+DescribeInstancesCommand({}))).Reservations.length);
+ console.log((await new SSMClient({}).send(new 
+GetParameterCommand({Name:'/paigo/attribution/alias/zircon'}))).Parameter);
+})().catch(e=>console.log('ERR',e.name,e.message));
+EOF
+node t.js
+```
+
+Tool:
+<returncode>
+0
+<output>
+[
+  'paigo-metering-loomwright',
+  'paigo-usage-loomwright-platform',
+  'paigo-usage-loomwright-analytics'
+]
+0
+{
+  ARN: 'arn:aws:ssm:us-east-1::parameter/paigo/attribution/alias/zircon',
+  DataType: 'text',
+  Name: '/paigo/attribution/alias/zircon',
+  Type: 'String',
+  Value: 'pool/quillon',
+  Version: 1
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 20, $0.90):
+Now I understand the full picture. Let me write the helpers first.
+
+```
+cd /app && cat >> src/utils/aws/awsSSM.ts <<'EOF'
+
+/**
+ * The value of a single parameter, or undefined when the parameter is not
+ * there. Callers use this for lookups where a missing parameter is a normal
+ * outcome rather than a failure.
+ */
+export const getParameterValue = async (Name: string, credentials = undefined): 
+Promise<string> => {
+    const client = new SSMClient(credentials ? { credentials } : {});
+    try {
+        const { Parameter } = await client.send(new GetParameterCommand({ Name 
+}));
+        return Parameter?.Value;
+    } catch (error) {
+        if (error?.name === 'ParameterNotFound') {
+            return undefined;
+        }
+        throw error;
+    }
+};
+EOF
+cat src/utils/aws/awsSSM.ts
+```
+
+```
+cd /app && grep -n "export const" src/utils/aws/awsEc2.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+
+export const getRegionNameFromCode = async (region) => {
+    const client = new SSMClient({});
+    const regionURL = 
+`/aws/service/global-infrastructure/regions/${region}/longName`;
+    const { Parameter } = await client.send(new GetParameterCommand({ Name: 
+regionURL }));
+    return Parameter?.Value;
+};
+
+/**
+ * The value of a single parameter, or undefined when the parameter is not
+ * there. Callers use this for lookups where a missing parameter is a normal
+ * outcome rather than a failure.
+ */
+export const getParameterValue = async (Name: string, credentials = undefined): 
+Promise<string> => {
+    const client = new SSMClient(credentials ? { credentials } : {});
+    try {
+        const { Parameter } = await client.send(new GetParameterCommand({ Name 
+}));
+        return Parameter?.Value;
+    } catch (error) {
+        if (error?.name === 'ParameterNotFound') {
+            return undefined;
+        }
+        throw error;
+    }
+};
+
+
+Tool:
+<returncode>
+0
+<output>
+17:export const getInstanceWithFilters = async (region, creds, filters = []): 
+Promise<any> => {
+42:export const getAllInstanceIDs = async (
+140:export const getAllRegions = async (creds = undefined) => {
+151:export const getAllVolumes = async (creds, Filters: Array<Filter> = []): 
+Promise<Record<string, Array<Volume>>> => {
+180:export const getAllSnapshots = async (creds, Filters: Array<Filter> = []): 
+Promise<Record<string, Array<Snapshot>>> => {
+208:export const getReservedInstanceCount = async (creds, region, filters) => {
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 21, $0.97):
+```
+cd /app && cat >> src/utils/aws/awsEc2.ts <<'EOF'
+
+/**
+ * The tags one instance carries, keyed by tag name. Returns undefined when the
+ * instance is not in the account/region asked for, so callers can treat a
+ * dangling reference as a miss instead of a failure.
+ */
+export const getInstanceTags = async (
+    region: string,
+    creds,
+    instanceId: string,
+): Promise<Record<string, string>> => {
+    try {
+        const ec2Client = new EC2Client({ region, credentials: creds });
+        const { Reservations } = await ec2Client.send(
+            new DescribeInstancesCommand({ InstanceIds: [instanceId] }),
+        );
+        const instance = flattenDeep((Reservations ?? []).map(({ Instances }) =>
+Instances ?? [])).find(
+            ({ InstanceId }) => InstanceId === instanceId,
+        );
+        if (!instance) {
+            return undefined;
+        }
+        return (instance.Tags ?? []).reduce((tags, { Key, Value }) => ({ 
+...tags, [Key]: Value }), {});
+    } catch (error) {
+        if (error?.name === 'InvalidInstanceID.NotFound') {
+            return undefined;
+        }
+        throw error;
+    }
+};
+EOF
+npx tsc --noEmit -p tsconfig.json 2>&1 | head -20
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/billing/billing.service.spec.ts(76,28): error TS2345: Argument of type 
+'string' is not assignable to parameter of type 'FakeTimersConfig | 
+LegacyFakeTimersConfig'.
+src/billing/billing.service.spec.ts(97,28): error TS2345: Argument of type 
+'string' is not assignable to parameter of type 'FakeTimersConfig | 
+LegacyFakeTimersConfig'.
+src/billing/billing.service.spec.ts(114,28): error TS2345: Argument of type 
+'string' is not assignable to parameter of type 'FakeTimersConfig | 
+LegacyFakeTimersConfig'.
+src/contract/contract.service.spec.ts(25,28): error TS2345: Argument of type 
+'string' is not assignable to parameter of type 'FakeTimersConfig | 
+LegacyFakeTimersConfig'.
+src/contract/contract.service.spec.ts(60,78): error TS2345: Argument of type '{ 
+offering: { enroll: jest.Mock<any, any, any>; }; }' is not assignable to 
+parameter of type 'PrepareContractResponseDto | 
+Promise<PrepareContractResponseDto>'.
+  Type '{ offering: { enroll: Mock<any, any, any>; }; }' is missing the 
+following properties from type 'PrepareContractResponseDto': customerId, 
+businessID, offeringId, offeringEnrollmentDate, readOfferingResponseData
+src/contract/contract.service.spec.ts(64,37): error TS2345: Argument of type '{ 
+customerId: string; offeringId: string; businessID: string; 
+readSettingsResponseData: { id: string; name: string; }; }' is not assignable to
+parameter of type 'CreateContractDto'.
+  Types of property 'readSettingsResponseData' are incompatible.
+    Type '{ id: string; name: string; }' has no properties in common with type 
+'ReadSettingsResponseData'.
+src/contract/contract.service.spec.ts(1032,13): error TS2345: Argument of type 
+'{ customer: ReadCustomerResponseData; oldOfferingId: string; newOfferingId: 
+string; subject: string; }' is not assignable to parameter of type '{ customer: 
+ReadCustomerResponseData; subject: string; businessID: string; oldOfferingIds?: 
+string[]; newOfferingId?: string; overridesForCustomer?: CustomOverrides; 
+usageOverrides?: UsageForCustomerEnrollment[]; removePriorOffering?: boolean; 
+unenrollOfferingId?: string; }'.
+  Object literal may only specify known properties, but 'oldOfferingId' does not
+exist in type '{ customer: ReadCustomerResponseData; subject: string; 
+businessID: string; oldOfferingIds?: string[]; newOfferingId?: string; 
+overridesForCustomer?: CustomOverrides; usageOverrides?: 
+UsageForCustomerEnrollment[]; removePriorOffering?: boolean; 
+unenrollOfferingId?: string; }'. Did you mean to write 'oldOfferingIds'?
+src/customer/customer.service.spec.ts(80,9): error TS2322: Type 'Promise<{ 
+customerId: string; businessID: string; discount?: CustomerContractDiscount; 
+dimensionOverrides?: DimensionOverridesDto[]; offeringId: string; ... 4 more 
+...; message: string; }>' is not assignable to type 
+'Promise<CreateContractResponseDto>'.
+  Property 'readOfferingResponseData' is missing in type '{ customerId: string; 
+businessID: string; discount?: CustomerContractDiscount; dimensionOverrides?: 
+DimensionOverridesDto[]; offeringId: string; ... 4 more ...; message: string; }'
+but required in type 'CreateContractResponseDto'.
+src/customer/customer.service.spec.ts(125,45): error TS2352: Conversion of type 
+'{ overridesForOffering: { freeTrialEndDate: any; }; offeringEnrollmentDate: 
+Date; readOfferingResponseData: unknown; }' to type 'ReadContractResponseDto' 
+may be a mistake because neither type sufficiently overlaps with the other. If 
+this was intentional, convert the expression to 'unknown' first.
+  Type '{ overridesForOffering: { freeTrialEndDate: any; }; 
+offeringEnrollmentDate: Date; readOfferingResponseData: unknown; }' is missing 
+the following properties from type 'ReadContractResponseDto': customerId, 
+offeringId
+src/customer/customer.service.spec.ts(218,21): error TS2322: Type 'string' is 
+not assignable to type 'number'.
+src/customer/customer.service.spec.ts(231,21): error TS2322: Type 'string' is 
+not assignable to type 'number'.
+src/customer/customer.service.spec.ts(236,93): error TS2740: Type '{ unenroll: 
+Mock<any, any, any>; enroll: Mock<any, any, any>; }' is missing the following 
+properties from type 'Offering': offeringType, offeringName, invoicesService, 
+businessID, and 13 more.
+src/customer/customer.service.spec.ts(292,23): error TS2554: Expected 3-5 
+arguments, but got 2.
+src/customer/customer.service.spec.ts(300,23): error TS2554: Expected 3-5 
+arguments, but got 2.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 22, $1.12):
+Pre-existing spec errors. Now let me write the attribution chain resolution.
+
+```
+cd /app && cat > src/onboarding/entities/attributionDirectory.entity.ts <<'EOF'
+import { Logger } from '@nestjs/common';
+import { getDocument } from '../../utils/aws/s3.js';
+import { getParameterValue } from '../../utils/aws/awsSSM.js';
+import { getInstanceTags } from '../../utils/aws/awsEc2.js';
+import { MeteredAccount, credentialsForAccount } from 
+'./meteringAccounts.entity.js';
+
+const POOL_REFERENCE = 'pool/';
+const UNIT_REFERENCE = 'unit/';
+const ALIAS_REFERENCE = 'alias/';
+const NODE_REFERENCE = 'node/';
+
+/** Where a business' alias records live outside of its metering bucket. */
+const ALIAS_PARAMETER_PREFIX = '/paigo/attribution/alias/';
+/** The tags an instance carries when it takes part in attribution. */
+const NODE_CHARGE_CODE_TAG = 'paigoChargeCode';
+const NODE_ROLLS_INTO_TAG = 'paigoRollsInto';
+
+/** Guards against attribution material that points onwards without ever ending.
+*/
+const MAX_CHAIN_LENGTH = 64;
+
+/**
+ * One step of an attribution chain: the code the step itself names, and the
+ * reference it hands the spend on to, when it hands it on at all.
+ */
+class AttributionLink {
+    public chargeCode?: string;
+    public passesTo?: string;
+}
+
+/**
+ * One pocket of a business' estate. The finance system rewrites the whole set
+ * whenever a team moves, so the pools are kept together in a single document
+ * rather than one object each.
+ */
+export class AttributionPool {
+    /** The code spend sitting on this pool is booked to. */
+    public chargeCode: string;
+    /**
+     * Where the pool passes its spend on to, when it does not keep it. The
+     * owner named here carries the spend instead of the pool itself.
+     * @example "unit/fernlea"
+     */
+    public rollsUpTo?: string;
+}
+
+export class AttributionPoolDocument {
+    public revision: string;
+    public pools: Record<string, AttributionPool>;
+}
+
+/**
+ * One business unit the finance system keeps as its own object beside the pool
+ * document.
+ */
+export class AttributionUnit {
+    public unitId: string;
+    /** The code spend sitting on this unit is booked to. */
+    public chargeCode: string;
+    /**
+     * The owner this unit passes its spend on to, when it passes it on.
+     * @example "alias/zircon"
+     */
+    public parentRef?: string;
+}
+
+/**
+ * The attribution material a business keeps beside its onboarding record.
+ *
+ * A usage line names where its spend starts, but a pool, unit, alias or
+ * instance may pass that spend on to another owner, and that owner may pass it
+ * on again. The directory walks the whole chain so spend lands on the code that
+ * ultimately carries it rather than on the first code it meets.
+ */
+export class AttributionDirectory {
+    private static readonly logger = new Logger(AttributionDirectory.name);
+
+    private readonly pools: Record<string, AttributionPool>;
+
+    /** The metering bucket and prefix the rest of the material sits under. */
+    private readonly bucket: string;
+
+    private readonly prefix: string;
+
+    /** The accounts we may read instances from, keyed by account id. */
+    private readonly accounts: Record<string, MeteredAccount>;
+
+    private readonly unitCache = new Map<string, Promise<AttributionUnit>>();
+
+    private readonly aliasCache = new Map<string, Promise<string>>();
+
+    private readonly nodeCache = new Map<string, Promise<Record<string, 
+string>>>();
+
+    private readonly resolutionCache = new Map<string, string>();
+
+    private constructor(
+        pools: Record<string, AttributionPool>,
+        bucket: string,
+        prefix: string,
+        accounts: Array<MeteredAccount>,
+    ) {
+        this.pools = pools;
+        this.bucket = bucket;
+        this.prefix = prefix;
+        this.accounts = (accounts ?? []).reduce((known, account) => ({ ...known,
+[account.accountId]: account }), {});
+    }
+
+    static async load(bucket: string, prefix: string, accounts: 
+Array<MeteredAccount> = []): Promise<AttributionDirectory> {
+        const document = await getDocument<AttributionPoolDocument>(bucket, 
+`${prefix}pools.json`);
+        return new AttributionDirectory(document?.pools ?? {}, bucket, prefix, 
+accounts);
+    }
+
+    /**
+     * The code that ends up carrying a usage line's spend. The reference the
+     * line carries is followed through every owner that passes the cost on, so
+     * the answer is the last owner in the chain rather than the first one.
+     *
+     * When the chain turns back on itself the owners in the loop share a code
+     * between them, and that shared code is the one used.
+     */
+    async chargeCodeFor(reference: string): Promise<string> {
+        if (!reference) {
+            return undefined;
+        }
+        if (this.resolutionCache.has(reference)) {
+            return this.resolutionCache.get(reference);
+        }
+
+        const visited = new Map<string, number>();
+        const codes: Array<string> = [];
+        let current = reference;
+        let carried: string;
+
+        while (current) {
+            if (visited.has(current)) {
+                const shared = 
+AttributionDirectory.sharedCycleCode(codes.slice(visited.get(current)));
+                AttributionDirectory.logger.warn(
+                    `Attribution chain from ${reference} repeats at ${current}, 
+booking to ${shared ?? carried}`,
+                );
+                carried = shared ?? carried;
+                break;
+            }
+            visited.set(current, codes.length);
+
+            // Each step has to be read before we know where the chain goes 
+next.
+            // eslint-disable-next-line no-await-in-loop
+            const link = await this.linkFor(current);
+            if (!link) {
+                AttributionDirectory.logger.warn(
+                    `Attribution reference ${current} reached from ${reference} 
+is not in the business' material`,
+                );
+                break;
+            }
+            codes.push(link.chargeCode);
+            if (link.chargeCode) {
+                carried = link.chargeCode;
+            }
+            if (codes.length >= MAX_CHAIN_LENGTH) {
+                AttributionDirectory.logger.warn(
+                    `Attribution chain from ${reference} is longer than 
+${MAX_CHAIN_LENGTH} owners, booking to ${carried}`,
+                );
+                break;
+            }
+            current = link.passesTo;
+        }
+
+        this.resolutionCache.set(reference, carried);
+        return carried;
+    }
+
+    /**
+     * The code the owners caught in a repeating chain hold between them. They
+     * normally all name the same code, and that is the code the cycle carries;
+     * when they disagree the one the most of them name is used.
+     */
+    private static sharedCycleCode(codes: Array<string>): string {
+        const named = codes.filter((code) => code);
+        if (named.length === 0) {
+            return undefined;
+        }
+        const tally = named.reduce((counts, code) => ({ ...counts, [code]: 
+(counts[code] ?? 0) + 1 }), {});
+        return Object.keys(tally)
+            .sort((left, right) => tally[right] - tally[left] || 
+left.localeCompare(right))
+            .shift();
+    }
+
+    /**
+     * What one attribution reference names, whichever kind of owner it points 
+at.
+     */
+    private async linkFor(reference: string): Promise<AttributionLink> {
+        if (reference.startsWith(POOL_REFERENCE)) {
+            const pool = this.pools[reference.slice(POOL_REFERENCE.length)];
+            return pool ? { chargeCode: pool.chargeCode, passesTo: 
+pool.rollsUpTo } : undefined;
+        }
+        if (reference.startsWith(UNIT_REFERENCE)) {
+            const unit = await 
+this.unit(reference.slice(UNIT_REFERENCE.length));
+            return unit ? { chargeCode: unit.chargeCode, passesTo: 
+unit.parentRef } : undefined;
+        }
+        if (reference.startsWith(ALIAS_REFERENCE)) {
+            const target = await 
+this.alias(reference.slice(ALIAS_REFERENCE.length));
+            // An alias only ever stands in for another owner, it books nothing 
+itself.
+            return target ? { passesTo: target } : undefined;
+        }
+        if (reference.startsWith(NODE_REFERENCE)) {
+            return this.node(reference.slice(NODE_REFERENCE.length));
+        }
+        return undefined;
+    }
+
+    /**
+     * A business unit, read from its own object in the metering bucket.
+     */
+    private async unit(name: string): Promise<AttributionUnit> {
+        if (!this.unitCache.has(name)) {
+            this.unitCache.set(
+                name,
+                getDocument<AttributionUnit>(this.bucket, 
+`${this.prefix}units/${name}.json`).catch(() => undefined),
+            );
+        }
+        return this.unitCache.get(name);
+    }
+
+    /**
+     * The owner an alias stands in for.
+     */
+    private async alias(name: string): Promise<string> {
+        if (!this.aliasCache.has(name)) {
+            this.aliasCache.set(
+                name,
+                getParameterValue(`${ALIAS_PARAMETER_PREFIX}${name}`).catch(() 
+=> undefined),
+            );
+        }
+        return this.aliasCache.get(name);
+    }
+
+    /**
+     * What an instance named by a `node/<account>/<region>/<instance>` 
+reference
+     * carries. The instance lives in one of the business' own accounts, so it 
+is
+     * read with that account's credentials rather than our own.
+     */
+    private async node(target: string): Promise<AttributionLink> {
+        const [accountId, region, instanceId] = target.split('/');
+        if (!accountId || !region || !instanceId) {
+            return undefined;
+        }
+        const account = this.accounts[accountId];
+        if (!account) {
+            AttributionDirectory.logger.warn(
+                `Attribution reference names instance ${instanceId} in account 
+${accountId}, which is not onboarded`,
+            );
+            return undefined;
+        }
+        const key = `${accountId}/${region}/${instanceId}`;
+        if (!this.nodeCache.has(key)) {
+            this.nodeCache.set(
+                key,
+                getInstanceTags(region, credentialsForAccount(account), 
+instanceId).catch(() => undefined),
+            );
+        }
+        const tags = await this.nodeCache.get(key);
+        if (!tags) {
+            return undefined;
+        }
+        return { chargeCode: tags[NODE_CHARGE_CODE_TAG], passesTo: 
+tags[NODE_ROLLS_INTO_TAG] };
+    }
+}
+EOF
+echo ok
+```
+
+Tool:
+<returncode>
+0
+<output>
+ok
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 23, $1.18):
+Now update the metering accounts entity with the credentials helper and the 
+service.
+
+```
+cd /app && python3 - <<'PY'
+import re
+p='src/onboarding/entities/meteringAccounts.entity.ts'
+s=open(p).read()
+s=s.replace("""import { getDocument } from '../../utils/aws/s3.js';""","""import
+{ fromTemporaryCredentials } from '@aws-sdk/credential-providers';
+import { getDocument } from '../../utils/aws/s3.js';""")
+s=s.rstrip()+"""
+
+/**
+ * The credentials we read one of a business' accounts with.
+ */
+export const credentialsForAccount = (account: MeteredAccount) =>
+    fromTemporaryCredentials({
+        params: {
+            RoleArn: account.roleArn,
+            ExternalId: account.externalId ? account.externalId : undefined,
+        },
+        clientConfig: { region: 'us-east-1' },
+    });
+"""
+open(p,'w').write(s)
+PY
+tail -20 src/onboarding/entities/meteringAccounts.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+     */
+    public attributionPrefix: string;
+    public accounts: Array<MeteredAccount>;
+
+    static async load(bucket: string, key: string): Promise<MeteringRegistry> {
+        return getDocument<MeteringRegistry>(bucket, key);
+    }
+}
+
+/**
+ * The credentials we read one of a business' accounts with.
+ */
+export const credentialsForAccount = (account: MeteredAccount) =>
+    fromTemporaryCredentials({
+        params: {
+            RoleArn: account.roleArn,
+            ExternalId: account.externalId ? account.externalId : undefined,
+        },
+        clientConfig: { region: 'us-east-1' },
+    });
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 24, $1.25):
+```
+cd /app && python3 - <<'PY'
+p='src/microservices/usageAttribution/usageAttribution.service.ts'
+s=open(p).read()
+s=s.replace("""import { fromTemporaryCredentials } from 
+'@aws-sdk/credential-providers';
+""","")
+s=s.replace("""import { MeteredAccount, MeteringRegistry } from 
+'../../onboarding/entities/meteringAccounts.entity.js';""","""import { 
+MeteringRegistry, credentialsForAccount } from 
+'../../onboarding/entities/meteringAccounts.entity.js';""")
+s=s.replace("""const credentialsForAccount = (account: MeteredAccount) =>
+    fromTemporaryCredentials({
+        params: {
+            RoleArn: account.roleArn,
+            ExternalId: account.externalId ? account.externalId : undefined,
+        },
+        clientConfig: { region: 'us-east-1' },
+    });
+
+""","")
+old = """    /**
+     * Reads every usage export the business' accounts have written and returns
+     * one row per charge code the exported lines are attributed to.
+     */"""
+new = """    /**
+     * Reads every usage export the business' accounts have written and returns
+     * one row per charge code that ultimately carries the exported spend. A
+     * line's attribution reference is only where its spend starts: pools,
+     * units, aliases and instances may each pass the cost on, so every line is
+     * followed to the end of its chain and booked once, against the code that
+     * finally owns it.
+     */"""
+assert old in s
+s=s.replace(old,new)
+old2 = """        const registry = await MeteringRegistry.load(registryBucket, 
+registryKey);
+        const directory = await AttributionDirectory.load(registryBucket, 
+registry.attributionPrefix);"""
+new2 = """        const registry = await MeteringRegistry.load(registryBucket, 
+registryKey);
+        const directory = await AttributionDirectory.load(
+            registryBucket,
+            registry.attributionPrefix,
+            registry.accounts,
+        );"""
+assert old2 in s
+s=s.replace(old2,new2)
+old3 = """            lines.forEach((line) => {
+                const chargeCode = directory.chargeCodeFor(line.attribution);
+                if (!chargeCode) {
+                    return;
+                }
+                const running =
+                    totals[chargeCode] ??
+                    new AttributedSpendEntity({ businessID, chargeCode, 
+quantity: 0, amount: 0, lineCount: 0 });
+                running.quantity += Number(line.quantity ?? 0);
+                running.amount += Number(line.amount ?? 0);
+                running.lineCount += 1;
+                totals[chargeCode] = running;
+            });"""
+new3 = """            // eslint-disable-next-line no-await-in-loop
+            const attributions = await Promise.all(lines.map((line) => 
+directory.chargeCodeFor(line.attribution)));
+            lines.forEach((line, index) => {
+                const chargeCode = attributions[index];
+                if (!chargeCode) {
+                    UsageAttributionService.logger.warn(
+                        `No charge code carries line ${line.lineId} attributed 
+to ${line.attribution}`,
+                    );
+                    return;
+                }
+                const running =
+                    totals[chargeCode] ??
+                    new AttributedSpendEntity({ businessID, chargeCode, 
+quantity: 0, amount: 0, lineCount: 0 });
+                running.quantity += Number(line.quantity ?? 0);
+                running.amount += Number(line.amount ?? 0);
+                running.lineCount += 1;
+                totals[chargeCode] = running;
+            });"""
+assert old3 in s
+s=s.replace(old3,new3)
+open(p,'w').write(s)
+PY
+cat src/microservices/usageAttribution/usageAttribution.service.ts | sed -n 
+1,100p
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { BadRequestException, Inject, Logger, forwardRef } from 
+'@nestjs/common';
+import { InfluxService } from '../../influx/influx.service.js';
+import { AttributedSpendEntity } from './entities/attributedSpend.entity.js';
+import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import { infrastructureType } from 
+'../../dimensions/dto/create-dimension.dto.js';
+import { SchedulerEntity } from '../../scheduler/entities/scheduler.entity.js';
+import { Job } from 'bull';
+import { Point } from '@influxdata/influxdb-client';
+import { AuditScope } from '../../audit/entities/audit.interface.js';
+import { AuditService } from '../../audit/audit.service.js';
+import { MeteringRegistry, credentialsForAccount } from 
+'../../onboarding/entities/meteringAccounts.entity.js';
+import { AttributionDirectory } from 
+'../../onboarding/entities/attributionDirectory.entity.js';
+import { UsageExport } from '../../onboarding/entities/usageExport.entity.js';
+
+@Processor('scheduler_queue')
+export class UsageAttributionService {
+    private static readonly logger = new Logger(UsageAttributionService.name);
+    constructor(@Inject(forwardRef(() => InfluxService)) readonly InfluxService:
+InfluxService) {}
+
+    @Process('attributedSpend')
+    async getAttributedSpend({ data: { scheduleParameters, businessID, subject, 
+rate } }: Job<SchedulerEntity>) {
+        if (!('registryBucket' in scheduleParameters)) {
+            throw new BadRequestException('Metering registry location not 
+found');
+        }
+        const { registryBucket, registryKey } = scheduleParameters;
+        UsageAttributionService.logger.log(
+            'Processing Automated spend attribution event, logging inputs',
+            JSON.stringify({ rate, businessID, registryBucket, subject }),
+        );
+        const attributed = await this.attributeSpend({ businessID, 
+registryBucket, registryKey });
+        const points = attributed.map((entity): Point => 
+AttributedSpendEntity.transformer(entity, this.InfluxService));
+        const { loadPoints } = this.InfluxService;
+        UsageAttributionService.logger.log('Loading Attributed Spend Points into
+Influx', points.length);
+        return loadPoints(`${process.env.STAGE}-usage-data`, 
+process.env.INFLUX_ORG, points);
+    }
+
+    /**
+     * Reads every usage export the business' accounts have written and returns
+     * one row per charge code that ultimately carries the exported spend. A
+     * line's attribution reference is only where its spend starts: pools,
+     * units, aliases and instances may each pass the cost on, so every line is
+     * followed to the end of its chain and booked once, against the code that
+     * finally owns it.
+     */
+    async attributeSpend({
+        businessID,
+        registryBucket,
+        registryKey,
+    }: {
+        businessID: string;
+        registryBucket: string;
+        registryKey: string;
+    }): Promise<Array<AttributedSpendEntity>> {
+        const registry = await MeteringRegistry.load(registryBucket, 
+registryKey);
+        const directory = await AttributionDirectory.load(
+            registryBucket,
+            registry.attributionPrefix,
+            registry.accounts,
+        );
+        const totals: Record<string, AttributedSpendEntity> = {};
+
+        for (const account of registry.accounts) {
+            // eslint-disable-next-line no-await-in-loop
+            const lines = await UsageExport.linesForAccount(
+                account.usageBucket,
+                registry.usageExportPrefix,
+                account.accountId,
+                credentialsForAccount(account),
+            );
+            // eslint-disable-next-line no-await-in-loop
+            const attributions = await Promise.all(lines.map((line) => 
+directory.chargeCodeFor(line.attribution)));
+            lines.forEach((line, index) => {
+                const chargeCode = attributions[index];
+                if (!chargeCode) {
+                    UsageAttributionService.logger.warn(
+                        `No charge code carries line ${line.lineId} attributed 
+to ${line.attribution}`,
+                    );
+                    return;
+                }
+                const running =
+                    totals[chargeCode] ??
+                    new AttributedSpendEntity({ businessID, chargeCode, 
+quantity: 0, amount: 0, lineCount: 0 });
+                running.quantity += Number(line.quantity ?? 0);
+                running.amount += Number(line.amount ?? 0);
+                running.lineCount += 1;
+                totals[chargeCode] = running;
+            });
+        }
+
+        const codes = Object.keys(totals).sort();
+        UsageAttributionService.logger.log(
+            `Attributed spend across ${codes.length} charge codes for 
+${registry.accounts.length} accounts`,
+        );
+        return codes.map((code) => totals[code]);
+    }
+
+    @OnQueueFailed({ name: infrastructureType.podCPUHours })
+    jobFailure(job: Job) {
+        AuditService.publishEvent({
+            message: 'Failed to attribute usage for account',
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 25, $1.33):
+```
+cd /app && python3 - <<'PY'
+p='src/microservices/usageAttribution/usageAttribution.service.ts'
+s=open(p).read()
+old = """            // eslint-disable-next-line no-await-in-loop
+            const attributions = await Promise.all(lines.map((line) => 
+directory.chargeCodeFor(line.attribution)));
+            lines.forEach((line, index) => {
+                const chargeCode = attributions[index];
+                if (!chargeCode) {"""
+new = """            for (const line of lines) {
+                // The chain behind a line has to be walked before it can be 
+booked.
+                // eslint-disable-next-line no-await-in-loop
+                const chargeCode = await 
+directory.chargeCodeFor(line.attribution);
+                if (!chargeCode) {"""
+assert old in s
+s=s.replace(old,new)
+old2="""                        `No charge code carries line ${line.lineId} 
+attributed to ${line.attribution}`,
+                    );
+                    return;
+                }
+                const running =
+                    totals[chargeCode] ??
+                    new AttributedSpendEntity({ businessID, chargeCode, 
+quantity: 0, amount: 0, lineCount: 0 });
+                running.quantity += Number(line.quantity ?? 0);
+                running.amount += Number(line.amount ?? 0);
+                running.lineCount += 1;
+                totals[chargeCode] = running;
+            });"""
+new2="""                        `No charge code carries line ${line.lineId} 
+attributed to ${line.attribution}`,
+                    );
+                    // eslint-disable-next-line no-continue
+                    continue;
+                }
+                const running =
+                    totals[chargeCode] ??
+                    new AttributedSpendEntity({ businessID, chargeCode, 
+quantity: 0, amount: 0, lineCount: 0 });
+                running.quantity += Number(line.quantity ?? 0);
+                running.amount += Number(line.amount ?? 0);
+                running.lineCount += 1;
+                totals[chargeCode] = running;
+            }"""
+assert old2 in s
+s=s.replace(old2,new2)
+open(p,'w').write(s)
+PY
+npx tsc --noEmit -p tsconfig.json 2>&1 | grep -v "\.spec\.ts" | head -20
+```
+
+Tool:
+<returncode>
+0
+<output>
+  Type '{ offering: { enroll: Mock<any, any, any>; }; }' is missing the 
+following properties from type 'PrepareContractResponseDto': customerId, 
+businessID, offeringId, offeringEnrollmentDate, readOfferingResponseData
+  Types of property 'readSettingsResponseData' are incompatible.
+    Type '{ id: string; name: string; }' has no properties in common with type 
+'ReadSettingsResponseData'.
+  Object literal may only specify known properties, but 'oldOfferingId' does not
+exist in type '{ customer: ReadCustomerResponseData; subject: string; 
+businessID: string; oldOfferingIds?: string[]; newOfferingId?: string; 
+overridesForCustomer?: CustomOverrides; usageOverrides?: 
+UsageForCustomerEnrollment[]; removePriorOffering?: boolean; 
+unenrollOfferingId?: string; }'. Did you mean to write 'oldOfferingIds'?
+  Property 'readOfferingResponseData' is missing in type '{ customerId: string; 
+businessID: string; discount?: CustomerContractDiscount; dimensionOverrides?: 
+DimensionOverridesDto[]; offeringId: string; ... 4 more ...; message: string; }'
+but required in type 'CreateContractResponseDto'.
+  Type '{ overridesForOffering: { freeTrialEndDate: any; }; 
+offeringEnrollmentDate: Date; readOfferingResponseData: unknown; }' is missing 
+the following properties from type 'ReadContractResponseDto': customerId, 
+offeringId
+  Overload 1 of 3, '(object: Offering, method: never): SpyInstance<never, never,
+any>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'never'.
+  Overload 2 of 3, '(object: Offering, method: "enroll" | "unenroll" | 
+"getCronRate" | "processFreeTrialEnd" | "offcycleBilling" | "processBilling"): 
+SpyInstance<string | void | Promise<string>, [] | ... 4 more ... | [startDate?: 
+...], any>', gave the following error.
+    Argument of type '"calculateSubscriptionLineItem"' is not assignable to 
+parameter of type '"enroll" | "unenroll" | "getCronRate" | "processFreeTrialEnd"
+| "offcycleBilling" | "processBilling"'.
+  Overload 1 of 3, '(object: Offering, method: never): SpyInstance<never, never,
+any>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'never'.
+  Overload 2 of 3, '(object: Offering, method: "enroll" | "unenroll" | 
+"getCronRate" | "processFreeTrialEnd" | "offcycleBilling" | "processBilling"): 
+SpyInstance<string | void | Promise<string>, [] | ... 4 more ... | [startDate?: 
+...], any>', gave the following error.
+    Argument of type '"calculateSubscriptionLineItem"' is not assignable to 
+parameter of type '"enroll" | "unenroll" | "getCronRate" | "processFreeTrialEnd"
+| "offcycleBilling" | "processBilling"'.
+  Overload 1 of 3, '(object: Offering, method: never): SpyInstance<never, never,
+any>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'never'.
+  Overload 2 of 3, '(object: Offering, method: "enroll" | "unenroll" | 
+"getCronRate" | "processFreeTrialEnd" | "offcycleBilling" | "processBilling"): 
+SpyInstance<string | void | Promise<string>, [] | ... 4 more ... | [startDate?: 
+...], any>', gave the following error.
+    Argument of type '"calculateSubscriptionLineItem"' is not assignable to 
+parameter of type '"enroll" | "unenroll" | "getCronRate" | "processFreeTrialEnd"
+| "offcycleBilling" | "processBilling"'.
+  Type 'ReadSettingsResponseData' is missing the following properties from type 
+'InvoicesService': customerService, paymentService, usageService, 
+dimensionService, and 19 more.
+  Types of property 'payments' are incompatible.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 26, $1.39):
+```
+cd /app && npx tsc --noEmit -p tsconfig.json 2>&1 | grep "^src" | grep -v 
+"spec.ts" | head -20
+```
+
+Tool:
+<returncode>
+0
+<output>
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 27, $1.43):
+```
+cd /app && cat jest.unit.config.json tsconfig.json testTSConfig.json; ls test
+```
+
+Tool:
+<returncode>
+0
+<output>
+{
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "./src",
+    "testEnvironment": "node",
+    "transform": {
+        "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "transformIgnorePatterns": ["node_modules/(?!serialize-error/.*)"],
+    "testRegex": ".spec.ts$",
+    "preset": "ts-jest/presets/js-with-ts",
+    "globals": {
+        "ts-jest": {
+            "isolatedModules": true,
+            "tsConfig": "testTSConfig.json",
+            "useESM": true
+        }
+    },
+    "moduleNameMapper": {
+        "^(\\.\\.?\\/.+)\\.js$": "$1"
+    },
+    "extensionsToTreatAsEsm": [".ts"],
+    "maxWorkers": "20%",
+    "testTimeout": 30000
+}
+ {
+    "compilerOptions": {
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "declaration": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "sourceMap": true,
+        "outDir": "./dist",
+        "baseUrl": "./src",
+        "incremental": true,
+        "skipLibCheck": true,
+        "strictNullChecks": false,
+        "noImplicitAny": false,
+        "strictBindCallApply": false,
+        "forceConsistentCasingInFileNames": false,
+        "noFallthroughCasesInSwitch": false,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+    },
+    "exclude": ["integration"],
+    "include": ["src"]
+}
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "target": "es2017",
+        "sourceMap": true,
+        "outDir": "./dist",
+        "baseUrl": "./src",
+        "incremental": true,
+        "skipLibCheck": true,
+        "strictNullChecks": false,
+        "noImplicitAny": false,
+        "strictBindCallApply": false,
+        "forceConsistentCasingInFileNames": false,
+        "noFallthroughCasesInSwitch": false,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "allowJs": true
+    },
+    "exclude": ["integration"],
+    "include": ["src"]
+}
+api
+app.e2e-spec.ts
+db
+e2e
+fixtures
+jest-api.json
+jest-db.json
+jest-e2e.json
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 28, $1.49):
+```
+cd /app && cat > src/microservices/usageAttribution/repro.spec.ts <<'EOF'
+import { UsageAttributionService } from './usageAttribution.service.js';
+
+describe('attributeSpend against the local emulator', () => {
+    it('books every line against the code that ultimately carries it', async () 
+=> {
+        const service = new UsageAttributionService(undefined);
+        const rows = await service.attributeSpend({
+            businessID: 'biz-loomwright',
+            registryBucket: 'paigo-metering-loomwright',
+            registryKey: 'onboarding/registry.json',
+        });
+        // eslint-disable-next-line no-console
+        console.log(
+            JSON.stringify(
+                rows.map((r) => ({ ...r, amount: Number(r.amount.toFixed(2)) 
+})),
+                null,
+                1,
+            ),
+        );
+        const totals = rows.reduce(
+            (acc, r) => ({ q: acc.q + r.quantity, a: acc.a + r.amount, c: acc.c 
++ r.lineCount }),
+            { q: 0, a: 0, c: 0 },
+        );
+        // eslint-disable-next-line no-console
+        console.log('TOTALS', totals.q, totals.a.toFixed(2), totals.c);
+    }, 120000);
+});
+EOF
+npx jest --config jest.unit.config.json 
+src/microservices/usageAttribution/repro.spec.ts 2>&1 | tail -80
+```
+
+Tool:
+<returncode>
+0
+<output>
+      "businessID": "biz-loomwright",
+      "chargeCode": "cc-media-encode",
+      "quantity": 354,
+      "amount": 128.13,
+      "lineCount": 2
+     },
+     {
+      "businessID": "biz-loomwright",
+      "chargeCode": "cc-ml-training",
+      "quantity": 111,
+      "amount": 34.12,
+      "lineCount": 2
+     },
+     {
+      "businessID": "biz-loomwright",
+      "chargeCode": "cc-mobile-backend",
+      "quantity": 229,
+      "amount": 43.28,
+      "lineCount": 2
+     },
+     {
+      "businessID": "biz-loomwright",
+      "chargeCode": "cc-observability",
+      "quantity": 175,
+      "amount": 44.1,
+      "lineCount": 1
+     },
+     {
+      "businessID": "biz-loomwright",
+      "chargeCode": "cc-partner-api",
+      "quantity": 518,
+      "amount": 123.66,
+      "lineCount": 2
+     },
+     {
+      "businessID": "biz-loomwright",
+      "chargeCode": "cc-platform-core",
+      "quantity": 590,
+      "amount": 187.14,
+      "lineCount": 3
+     },
+     {
+      "businessID": "biz-loomwright",
+      "chargeCode": "cc-search-serving",
+      "quantity": 385,
+      "amount": 95.9,
+      "lineCount": 2
+     },
+     {
+      "businessID": "biz-loomwright",
+      "chargeCode": "cc-shared-tooling",
+      "quantity": 155,
+      "amount": 47.48,
+      "lineCount": 2
+     },
+     {
+      "businessID": "biz-loomwright",
+      "chargeCode": "cc-warehouse-etl",
+      "quantity": 472,
+      "amount": 110.66,
+      "lineCount": 3
+     }
+    ]
+
+      at Object.<anonymous> (microservices/usageAttribution/repro.spec.ts:12:17)
+
+  console.log
+    TOTALS 5043 1335.41 33
+
+      at Object.<anonymous> (microservices/usageAttribution/repro.spec.ts:24:17)
+
+PASS src/microservices/usageAttribution/repro.spec.ts (6.368 s)
+  attributeSpend against the local emulator
+    ✓ books every line against the code that ultimately carries it (1572 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        6.432 s
+Ran all test suites matching 
+/src\/microservices\/usageAttribution\/repro.spec.ts/i.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 29, $1.55):
+```
+cd /app && npx jest --config jest.unit.config.json 
+src/microservices/usageAttribution/repro.spec.ts 2>&1 | grep -A5 '"chargeCode"' 
+| grep -E "chargeCode|quantity|amount|lineCount" | paste - - - - | head -30
+```
+
+Tool:
+<returncode>
+0
+<output>
+      "chargeCode": "cc-batch-scoring",       "quantity": 135,        "amount": 
+46.84,        "lineCount": 1
+      "chargeCode": "cc-content-index",       "quantity": 59,         "amount": 
+12.15,        "lineCount": 1
+      "chargeCode": "cc-customer-apps",       "quantity": 147,        "amount": 
+39.86,        "lineCount": 2
+      "chargeCode": "cc-data-pipeline",       "quantity": 705,        "amount": 
+190.15,       "lineCount": 3
+      "chargeCode": "cc-edge-delivery",       "quantity": 494,        "amount": 
+110.54,       "lineCount": 3
+      "chargeCode": "cc-fraud-review",        "quantity": 297,        "amount": 
+59.98,        "lineCount": 2
+      "chargeCode": "cc-identity-svc",        "quantity": 217,        "amount": 
+61.42,        "lineCount": 2
+      "chargeCode": "cc-media-encode",        "quantity": 354,        "amount": 
+128.13,       "lineCount": 2
+      "chargeCode": "cc-ml-training",         "quantity": 111,        "amount": 
+34.12,        "lineCount": 2
+      "chargeCode": "cc-mobile-backend",              "quantity": 229,        
+"amount": 43.28,        "lineCount": 2
+      "chargeCode": "cc-observability",       "quantity": 175,        "amount": 
+44.1,         "lineCount": 1
+      "chargeCode": "cc-partner-api",         "quantity": 518,        "amount": 
+123.66,       "lineCount": 2
+      "chargeCode": "cc-platform-core",       "quantity": 590,        "amount": 
+187.14,       "lineCount": 3
+      "chargeCode": "cc-search-serving",              "quantity": 385,        
+"amount": 95.9,         "lineCount": 2
+      "chargeCode": "cc-shared-tooling",              "quantity": 155,        
+"amount": 47.48,        "lineCount": 2
+      "chargeCode": "cc-warehouse-etl",       "quantity": 472,        "amount": 
+110.66,       "lineCount": 3
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 30, $1.60):
+```
+cd /app && sed -n 1,40p src/onboarding/onboarding.service.spec.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { Test, TestingModule } from '@nestjs/testing';
+import { OnboardingService } from './onboarding.service.js';
+import { createMock } from '@golevelup/ts-jest';
+
+describe('OnboardingService', () => {
+    let service: OnboardingService;
+
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [OnboardingService],
+            imports: [],
+        })
+            .useMocker(createMock)
+            .compile();
+
+        service = module.get<OnboardingService>(OnboardingService);
+    });
+
+    it('should be defined', () => {
+        expect(service).toBeDefined();
+    });
+});
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 31, $1.72):
+```
+cd /app && cat > src/onboarding/entities/attributionDirectory.entity.spec.ts 
+<<'EOF'
+import { AttributionDirectory } from './attributionDirectory.entity.js';
+import { getDocument } from '../../utils/aws/s3.js';
+import { getParameterValue } from '../../utils/aws/awsSSM.js';
+import { getInstanceTags } from '../../utils/aws/awsEc2.js';
+
+jest.mock('../../utils/aws/s3.js', () => ({ getDocument: jest.fn() }));
+jest.mock('../../utils/aws/awsSSM.js', () => ({ getParameterValue: jest.fn() 
+}));
+jest.mock('../../utils/aws/awsEc2.js', () => ({ getInstanceTags: jest.fn() }));
+jest.mock('@aws-sdk/credential-providers', () => ({ fromTemporaryCredentials: 
+jest.fn(() => 'creds') }));
+
+const pools = {
+    revision: 'test',
+    pools: {
+        standalone: { chargeCode: 'cc-standalone' },
+        toUnit: { chargeCode: 'cc-first', rollsUpTo: 'unit/second' },
+        toAlias: { chargeCode: 'cc-first', rollsUpTo: 'alias/stand-in' },
+        toNode: { chargeCode: 'cc-first', rollsUpTo: 
+'node/111111111111/eu-west-1/i-01' },
+        toMissing: { chargeCode: 'cc-kept', rollsUpTo: 'unit/gone' },
+        toForeignNode: { chargeCode: 'cc-kept', rollsUpTo: 
+'node/999999999999/eu-west-1/i-99' },
+        looping: { chargeCode: 'cc-shared', rollsUpTo: 'unit/loop' },
+    },
+};
+
+const units = {
+    second: { unitId: 'bu-second', chargeCode: 'cc-second' },
+    third: { unitId: 'bu-third', chargeCode: 'cc-third' },
+    loop: { unitId: 'bu-loop', chargeCode: 'cc-shared', parentRef: 
+'pool/looping' },
+};
+
+const accounts = [
+    {
+        accountId: '111111111111',
+        roleArn: 'arn:aws:iam::111111111111:role/paigo-metering',
+        externalId: 'external',
+        region: 'eu-west-1',
+        usageBucket: 'usage-bucket',
+    },
+];
+
+const load = () => AttributionDirectory.load('metering-bucket', 'attribution/', 
+accounts as any);
+
+describe('AttributionDirectory', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        (getDocument as jest.Mock).mockImplementation((bucket: string, key: 
+string) => {
+            if (key === 'attribution/pools.json') {
+                return Promise.resolve(pools);
+            }
+            const name = key.replace('attribution/units/', '').replace('.json', 
+'');
+            return units[name] ? Promise.resolve(units[name]) : 
+Promise.reject(new Error('NoSuchKey'));
+        });
+        (getParameterValue as jest.Mock).mockResolvedValue(undefined);
+        (getInstanceTags as jest.Mock).mockResolvedValue(undefined);
+    });
+
+    it('books spend on a pool that keeps it', async () => {
+        expect(await (await 
+load()).chargeCodeFor('pool/standalone')).toEqual('cc-standalone');
+    });
+
+    it('books spend on the unit a pool passes it to', async () => {
+        expect(await (await 
+load()).chargeCodeFor('pool/toUnit')).toEqual('cc-second');
+    });
+
+    it('follows an alias through to the owner it stands in for', async () => {
+        (getParameterValue as jest.Mock).mockResolvedValue('unit/third');
+        expect(await (await 
+load()).chargeCodeFor('pool/toAlias')).toEqual('cc-third');
+        expect(getParameterValue).toHaveBeenCalledWith('/paigo/attribution/alias
+/stand-in');
+    });
+
+    it('books spend on the code an instance is tagged with', async () => {
+        (getInstanceTags as jest.Mock).mockResolvedValue({ paigoChargeCode: 
+'cc-instance' });
+        expect(await (await 
+load()).chargeCodeFor('pool/toNode')).toEqual('cc-instance');
+        expect(getInstanceTags).toHaveBeenCalledWith('eu-west-1', 'creds', 
+'i-01');
+    });
+
+    it('keeps following the chain when an instance passes the cost on again', 
+async () => {
+        (getInstanceTags as jest.Mock).mockResolvedValue({
+            paigoChargeCode: 'cc-instance',
+            paigoRollsInto: 'unit/third',
+        });
+        expect(await (await 
+load()).chargeCodeFor('pool/toNode')).toEqual('cc-third');
+    });
+
+    it('uses the code shared by a chain that repeats', async () => {
+        expect(await (await 
+load()).chargeCodeFor('pool/looping')).toEqual('cc-shared');
+        expect(await (await 
+load()).chargeCodeFor('unit/loop')).toEqual('cc-shared');
+    });
+
+    it('keeps the last known code when the chain runs into material we cannot 
+read', async () => {
+        expect(await (await 
+load()).chargeCodeFor('pool/toMissing')).toEqual('cc-kept');
+    });
+
+    it('keeps the last known code when the chain names an account that is not 
+onboarded', async () => {
+        expect(await (await 
+load()).chargeCodeFor('pool/toForeignNode')).toEqual('cc-kept');
+        expect(getInstanceTags).not.toHaveBeenCalled();
+    });
+
+    it('reads each owner in a chain once however many lines lead to it', async 
+() => {
+        const directory = await load();
+        await directory.chargeCodeFor('pool/toUnit');
+        await directory.chargeCodeFor('pool/toUnit');
+        expect((getDocument as jest.Mock).mock.calls.filter(([, key]) => 
+key.includes('units/')).length).toEqual(1);
+    });
+
+    it('books nothing for references it does not recognise', async () => {
+        const directory = await load();
+        expect(await directory.chargeCodeFor(undefined)).toBeUndefined();
+        expect(await directory.chargeCodeFor('')).toBeUndefined();
+        expect(await directory.chargeCodeFor('team/marketing')).toBeUndefined();
+        expect(await directory.chargeCodeFor('pool/unknown')).toBeUndefined();
+        expect(await 
+directory.chargeCodeFor('node/111111111111')).toBeUndefined();
+    });
+});
+EOF
+npx jest --config jest.unit.config.json 
+src/onboarding/entities/attributionDirectory.entity.spec.ts 2>&1 | tail -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is 
+deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+ts-jest[backports] (WARN) "[jest-config].globals.ts-jest.tsConfig" is 
+deprecated, use "[jest-config].globals.ts-jest.tsconfig" instead.
+ts-jest[backports] (WARN) Your Jest configuration is outdated. Use the CLI to 
+help migrating it: ts-jest config:migrate <config-file>.
+[33m[Nest] 1514  - [39m08/24/2026, 4:50:36 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution chain from pool/looping 
+repeats at pool/looping, booking to cc-shared[39m
+[33m[Nest] 1514  - [39m08/24/2026, 4:50:36 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution chain from unit/loop repeats
+at unit/loop, booking to cc-shared[39m
+[33m[Nest] 1514  - [39m08/24/2026, 4:50:36 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference unit/gone reached
+from pool/toMissing is not in the business' material[39m
+[33m[Nest] 1514  - [39m08/24/2026, 4:50:36 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference names instance i-99
+in account 999999999999, which is not onboarded[39m
+[33m[Nest] 1514  - [39m08/24/2026, 4:50:36 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference 
+node/999999999999/eu-west-1/i-99 reached from pool/toForeignNode is not in the 
+business' material[39m
+[33m[Nest] 1514  - [39m08/24/2026, 4:50:36 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference team/marketing 
+reached from team/marketing is not in the business' material[39m
+[33m[Nest] 1514  - [39m08/24/2026, 4:50:36 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference pool/unknown 
+reached from pool/unknown is not in the business' material[39m
+[33m[Nest] 1514  - [39m08/24/2026, 4:50:36 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference node/111111111111
+reached from node/111111111111 is not in the business' material[39m
+PASS src/onboarding/entities/attributionDirectory.entity.spec.ts
+  AttributionDirectory
+    ✓ books spend on a pool that keeps it (2 ms)
+    ✓ books spend on the unit a pool passes it to (1 ms)
+    ✓ follows an alias through to the owner it stands in for (4 ms)
+    ✓ books spend on the code an instance is tagged with
+    ✓ keeps following the chain when an instance passes the cost on again (1 ms)
+    ✓ uses the code shared by a chain that repeats (1 ms)
+    ✓ keeps the last known code when the chain runs into material we cannot read
+    ✓ keeps the last known code when the chain names an account that is not 
+onboarded (1 ms)
+    ✓ reads each owner in a chain once however many lines lead to it
+    ✓ books nothing for references it does not recognise (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       10 passed, 10 total
+Snapshots:   0 total
+Time:        0.471 s
+Ran all test suites matching 
+/src\/onboarding\/entities\/attributionDirectory.entity.spec.ts/i.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 32, $1.81):
+```
+cd /app && rm -f ls.js ls2.js get.js svc.js svc2.js svc3.js lines.js lines2.js 
+lines3.js t.js && npx eslint 
+src/onboarding/entities/attributionDirectory.entity.ts 
+src/onboarding/entities/meteringAccounts.entity.ts 
+src/microservices/usageAttribution/usageAttribution.service.ts 
+src/utils/aws/awsEc2.ts src/utils/aws/awsSSM.ts 
+src/onboarding/entities/attributionDirectory.entity.spec.ts 2>&1 | head -30
+```
+
+Tool:
+<returncode>
+0
+<output>
+
+/app/src/onboarding/entities/attributionDirectory.entity.ts
+  107:23  error  Replace 
+`bucket:·string,·prefix:·string,·accounts:·Array<MeteredAccount>·=·[]` with 
+`⏎········bucket:·string,⏎········prefix:·string,⏎········accounts:·Array<Metere
+dAccount>·=·[],⏎····`  prettier/prettier
+
+/app/src/utils/aws/awsEc2.ts
+  247:39  error  Replace 
+`⏎····region:·string,⏎····creds,⏎····instanceId:·string,⏎` with 
+`region:·string,·creds,·instanceId:·string`                                     
+prettier/prettier
+  254:55  error  Replace 
+`⏎············new·DescribeInstancesCommand({·InstanceIds:·[instanceId]·}),⏎·····
+···` with `new·DescribeInstancesCommand({·InstanceIds:·[instanceId]·})`  
+prettier/prettier
+
+✖ 3 problems (3 errors, 0 warnings)
+  3 errors and 0 warnings potentially fixable with the `--fix` option.
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 33, $1.86):
+```
+cd /app && npx eslint --fix 
+src/onboarding/entities/attributionDirectory.entity.ts src/utils/aws/awsEc2.ts 
+&& npx eslint src/onboarding src/microservices/usageAttribution src/utils/aws 
+2>&1 | tail -5
+```
+
+Tool:
+<returncode>
+0
+<output>
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 34, $1.91):
+```
+cd /app && npx jest --config jest.unit.config.json src/onboarding 
+src/microservices 2>&1 | tail -25
+```
+
+Tool:
+<returncode>
+0
+<output>
+      at Object.<anonymous> (microservices/usageAttribution/repro.spec.ts:12:17)
+
+    console.log
+      TOTALS 5043 1335.41 33
+
+      at Object.<anonymous> (microservices/usageAttribution/repro.spec.ts:24:17)
+
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution chain from pool/oakfield 
+repeats at unit/pinehurst, booking to cc-content-index[39m
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution chain from pool/mossgate 
+repeats at pool/mossgate, booking to cc-batch-scoring[39m
+[32m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [32m    LOG[39m 
+[38;5;3m[UsageAttributionService] [39m[32mAttributed spend across 16 charge 
+codes for 2 accounts[39m
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution chain from pool/looping 
+repeats at pool/looping, booking to cc-shared[39m
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution chain from unit/loop repeats
+at unit/loop, booking to cc-shared[39m
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference unit/gone reached
+from pool/toMissing is not in the business' material[39m
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference names instance i-99
+in account 999999999999, which is not onboarded[39m
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference 
+node/999999999999/eu-west-1/i-99 reached from pool/toForeignNode is not in the 
+business' material[39m
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference team/marketing 
+reached from team/marketing is not in the business' material[39m
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference pool/unknown 
+reached from pool/unknown is not in the business' material[39m
+[33m[Nest] 1625  - [39m08/24/2026, 4:51:16 AM [33m   WARN[39m 
+[38;5;3m[AttributionDirectory] [39m[33mAttribution reference node/111111111111
+reached from node/111111111111 is not in the business' material[39m
+PASS src/onboarding/entities/attributionDirectory.entity.spec.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       13 passed, 13 total
+Snapshots:   0 total
+Time:        3.624 s, estimated 4 s
+Ran all test suites matching /src\/onboarding|src\/microservices/i.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 35, $1.97):
+```
+cd /app && rm -f src/microservices/usageAttribution/repro.spec.ts && git status 
+--short && git diff --stat
+```
+
+Tool:
+<returncode>
+128
+<output>
+fatal: not a git repository (or any of the parent directories): .git
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 36, $2.02):
+```
+cd /app && ls; sed -n 95,120p 
+src/onboarding/entities/attributionDirectory.entity.ts; sed -n 240,270p 
+src/utils/aws/awsEc2.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+Dockerfile
+README.md
+dist
+docs
+integration
+jest.unit.config.json
+nest-cli.json
+node_modules
+package-lock.json
+package.json
+resources
+src
+test
+testTSConfig.json
+tsconfig.build.json
+tsconfig.json
+    private constructor(
+        pools: Record<string, AttributionPool>,
+        bucket: string,
+        prefix: string,
+        accounts: Array<MeteredAccount>,
+    ) {
+        this.pools = pools;
+        this.bucket = bucket;
+        this.prefix = prefix;
+        this.accounts = (accounts ?? []).reduce((known, account) => ({ ...known,
+[account.accountId]: account }), {});
+    }
+
+    static async load(
+        bucket: string,
+        prefix: string,
+        accounts: Array<MeteredAccount> = [],
+    ): Promise<AttributionDirectory> {
+        const document = await getDocument<AttributionPoolDocument>(bucket, 
+`${prefix}pools.json`);
+        return new AttributionDirectory(document?.pools ?? {}, bucket, prefix, 
+accounts);
+    }
+
+    /**
+     * The code that ends up carrying a usage line's spend. The reference the
+     * line carries is followed through every owner that passes the cost on, so
+     * the answer is the last owner in the chain rather than the first one.
+     *
+};
+
+/**
+ * The tags one instance carries, keyed by tag name. Returns undefined when the
+ * instance is not in the account/region asked for, so callers can treat a
+ * dangling reference as a miss instead of a failure.
+ */
+export const getInstanceTags = async (region: string, creds, instanceId: 
+string): Promise<Record<string, string>> => {
+    try {
+        const ec2Client = new EC2Client({ region, credentials: creds });
+        const { Reservations } = await ec2Client.send(new 
+DescribeInstancesCommand({ InstanceIds: [instanceId] }));
+        const instance = flattenDeep((Reservations ?? []).map(({ Instances }) =>
+Instances ?? [])).find(
+            ({ InstanceId }) => InstanceId === instanceId,
+        );
+        if (!instance) {
+            return undefined;
+        }
+        return (instance.Tags ?? []).reduce((tags, { Key, Value }) => ({ 
+...tags, [Key]: Value }), {});
+    } catch (error) {
+        if (error?.name === 'InvalidInstanceID.NotFound') {
+            return undefined;
+        }
+        throw error;
+    }
+};
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 37, $2.11):
+All changes are complete and verified. Summary of the fix:
+
+**Root cause:** `AttributionDirectory.chargeCodeFor` only looked at the first 
+`pool/<name>` entry and returned its `chargeCode`, ignoring the pass-through 
+pointers (`rollsUpTo`, unit `parentRef`, alias parameters, instance 
+`paigoRollsInto` tags), so spend was booked against intermediate codes.
+
+**Changes:**
+
+1. `src/onboarding/entities/attributionDirectory.entity.ts` — now walks the 
+whole attribution chain:
+   - `pool/<name>` → pool document (`chargeCode`, `rollsUpTo`)
+   - `unit/<name>` → `attribution/units/<name>.json` in the metering bucket 
+(`chargeCode`, `parentRef`)
+   - `alias/<name>` → SSM parameter `/paigo/attribution/alias/<name>` (a pure 
+stand-in, books nothing itself)
+   - `node/<account>/<region>/<instance>` → EC2 instance tags `paigoChargeCode` 
+/ `paigoRollsInto`, read with the referenced onboarded account's assumed-role 
+credentials
+   - Ends on the last owner in the chain; on a repeating chain it books to the 
+code shared by the cycle's members; falls back to the last known code when 
+material is unreadable/not onboarded; caps runaway chains; caches every lookup 
+and resolution.
+
+2. `src/onboarding/entities/meteringAccounts.entity.ts` — exported 
+`credentialsForAccount` so instance lookups can use each account's role.
+
+3. `src/microservices/usageAttribution/usageAttribution.service.ts` — passes the
+registry accounts into the directory, awaits chain resolution per line, and 
+warns on lines nothing carries; each line's quantity/amount/count lands under 
+exactly one final code.
+
+4. `src/utils/aws/awsSSM.ts` / `src/utils/aws/awsEc2.ts` — added 
+`getParameterValue` and `getInstanceTags` helpers (missing lookups treated as 
+misses, not failures).
+
+5. Added `src/onboarding/entities/attributionDirectory.entity.spec.ts` covering 
+pass-through chains, aliases, instance hops, cycles, unreadable material, 
+non-onboarded accounts, caching and unrecognised references.
+
+Against the emulator the report went from booking intermediate codes to 16 final
+codes covering all 33 exported lines (e.g. `pool/glenrow` + `pool/redbourne` → 
+`cc-identity-svc` 217/61.42/2; the `mossgate↔northgate` cycle → 
+`cc-batch-scoring`; `pinehurst→zircon→quillon` cycle → `cc-content-index`), with
+totals preserved (5043 quantity, 1335.41 amount, 33 lines).
+
+```
+echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+```
+
+Tool:
+<returncode>
+-1
+<output>
+
+<exception_info>
+action was not executed
+
+Exit:
+
+Saved trajectory to '/logs/agent/mini-swe-agent.trajectory.json'

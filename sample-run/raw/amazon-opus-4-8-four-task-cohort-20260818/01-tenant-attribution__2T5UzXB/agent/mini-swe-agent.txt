@@ -1,0 +1,3823 @@
+This is mini-swe-agent version 2.4.5.
+Check the v2 migration guide at https://klieret.short.gy/mini-v2-migration
+Loading global config from '/home/agent/.config/mini-swe-agent/.env'
+Warning: Input is not a terminal (fd=0).
+Building agent config from specs: ['mini', '/tmp/mswea-config/custom.yaml']
+
+System:
+You are a helpful assistant that can interact with a computer.
+
+User:
+Please solve this issue: Finance cannot reconcile instance uptime. A metered 
+machine in an account dedicated to one customer belongs to that customer 
+regardless of which customer its tags name, including when they name none. A 
+shared-account machine may belong to several customers and its uptime must be 
+divided evenly among tenants genuinely onboarded for that account; unknown or 
+unplaceable usage stays off the bill. The onboarding records in the metering 
+bucket beside the account list identify billable customers. Update the metering 
+sweep so published uptime follows those rules. This task includes a local 
+AWS-compatible emulator at the preconfigured AWS_ENDPOINT_URL. Its credentials 
+and region are already in the shell, the repository's AWS SDK clients use it, 
+and no real AWS account is involved. You may inspect its resources while 
+developing and testing.
+
+
+You can execute bash commands and edit files to implement the necessary changes.
+
+## Recommended Workflow
+
+This workflow should be done step-by-step so that you can iterate on your 
+changes and any possible problems.
+
+1. Analyze the codebase by finding and reading relevant files
+2. Create a script to reproduce the issue
+3. Edit the source code to resolve the issue
+4. Verify your fix works by running your script again
+5. Test edge cases to ensure your fix is robust
+6. Submit your changes and finish your work by issuing the following command: 
+`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
+   Do not combine it with any other command. <important>After this command, you 
+cannot continue working on this task.</important>
+
+## Command Execution Rules
+
+You are operating in an environment where
+
+1. You issue at least one command
+2. The system executes the command(s) in a subshell
+3. You see the result(s)
+4. You write your next command(s)
+
+Each response should include:
+
+1. **Reasoning text** where you explain your analysis and plan
+2. At least one tool call with your command
+
+**CRITICAL REQUIREMENTS:**
+
+- Your response SHOULD include reasoning text explaining what you're doing
+- Your response MUST include AT LEAST ONE bash tool call
+- Directory or environment variable changes are not persistent. Every action is 
+executed in a new subshell.
+- However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd 
+/path/to/working/dir && ...` or write/load environment variables from files
+- Submit your changes and finish your work by issuing the following command: 
+`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
+  Do not combine it with any other command. <important>After this command, you 
+cannot continue working on this task.</important>
+
+Example of a CORRECT response:
+<example_response>
+I need to understand the structure of the repository first. Let me check what 
+files are in the current directory to get a better understanding of the 
+codebase.
+
+[Makes bash tool call with {"command": "ls -la"} as arguments]
+</example_response>
+
+<system_information>
+Linux 6.17.0-42-generic #42-Ubuntu SMP PREEMPT_DYNAMIC Thu Jul 23 19:56:28 UTC 
+2026 x86_64
+</system_information>
+
+## Useful command examples
+
+### Create a new file:
+
+```bash
+cat <<'EOF' > newfile.py
+import numpy as np
+hello = "world"
+print(hello)
+EOF
+```
+
+### Edit files with sed:```bash
+# Replace all occurrences
+sed -i 's/old_string/new_string/g' filename.py
+
+# Replace only first occurrence
+sed -i 's/old_string/new_string/' filename.py
+
+# Replace first occurrence on line 1
+sed -i '1s/old_string/new_string/' filename.py
+
+# Replace all occurrences in lines 1-10
+sed -i '1,10s/old_string/new_string/g' filename.py
+```
+
+### View file content:
+
+```bash
+# View specific lines with numbers
+nl -ba filename.py | sed -n '10,20p'
+```
+
+### Any other command you want to run
+
+```bash
+anything
+```
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 1, $0.00):
+I'll start by exploring the repository structure.
+
+```
+ls -la && cat README* 2>/dev/null | head -50
+```
+
+```
+env | grep -i aws
+```
+
+Tool:
+<returncode>
+0
+<output>
+total 1320
+drwxr-xr-x    1 agent agent      63 Aug 24 05:52 .
+drwxr-xr-x    1 root  root      130 Aug 24 05:54 ..
+-rw-r--r--    1 agent agent      15 Jan  1  1970 .eslintignore
+-rw-r--r--    1 agent agent     760 Jan  1  1970 .eslintrc.js
+drwxr-xr-x    3 agent agent      31 Aug 24 05:52 .github
+-rw-r--r--    1 agent agent    1783 Jan  1  1970 .gitignore
+drwxr-xr-x    2 agent agent      52 Aug 24 05:52 .husky
+-rw-r--r--    1 agent agent      99 Jan  1  1970 .prettierrc.json
+drwxr-xr-x    2 agent agent      33 Aug 24 05:52 .vscode
+-rw-r--r--    1 agent agent    2064 Jan  1  1970 Dockerfile
+-rw-r--r--    1 agent agent    8428 Jan  1  1970 README.md
+drwxr-xr-x    2 agent agent    4096 Aug 24 05:52 docs
+drwxr-xr-x   16 agent agent    4096 Aug 24 05:52 integration
+-rw-r--r--    1 agent agent     641 Jan  1  1970 jest.unit.config.json
+-rw-r--r--    1 agent agent     400 Jan  1  1970 nest-cli.json
+drwxr-xr-x 1004 agent agent   28672 Aug 24 05:52 node_modules
+-rw-r--r--    1 agent agent 1224456 Aug 24 05:52 package-lock.json
+-rw-r--r--    1 agent agent    9770 Jan  1  1970 package.json
+drwxr-xr-x    4 agent agent     130 Aug 24 05:52 resources
+drwxr-xr-x   39 agent agent    4096 Aug 24 05:52 src
+drwxr-xr-x    6 agent agent     175 Aug 24 05:52 test
+-rw-r--r--    1 agent agent     770 Jan  1  1970 testTSConfig.json
+-rw-r--r--    1 agent agent     109 Jan  1  1970 tsconfig.build.json
+-rw-r--r--    1 agent agent     758 Jan  1  1970 tsconfig.json
+# Metering Backend
+
+This repository serves to hold the backend infrastructure for Metering. 
+Specifically it contains the code for the Private and Public API
+
+### Current Status
+
+Don't break this.
+[![CI](https://github.com/example-org/metering-backend/actions/workflows/main.ym
+l/badge.svg)](https://github.com/example-org/metering-backend/actions/workflows/
+main.yml)
+
+# Folder Structure
+
+| .prettierrc.json - prettier formatting file  
+| .eslintrc.cjs - linter configuration only comment out linting rules if there a
+good reason  
+| .gitignore - ignored files for source control  
+| src - source for the api application  
+
+
+# Getting started with Local Development
+
+# Environment
+
+-   Latest version of [NVM](https://github.com/nvm-sh/nvm)
+-   Latest version of NodeJS 18.x `nvm install 18`
+-   Latest version of [AWS CLI](https://aws.amazon.com/cli/)
+-   Latest version of [Docker 
+Desktop](https://www.docker.com/products/docker-desktop/)
+-   Assigned AWS accounts and IAM credentials
+-   [Redoc](https://github.com/Redocly/redoc#redoc-cli) for automatically 
+generating html from the open api specification, see install 
+[here](https://stackoverflow.com/questions/25800493/converting-swagger-specifica
+tion-json-to-html-documentation)
+-   Latest version of [Kind](https://kind.sigs.k8s.io/) for the local 
+integration test enviornment, see install 
+[here](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
+-   Latest version of [Helm](https://helm.sh/) see the install guild 
+[here](https://helm.sh/docs/intro/install/)
+
+For the remainng item of this list, you should figure out yourself if you don't 
+already know.
+
+-   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+-   A good terminal (such as [iTerm2](https://iterm2.com/index.html) + 
+[ohmyzsh](https://ohmyz.sh/))
+-   A good IDE (such as [VSCode](https://code.visualstudio.com/), or 
+[WebStorm](https://www.jetbrains.com/webstorm/))
+-   Helpful for command line navigation 
+[z](https://facilecode.com/how-to-setup-z-jump-around/)
+
+# Setup
+
+1. Configure AWS CLI. `aws configure`. See sample config below. Use _us-east-1_ 
+as default region and _json_ as default output format.
+
+```bash
+aws configure
+AWS Access Key ID [None]: XXXXXXXXXXX
+AWS Secret Access Key [None]: XXXXXXXXXXXXXXXXXXXXXX
+Default region name [None]: us-east-1
+Default output format [None]: json
+```
+
+2. Clone the repository.
+
+
+Tool:
+<returncode>
+0
+<output>
+AWS_CONFIG_FILE=/tmp/mswea-bedrock-provider/config
+AWS_DEFAULT_REGION=us-east-1
+AWS_ENDPOINT_URL=http://127.0.0.1:4566
+AWS_SHARED_CREDENTIALS_FILE=/tmp/mswea-bedrock-provider/credentials
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=[REDACTED_AWS_ACCESS_KEY_ID]
+AWS_SECRET_ACCESS_KEY=[REDACTED_AWS_SECRET_ACCESS_KEY]
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 2, $0.03):
+```
+cd /app 2>/dev/null || cd $(pwd); ls src; echo ---; grep -ril "uptime" src | 
+head -50
+```
+
+```
+cd $(pwd); grep -ril "metering" src --include=*.ts -l | head -50
+```
+
+Tool:
+<returncode>
+0
+<output>
+agent-measurement
+alerts
+analytics
+app.controller.spec.ts
+app.controller.ts
+app.module.ts
+app.service.ts
+audit
+authz
+azure
+basicResponseDTO.ts
+billing
+cacheStore.ts
+contract
+cost
+credit
+customer
+customergroup
+dimensions
+genericExpressEnv.ts
+inbox
+influx
+interceptors
+invoice
+kubernetes-deployer
+ledger
+margincalc
+measurement
+measurement-config
+microservices
+offering
+onboarding
+openApiPublicSpecGenerator.ts
+openApiSpecGenerator.ts
+payment
+portal
+scheduler
+services
+setting
+tax
+token-consumer
+tracer.ts
+transformer
+usage
+users
+utils
+webhook
+---
+src/app.module.ts
+src/cost/cost.service.ts
+src/dimensions/dto/aggregation.dto.ts
+src/dimensions/entities/dimensions.entity.ts
+src/dimensions/entities/uptimeAggregationEntity.ts
+src/influx/entities/aggregatedPodUptime.entity.ts
+src/influx/influx.service.ts
+src/influx/influxUsageAggregateEvent.ts
+src/margincalc/dto/createMarginCalc.dto.ts
+src/margincalc/entities/instanceEventHistory.entity.ts
+src/margincalc/margincalc.service.ts
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts
+src/microservices/instanceUpTime/dto/instanceUptimeDTO.ts
+src/microservices/instanceUpTime/entities/instanceUptime.entity.ts
+src/microservices/instanceUpTime/instanceUptime.module.ts
+src/microservices/instanceUpTime/instanceUptime.service.ts
+src/microservices/reservedInstanceHistory/entities/reservedInstances.entity.ts
+src/microservices/reservedInstanceHistory/reservedInstance.service.ts
+src/openApiSpecGenerator.ts
+src/scheduler/dto/scheduler.dto.ts
+
+
+Tool:
+<returncode>
+0
+<output>
+src/agent-measurement/agent-measurement.service.ts
+src/authz/oidc.strategy.ts
+src/azure/azure.service.ts
+src/cost/cost.service.ts
+src/cost/dto/cost.dto.ts
+src/credit/credit.controller.ts
+src/credit/dto/create-credit.dto.ts
+src/customer/customer.controller.ts
+src/customer/customer.service.spec.ts
+src/customer/customer.service.ts
+src/customer/dto/AggregationPurpose.ts
+src/customer/dto/create-customer.dto.ts
+src/customer/dto/createCustomerEnrollment.dto.ts
+src/customer/dto/deleteCustomerResponse.dto.ts
+src/customer/dto/find-payments-query-param.dto.ts
+src/customer/dto/get-customer-auth.dto.ts
+src/customer/dto/read-customer.dto.ts
+src/customer/dto/update-customer.dto.ts
+src/customer/dto/updateCustomerEnrollment.dto.ts
+src/customer/dto/updateFreeTrial.dto.ts
+src/customer/entities/customer.entity.ts
+src/dimensions/dimensions.controller.ts
+src/dimensions/dto/aggregation.dto.ts
+src/dimensions/dto/create-dimension.dto.ts
+src/dimensions/entities/dimensions.entity.ts
+src/influx/dto/discoverService.dto.ts
+src/influx/entities/baseInfluxTable.entity.ts
+src/influx/entities/discovery.entity.ts
+src/influx/entities/ec2CostStorage.entity.ts
+src/influx/entities/kubePodLabels.entity.ts
+src/influx/entities/kubeStartStopCompleteTime.entity.ts
+src/influx/entities/labelPodInfluxRow.entity.ts
+src/influx/entities/metering_container_cpu_usage_seconds_total.entity.ts
+src/influx/entities/webhook.entity.ts
+src/influx/influx.service.ts
+src/influx/influxUsageAggregateEvent.ts
+src/influx/utils/joinPodData.ts
+src/interceptors/businessID.interceptor.ts
+src/interceptors/tokenRegisterInterceptor.ts
+src/invoice/dto/create-Invoices.dto.ts
+src/invoice/dto/read-invoices.dto.ts
+src/invoice/dto/update-invoices.dto.ts
+src/invoice/entities/invoice.entity.ts
+src/invoice/invoices.controller.ts
+src/kubernetes-deployer/dto/create-kubernetes-deployer.dto.ts
+src/kubernetes-deployer/entities/kafkaConsumer/logstashConfiguration.ts
+src/kubernetes-deployer/entities/kubernetes-deployer.entity.ts
+src/ledger/dto/readLedger.dto.ts
+src/margincalc/dto/createMarginCalc.dto.ts
+src/margincalc/dto/getCost.dto.ts
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 3, $0.05):
+```
+cd $(pwd); ls src/microservices/instanceUpTime/; wc -l 
+src/microservices/instanceUpTime/*.ts
+```
+
+```
+cd $(pwd); cat src/microservices/instanceUpTime/instanceUptime.service.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+dto
+entities
+instanceUptime.module.ts
+instanceUptime.service.ts
+  16 src/microservices/instanceUpTime/instanceUptime.module.ts
+  97 src/microservices/instanceUpTime/instanceUptime.service.ts
+ 113 total
+
+
+Tool:
+<returncode>
+0
+<output>
+import { Inject, InternalServerErrorException, Logger, forwardRef } from 
+'@nestjs/common';
+import flattenDeep from 'lodash.flattendeep';
+import { InfluxService } from '../../influx/influx.service.js';
+import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
+import { getAllInstanceIDs, getAllRegions } from '../../utils/aws/awsEc2.js';
+import { InstanceUptimeEntity } from './entities/instanceUptime.entity.js';
+import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import { infrastructureType } from 
+'../../dimensions/dto/create-dimension.dto.js';
+import { SchedulerEntity } from '../../scheduler/entities/scheduler.entity.js';
+import { Job } from 'bull';
+import { AuditService } from '../../audit/audit.service.js';
+import { AuditScope } from '../../audit/entities/audit.interface.js';
+import { logger } from '@azure/identity';
+
+@Processor('scheduler_queue')
+export class InstanceUptimeService {
+    private static readonly logger = new Logger(InstanceUptimeService.name);
+    constructor(@Inject(forwardRef(() => InfluxService)) readonly InfluxService:
+InfluxService) {}
+    @Process(infrastructureType.podCPUHours)
+    async getInstanceUptime({ data: { scheduleParameters, businessID, subject, 
+rate } }: Job<SchedulerEntity>) {
+        if ('iamRoleArn' in scheduleParameters) {
+            const { iamRoleArn, externalId } = scheduleParameters;
+            InstanceUptimeService.logger.log('Processing Automated Instance 
+Uptime gathering event, logging inputs', {
+                rate,
+                businessID,
+                externalId,
+                subject,
+            });
+            const creds = fromTemporaryCredentials({
+                params: { RoleArn: iamRoleArn, ExternalId: externalId ? 
+externalId : undefined },
+                clientConfig: { region: 'us-east-1' },
+            });
+            const regions = await getAllRegions(creds);
+            const instances = await Promise.all(
+                regions.map(async (region) => {
+                    try {
+                        const instance = await getAllInstanceIDs(region, creds);
+                        return instance;
+                    } catch (e) {
+                        InstanceUptimeService.logger.error("Couldn't get 
+instance IDs", e);
+                        return undefined;
+                    }
+                }),
+            );
+
+            // Put instances in influx with the following schema
+            const flattenedListOfInstances = flattenDeep(instances);
+            const filteredInstances = flattenedListOfInstances.filter((element) 
+=> element);
+            const points = await Promise.all(
+                filteredInstances.map(
+                    ({
+                        InstanceId: instanceID,
+                        State: status,
+                        Tags: metadata,
+                        LaunchTime: startTime,
+                        Memory,
+                        CpuCores,
+                        PrivateDnsName,
+                        InstanceType,
+                        region,
+                    }) =>
+                        InstanceUptimeEntity.transformer(
+                            new InstanceUptimeEntity({
+                                instanceID,
+                                status,
+                                metadata,
+                                startTime,
+                                businessID,
+                                memory: Memory,
+                                cpuCores: CpuCores,
+                                privateDNS: PrivateDnsName,
+                                instanceType: InstanceType,
+                                region,
+                            }),
+                            this.InfluxService,
+                        ),
+                ),
+            );
+            InstanceUptimeService.logger.log('Loading Instance Uptime Entity 
+Points into Influx', points.length);
+            const vaildPoints = points.filter((element) => element);
+            const { loadPoints } = this.InfluxService;
+            // InstanceMetaData | status (tag)  | instanceID (string field) | 
+price (tag)|  ... all other tags
+            const results = await loadPoints(`${process.env.STAGE}-usage-data`, 
+process.env.INFLUX_ORG, vaildPoints);
+            return results;
+        } else {
+            throw new InternalServerErrorException('iamRoleArn not found in 
+scheduleParameters');
+        }
+    }
+    @OnQueueFailed({ name: infrastructureType.podCPUHours })
+    jobFailure(job: Job) {
+        AuditService.publishEvent({
+            message: 'Failed to gather instance uptime',
+            data: job.data,
+            topic: AuditScope.ERROR,
+        });
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 4, $0.07):
+```
+cd $(pwd); ls src/microservices/ec2InstanceDataGatherer/; cat 
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+Dto
+ec2InstanceDataGatherer.module.ts
+ec2InstanceDataGatherer.service.ts
+import { BadRequestException, Logger } from '@nestjs/common';
+import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
+import { getInstanceWithFilters } from '../../utils/aws/awsEc2.js';
+import { StandardMeasurementEntity } from 
+'../../measurement-config/entities/standardMeasurement.entity.js';
+import { UsageEntity } from '../../usage/entities/usage.entity.js';
+import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import { infrastructureType } from 
+'../../dimensions/dto/create-dimension.dto.js';
+import { Job } from 'bull';
+import { SchedulerEntity } from '../../scheduler/entities/scheduler.entity.js';
+import { AuditService } from '../../audit/audit.service.js';
+import { AuditScope } from '../../audit/entities/audit.interface.js';
+import { MeteredAccount, MeteringRegistry } from 
+'../../onboarding/entities/meteringAccounts.entity.js';
+
+const RUNNING_TIME_INCREMENT = 0.08333333; // TODO: make this dynamic
+
+export type MeteredInstance = {
+    accountId: string;
+    instanceId: string;
+    instanceType: string;
+    region: string;
+    tags: Record<string, string>;
+};
+
+@Processor('scheduler_queue')
+export class Ec2InstanceDataGathererService {
+    private static readonly logger = new 
+Logger(Ec2InstanceDataGathererService.name);
+    constructor() {}
+
+    @Process(infrastructureType.instanceRunningTime)
+    async readOperationJob({ data: { scheduleParameters, businessID, subject, 
+rate } }: Job<SchedulerEntity>) {
+        if (!('registryBucket' in scheduleParameters)) {
+            throw new BadRequestException('Metering registry location not 
+found');
+        }
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const { registryBucket, registryKey, dimensionId } = scheduleParameters;
+        Ec2InstanceDataGathererService.logger.log(
+            'Processing Automated Instance Uptime gathering event, logging 
+inputs',
+            JSON.stringify({
+                rate,
+                businessID,
+                registryBucket,
+                subject,
+            }),
+        );
+        const measurements = await this.gatherUsage({ businessID, dimensionId, 
+registryBucket, registryKey });
+        measurements.forEach((entity) => 
+StandardMeasurementEntity.publish(entity));
+        Ec2InstanceDataGathererService.logger.log('Finished collecting EC2 
+instance running time data');
+    }
+
+    /**
+     * Sweeps every account the business has onboarded and returns one usage
+     * measurement per customer for the dimension being metered.
+     */
+    async gatherUsage({
+        businessID,
+        dimensionId,
+        registryBucket,
+        registryKey,
+    }: {
+        businessID: string;
+        dimensionId: string;
+        registryBucket: string;
+        registryKey: string;
+    }): Promise<Array<StandardMeasurementEntity>> {
+        const registry = await MeteringRegistry.load(registryBucket, 
+registryKey);
+        const collected: Array<MeteredInstance> = [];
+        for (const account of registry.accounts) {
+            // eslint-disable-next-line no-await-in-loop
+            const instances = await 
+Ec2InstanceDataGathererService.readAccount(account, dimensionId);
+            collected.push(...instances);
+        }
+        Ec2InstanceDataGathererService.logger.log(
+            `Metered ${collected.length} instances across 
+${registry.accounts.length} accounts`,
+        );
+
+        const runningTime: Record<string, number> = {};
+        const instanceIds: Record<string, Array<string>> = {};
+        collected.forEach((instance) => {
+            const customerId = instance.tags.meteringCustomerId;
+            if (!customerId) {
+                return;
+            }
+            runningTime[customerId] = (runningTime[customerId] ?? 0) + 
+RUNNING_TIME_INCREMENT;
+            instanceIds[customerId] = (instanceIds[customerId] ?? 
+[]).concat(instance.instanceId);
+        });
+
+        return Object.keys(runningTime)
+            .sort()
+            .map(
+                (customerId) =>
+                    new StandardMeasurementEntity({
+                        businessID,
+                        dimensionId,
+                        metadata: {
+                            instanceIds: 
+instanceIds[customerId].sort().join(','),
+                            instanceCount: instanceIds[customerId].length,
+                        },
+                        recordValue: runningTime[customerId],
+                        customerId,
+                        _measurement: UsageEntity._measurement,
+                    }),
+            );
+    }
+
+    private static async readAccount(
+        account: MeteredAccount,
+        dimensionId: string,
+    ): Promise<Array<MeteredInstance>> {
+        const creds = fromTemporaryCredentials({
+            params: {
+                RoleArn: account.roleArn,
+                ExternalId: account.externalId ? account.externalId : undefined,
+            },
+            clientConfig: { region: 'us-east-1' },
+        });
+        const instanceList = await getInstanceWithFilters(account.region, creds,
+[
+            { Name: 'instance-state-name', Values: ['running'] },
+            { Name: 'tag-key', Values: ['meteringDimensionId'] },
+        ]);
+        return instanceList
+            .filter((instance) => {
+                const tags = instance.Tags ?? [];
+                const taggedDimensionIdVal = tags.find((tag) => tag.Key === 
+'meteringDimensionId');
+                if (!taggedDimensionIdVal) {
+                    return false;
+                }
+                const meteringDimensionIds = 
+taggedDimensionIdVal.Value.split(',');
+                return meteringDimensionIds.includes(dimensionId);
+            })
+            .map((instance) => ({
+                accountId: account.accountId,
+                instanceId: instance.InstanceId,
+                instanceType: instance.InstanceType,
+                region: account.region,
+                tags: (instance.Tags ?? []).reduce((acc, { Key, Value }) => {
+                    acc[Key] = Value;
+                    return acc;
+                }, {} as Record<string, string>),
+            }));
+    }
+
+    @OnQueueFailed({ name: infrastructureType.instanceRunningTime })
+    jobFailure(job: Job) {
+        AuditService.publishEvent({
+            message: 'Failed to measure EC2 instance running time',
+            data: [job],
+            topic: AuditScope.ERROR,
+        });
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 5, $0.10):
+```
+cd $(pwd); ls src/onboarding src/onboarding/entities; cat 
+src/onboarding/entities/meteringAccounts.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/onboarding:
+dto
+entities
+onboarding.controller.spec.ts
+onboarding.controller.ts
+onboarding.module.ts
+onboarding.service.spec.ts
+onboarding.service.ts
+
+src/onboarding/entities:
+meteringAccounts.entity.ts
+onboarding.entity.ts
+import { getDocument } from '../../utils/aws/s3.js';
+
+/**
+ * An AWS account a business has handed us for measurement.
+ */
+export class MeteredAccount {
+    /**
+     * The account the metering role lives in.
+     * @example "445566778899"
+     */
+    public accountId: string;
+    /**
+     * The role we assume to read the account.
+     * @example "arn:aws:iam::445566778899:role/metering-metering"
+     */
+    public roleArn: string;
+    /**
+     * The external id the role's trust policy asks for, when it asks for one.
+     */
+    public externalId?: string;
+    /**
+     * The region the business runs the metered workload in.
+     * @example "us-east-1"
+     */
+    public region: string;
+}
+
+/**
+ * The onboarding record a business keeps in its metering bucket. It is written
+ * by the onboarding flow and read by every collector that has to sweep more
+ * than one account.
+ */
+export class MeteringRegistry {
+    public businessID: string;
+    /**
+     * Key prefix the per customer onboarding records sit under in the same
+     * bucket, one object per customer.
+     * @example "onboarding/customers/"
+     */
+    public customerRecordPrefix: string;
+    public accounts: Array<MeteredAccount>;
+
+    static async load(bucket: string, key: string): Promise<MeteringRegistry> {
+        return getDocument<MeteringRegistry>(bucket, key);
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 6, $0.12):
+```
+cd $(pwd); cat src/utils/aws/s3.ts
+```
+
+```
+cd $(pwd); cat src/onboarding/entities/onboarding.entity.ts; ls 
+src/onboarding/dto; cat src/onboarding/onboarding.service.ts | head -80
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
+
+export const putDocument = (document, Bucket, Key) =>
+    new Upload({ client: new S3Client({ region: 'us-east-1' }), params: { Body: 
+document, Bucket, Key } });
+
+export const getDocument = async <T>(Bucket: string, Key: string): Promise<T> =>
+{
+    const client = new S3Client({});
+    const { Body } = await client.send(new GetObjectCommand({ Bucket, Key }));
+    return JSON.parse(await Body.transformToString()) as T;
+};
+
+
+Tool:
+<returncode>
+0
+<output>
+export class Onboarding {}
+onboarding.dto.ts
+import {
+    ConflictException,
+    forwardRef,
+    Inject,
+    Injectable,
+    InternalServerErrorException,
+    Logger,
+    NotFoundException,
+} from '@nestjs/common';
+import { DeletedStripeAccountAssociationResponse, OnboardingDto, 
+OnboardingResponseDTO } from './dto/onboarding.dto.js';
+import { Stripe } from 'stripe';
+import { SettingsService } from '../setting/settings.service.js';
+import { AccountState } from '../setting/entities/AccountState.js';
+import { LocalJWTAuthService } from '../authz/jwt-local.strategy.js';
+
+@Injectable()
+export class OnboardingService {
+    private static readonly logger = new Logger(OnboardingService.name);
+    constructor(
+        private settingsService: SettingsService,
+        @Inject(forwardRef(() => LocalJWTAuthService)) readonly 
+localJWTAuthService: LocalJWTAuthService,
+    ) {}
+    async create({ businessID, sub }: OnboardingDto): 
+Promise<OnboardingResponseDTO> {
+        const [{ stripeAccountId, accountState }] = await 
+this.settingsService.findAll({ businessID });
+
+        if (stripeAccountId) {
+            throw new ConflictException(`Stripe Account already onboarded 
+StripeAccountID: ${stripeAccountId}`);
+        } else {
+            const stripe = new Stripe(
+                accountState === AccountState.production ? 
+process.env.PROD_STRIPE_TOKEN : process.env.STRIPE_TOKEN,
+                { apiVersion: '2022-08-01' },
+            );
+            const { access_token: state } = await 
+this.localJWTAuthService.generateStripeState(sub, businessID);
+            const url = await stripe.oauth.authorizeUrl({
+                redirect_uri: 
+`${process.env.METERING_URL}/onboarding/stripe/redirect`,
+                scope: 'read_write',
+                client_id:
+                    accountState === AccountState.production
+                        ? process.env.STRIPE_PROD_CLIENT_ID
+                        : process.env.STRIPE_CLIENT_ID,
+                response_type: 'code',
+                state,
+            });
+            try {
+            } catch (error) {
+                OnboardingService.logger.error(
+                    `Failed to link Stripe Account with user StripeAccount: 
+${stripeAccountId}`,
+                    error,
+                );
+                throw new InternalServerErrorException('Failed to link account 
+to user, try again');
+            }
+            return {
+                message: 'Stripe Account information for onboarding',
+                data: [{ url }],
+            };
+        }
+    }
+
+    async redirect({ businessID, authToken }) {
+        const [{ accountState }] = await this.settingsService.findAll({ 
+businessID });
+        const stripe = new Stripe(
+            accountState === AccountState.production ? 
+process.env.PROD_STRIPE_TOKEN : process.env.STRIPE_TOKEN,
+            { apiVersion: '2022-08-01' },
+        );
+
+        const stripeRes = await stripe.oauth.token({ code: authToken, 
+grant_type: 'authorization_code' });
+        const { stripe_user_id } = stripeRes;
+
+        try {
+            await this.settingsService.update({ stripeAccountId: stripe_user_id,
+businessID });
+            return { message: 'Successfully linked Stripe Account with user' };
+        } catch (error) {
+            OnboardingService.logger.error(
+                `Failed to link Stripe Account with user StripeAccount: 
+${stripe_user_id}`,
+                error,
+            );
+            throw new InternalServerErrorException('Failed to link account to 
+user, try again');
+        }
+    }
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 7, $0.15):
+```
+cd $(pwd); aws s3 ls 2>&1 | head; echo ---; for b in $(aws s3api list-buckets 
+--query 'Buckets[].Name' --output text); do echo "== $b"; aws s3 ls s3://$b 
+--recursive | head -30; done
+```
+
+```
+cd $(pwd); ls test; find . -path ./node_modules -prune -o -name "*ec2Instance*" 
+-print -o -name "*spec*" -print | grep -i -E "ec2|gather" 
+```
+
+Tool:
+<returncode>
+0
+<output>
+/bin/sh: 1: aws: not found
+---
+/bin/sh: 1: aws: not found
+
+
+Tool:
+<returncode>
+0
+<output>
+api
+app.e2e-spec.ts
+db
+e2e
+fixtures
+jest-api.json
+jest-db.json
+jest-e2e.json
+./integration/measurement/ec2EgressMeasurement.integration.spec.ts
+./integration/measurement/ec2RunningTimeMeasurement.integration.spec.ts
+./src/microservices/ec2InstanceDataGatherer
+./src/microservices/ec2InstanceDataGatherer/Dto/ec2InstanceDataGatherer.dto.ts
+./src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.module.ts
+./src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 8, $0.16):
+```
+cd $(pwd); cat 
+integration/measurement/ec2RunningTimeMeasurement.integration.spec.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { getInstanceWithFilters, updateInstanceTags } from '../utils/ec2.js';
+import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
+import {
+    setupCustomerWallStrTrading,
+    setupDimensionRequest,
+    setupSimpleUsageBasedOffering,
+} from '../setupAndTeardown/setup.js';
+import { sleep } from '../utils/utils.js';
+import { EC2InstanceTimeMeasurement } from 
+'../client/publicClient/measurement.js';
+import { AggregationInterval, AggregationMethod, Dimension, Rounding } from 
+'../client/publicClient/dimension.js';
+
+describe('Test EC2 Running Time Measurement', () => {
+    const region = 'us-east-1';
+    let serviceUsage;
+    let instanceList;
+    let instanceIds;
+    let measurement;
+    let dimension;
+    let offering;
+    let customer;
+    beforeAll(async () => {
+        instanceList = await getInstanceWithFilters(region, [
+            { Name: 'instance-state-name', Values: ['running'] },
+            { Name: 'tag-key', Values: ['aws:ec2spot:fleet-request-id'] },
+        ]);
+        instanceIds = instanceList.map((instance) => instance.InstanceId);
+        console.debug('Integration test instance List: ', 
+JSON.stringify(instanceIds, null, 2));
+        measurement = new EC2InstanceTimeMeasurement();
+        await measurement.create({
+            name: 'Measure EC2',
+            iamRoleArn: 'arn:aws:iam::[REDACTED_AWS_ACCOUNT_ID]:role/metering-read-only',
+            externalId: '',
+            region: 'us-east-1',
+        });
+        dimension = new Dimension();
+        await dimension.create({
+            aggregationInterval: AggregationInterval.Hour,
+            aggregationMethod: AggregationMethod.Sum,
+            name: 'EC2 Dimension',
+            consumptionPrice: '0.1',
+            rounding: Rounding.Ceiling,
+            usageIncrement: '1',
+            consumptionUnit: {
+                unit: 'hour',
+                type: 'time',
+            },
+            measurementId: measurement.measurementId,
+        });
+        offering = await setupSimpleUsageBasedOffering([dimension.dimensionId]);
+        customer = await setupCustomerWallStrTrading({ offeringId: 
+offering.offeringId });
+    });
+
+    test('Test Missing Customer', async () => {
+        try {
+            const instanceTags = [
+                {
+                    Key: 'meteringDimensionId',
+                    Value: dimension.dimensionId,
+                },
+                {
+                    Key: 'meteringCustomerId',
+                    Value: '',
+                },
+            ];
+            await updateInstanceTags(region, instanceIds, instanceTags);
+            console.debug('Instance tags: ', JSON.stringify(instanceTags, null, 
+2));
+            await sleep(1000 * 60 * 5.5); // Scheduler runs every 5 minutes
+            serviceUsage = await customer.getUsage(
+                new Date(new Date().getTime() - 1000 * 60 * 60).toISOString(),
+                new Date().toISOString(),
+                AggregationInterval.None
+            );
+            console.debug('Service Usage: ', JSON.stringify(serviceUsage, null, 
+2));
+        } catch (e) {
+            console.error(e);
+            expect.assertions(1);
+        }
+        expect(serviceUsage[0].usage.length).toBe(0);
+    });
+
+    test('Test Missing Dimension', async () => {
+        try {
+            const instanceTags = [
+                {
+                    Key: 'meteringDimensionId',
+                    Value: '',
+                },
+                {
+                    Key: 'meteringCustomerId',
+                    Value: customer.customerId,
+                },
+            ];
+            await updateInstanceTags(region, instanceIds, instanceTags);
+            console.debug('Instance tags: ', JSON.stringify(instanceTags, null, 
+2));
+            await sleep(1000 * 60 * 5.5); // Scheduler runs every 5 minutes
+            serviceUsage = await customer.getUsage(
+                new Date(new Date().getTime() - 1000 * 60 * 60).toISOString(),
+                new Date().toISOString(),
+                AggregationInterval.None
+            );
+            console.debug('Service Usage: ', JSON.stringify(serviceUsage, null, 
+2));
+        } catch (e) {
+            console.error(e);
+            expect.assertions(1);
+        }
+        expect(serviceUsage[0].usage.length).toBe(0);
+    });
+
+    test('Test Missing Dimension and Customer', async () => {
+        try {
+            const instanceTags = [
+                {
+                    Key: 'meteringDimensionId',
+                    Value: '',
+                },
+                {
+                    Key: 'meteringCustomerId',
+                    Value: '',
+                },
+            ];
+            await updateInstanceTags(region, instanceIds, instanceTags);
+            console.debug('Instance tags: ', JSON.stringify(instanceTags, null, 
+2));
+            await sleep(1000 * 60 * 5.5); // Scheduler runs every 5 minutes
+            serviceUsage = await customer.getUsage(
+                new Date(new Date().getTime() - 1000 * 60 * 60).toISOString(),
+                new Date().toISOString(),
+                AggregationInterval.None
+            );
+            console.debug('Service Usage: ', JSON.stringify(serviceUsage, null, 
+2));
+        } catch (e) {
+            console.error(e);
+            expect.assertions(1);
+        }
+        expect(serviceUsage[0].usage.length).toBe(0);
+    });
+
+    test('Test EC2 Running Time Measurement Happy Path', async () => {
+        try {
+            const instanceTags = [
+                {
+                    Key: 'meteringDimensionId',
+                    Value: dimension.dimensionId,
+                },
+                {
+                    Key: 'meteringCustomerId',
+                    Value: customer.customerId,
+                },
+            ];
+            await updateInstanceTags(region, instanceIds, instanceTags);
+            console.debug('Instance tags: ', JSON.stringify(instanceTags, null, 
+2));
+            await sleep(1000 * 60 * 5.5); // Scheduler runs every 5 minutes
+            serviceUsage = await customer.getUsage(
+                new Date(new Date().getTime() - 1000 * 60 * 60).toISOString(),
+                new Date().toISOString(),
+                AggregationInterval.None
+            );
+            console.debug('Service Usage: ', JSON.stringify(serviceUsage, null, 
+2));
+        } catch (e) {
+            console.error(e);
+            expect.assertions(1);
+        }
+        expect(serviceUsage[0].usage.length).toBe(1);
+        expect(Number(serviceUsage[0].usage[0].recordValue)).toBeCloseTo((instan
+ceList.length * 5) / 60);
+    });
+});
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 9, $0.21):
+```
+cd $(pwd); git log --oneline | head -20; echo ---; git status
+```
+
+```
+cd $(pwd); cat > /tmp/ls.mjs <<'EOF'
+import { S3Client, ListBucketsCommand, ListObjectsV2Command, GetObjectCommand } 
+from '@aws-sdk/client-s3';
+const c = new S3Client({});
+const bs = await c.send(new ListBucketsCommand({}));
+for (const b of bs.Buckets ?? []) {
+  console.log('== bucket', b.Name);
+  const objs = await c.send(new ListObjectsV2Command({ Bucket: b.Name }));
+  for (const o of objs.Contents ?? []) {
+    console.log(' -', o.Key);
+    const g = await c.send(new GetObjectCommand({Bucket: b.Name, Key: o.Key}));
+    console.log(await g.Body.transformToString());
+  }
+}
+EOF
+node /tmp/ls.mjs
+```
+
+Tool:
+<returncode>
+128
+<output>
+fatal: not a git repository (or any of the parent directories): .git
+---
+fatal: not a git repository (or any of the parent directories): .git
+
+
+Tool:
+<returncode>
+1
+<output>
+node:internal/modules/package_json_reader:314
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@aws-sdk/client-s3' imported 
+from /tmp/ls.mjs
+    at Object.getPackageJSONURL 
+(node:internal/modules/package_json_reader:314:9)
+    at packageResolve (node:internal/modules/esm/resolve:768:81)
+    at moduleResolve (node:internal/modules/esm/resolve:855:18)
+    at defaultResolve (node:internal/modules/esm/resolve:985:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:747:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:724:38)
+    at ModuleLoader.getModuleJobForImport 
+(node:internal/modules/esm/loader:320:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:182:49) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v22.23.2
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 10, $0.22):
+```
+cd $(pwd) && cp /tmp/ls.mjs ./ls.mjs && node ls.mjs
+```
+
+Tool:
+<returncode>
+0
+<output>
+== bucket metering-metering-cadence
+ - onboarding/customers/cus_harbor.json
+{"customerId":"cus_harbor","displayName":"Harbor 
+Analytics","accounts":[{"accountId":"100000000011","dedicated":true},{"accountId
+":"100000000022"}]}
+ - onboarding/customers/cus_lattice.json
+{"customerId":"cus_lattice","displayName":"Lattice 
+Robotics","accounts":[{"accountId":"100000000022"}]}
+ - onboarding/registry.json
+{"businessID":"biz-cadence","customerRecordPrefix":"onboarding/customers/","acco
+unts":[{"accountId":"100000000011","roleArn":"arn:aws:iam::100000000011:role/met
+ering-metering","externalId":"cadence-a1-4f21","region":"us-east-1"},{"accountId
+":"100000000022","roleArn":"arn:aws:iam::100000000022:role/metering-metering","e
+xternalId":"cadence-a2-9b07","region":"us-east-1"}]}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 11, $0.26):
+```
+cd $(pwd); cat src/utils/aws/awsEc2.ts | head -80; echo ...; grep -n 
+"getInstanceWithFilters" -A30 src/utils/aws/awsEc2.ts
+```
+
+```
+cd $(pwd); cat src/measurement-config/entities/standardMeasurement.entity.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import {
+    EC2Client,
+    DescribeInstancesCommand,
+    DescribeInstanceTypesCommand,
+    DescribeRegionsCommand,
+    DescribeVolumesCommand,
+    DescribeSnapshotsCommand,
+    DescribeReservedInstancesCommand,
+    Filter,
+    Volume,
+    Snapshot,
+    _InstanceType,
+} from '@aws-sdk/client-ec2';
+import flattenDeep from 'lodash.flattendeep';
+import { BadRequestException } from '@nestjs/common';
+
+export const getInstanceWithFilters = async (region, creds, filters = []): 
+Promise<any> => {
+    try {
+        const ec2Client = new EC2Client({ region, credentials: creds });
+        let instances = [];
+        let next;
+        do {
+            const response = await ec2Client.send(new DescribeInstancesCommand({
+NextToken: next, Filters: filters }));
+            next = response?.NextToken;
+            const { Reservations } = response;
+            Reservations.forEach((reservation) => {
+                const { Instances } = reservation;
+                instances = instances.concat(Instances);
+            });
+        } while (next);
+        return instances;
+    } catch (err) {
+        console.log('Error', err);
+        if (err.Code === 'AccessDenied') {
+            throw new BadRequestException('Invalid IAM role or external ID');
+        } else {
+            throw new BadRequestException('Error fetching instances');
+        }
+    }
+};
+
+export const getAllInstanceIDs = async (
+    region,
+    creds,
+    tagList = [],
+): Promise<
+    Array<{
+        InstanceId: string;
+        State: string;
+        Tags: Array<string>;
+        Memory: string;
+        LaunchTime: string;
+        CpuCores: string;
+        PrivateDnsName: string;
+        InstanceType: string;
+        region: string;
+    }>
+> => {
+    try {
+        const ec2Client = new EC2Client({ region, credentials: creds });
+        const instanceMetaData = [];
+        let next;
+        do {
+            // Update this to take optional parameters for instance status, 
+enabling fine grain querying
+            // Additionally enable tag filtering
+            // Need to do this for pagination
+            // eslint-disable-next-line no-await-in-loop
+            const response = await ec2Client.send(new DescribeInstancesCommand({
+NextToken: next, Filters: tagList }));
+            next = response?.NextToken;
+            const { Reservations } = response;
+            instanceMetaData.push(
+                Reservations.map(({ Instances }) => {
+                    return Instances.map(
+                        ({
+                            InstanceType,
+                            Tags,
+                            InstanceId,
+                            PlatformDetails,
+                            State,
+                            LaunchTime,
+...
+17:export const getInstanceWithFilters = async (region, creds, filters = []): 
+Promise<any> => {
+18-    try {
+19-        const ec2Client = new EC2Client({ region, credentials: creds });
+20-        let instances = [];
+21-        let next;
+22-        do {
+23-            const response = await ec2Client.send(new 
+DescribeInstancesCommand({ NextToken: next, Filters: filters }));
+24-            next = response?.NextToken;
+25-            const { Reservations } = response;
+26-            Reservations.forEach((reservation) => {
+27-                const { Instances } = reservation;
+28-                instances = instances.concat(Instances);
+29-            });
+30-        } while (next);
+31-        return instances;
+32-    } catch (err) {
+33-        console.log('Error', err);
+34-        if (err.Code === 'AccessDenied') {
+35-            throw new BadRequestException('Invalid IAM role or external ID');
+36-        } else {
+37-            throw new BadRequestException('Error fetching instances');
+38-        }
+39-    }
+40-};
+41-
+42-export const getAllInstanceIDs = async (
+43-    region,
+44-    creds,
+45-    tagList = [],
+46-): Promise<
+47-    Array<{
+
+
+Tool:
+<returncode>
+0
+<output>
+import { Tag } from '@aws-sdk/client-ec2';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Logger } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import EventEmitter from 'events';
+import { AuditService } from '../../audit/audit.service.js';
+import { AuditScope } from '../../audit/entities/audit.interface.js';
+import { InfluxService } from '../../influx/influx.service.js';
+import { DeploymentType } from 
+'../../kubernetes-deployer/dto/DeploymentType.js';
+import { KafkaManager } from 
+'../../kubernetes-deployer/entities/kafkaConsumer/kafkaClient.entity.js';
+import { KafkaDeploymentParametersEntity } from 
+'../../kubernetes-deployer/entities/kafkaConsumer/kafkaDeploymentParametersEntit
+y.js';
+import { KafkaSecurityMechanism } from 
+'../../kubernetes-deployer/entities/kafkaConsumer/KafkaSecurityMechanism.js';
+import { MeasurementFormat } from './measurement.interface.js';
+
+const eventEmitter = new EventEmitter();
+export enum DlqType {
+    s3 = 's3',
+    kafka = 'kafka',
+}
+export class StandardMeasurementEntity implements MeasurementFormat {
+    private static readonly logger = new Logger(StandardMeasurementEntity.name);
+    public timestamp?: string;
+    public dimensionId?: string;
+    public businessID: string;
+    public customerId: string;
+    public recordValue: number;
+    public metadata?: Record<string, string | number | null>;
+    public _measurement: string;
+    public static allowedTags = ['meteringCustomerId', 'meteringDimensionId'];
+
+    constructor(measurement: MeasurementFormat) {
+        if (measurement.timestamp) {
+            this.timestamp = measurement.timestamp;
+        } else {
+            this.timestamp = new Date().toISOString();
+        }
+        this.dimensionId = measurement.dimensionId;
+        this.customerId = measurement.customerId;
+        this.recordValue = measurement.recordValue;
+        this.metadata = measurement.metadata;
+        this.businessID = measurement.businessID;
+        this._measurement = measurement._measurement;
+    }
+    static publish(publishRequest: MeasurementFormat) {
+        eventEmitter.emit('standardMeasurements', publishRequest);
+        return {
+            message: 'published',
+            id: randomUUID(),
+            data: [publishRequest],
+        };
+    }
+    static subscribe(influxService: InfluxService) {
+        eventEmitter.on('standardMeasurements', async (measurementFormat: 
+MeasurementFormat) => {
+            const point = MeasurementFormat.getPointForm(measurementFormat, 
+influxService);
+            try {
+                await 
+influxService.loadPoints(`${process.env.STAGE}-usage-data`, 
+process.env.INFLUX_ORG, [point]);
+            } catch (err) {
+                AuditService.publishEvent({
+                    data: [{ err }],
+                    message: 'Failed to index Measurement',
+                    topic: AuditScope.ERROR,
+                });
+            }
+        });
+    }
+    static awsTagKeyReducer(Tags: Tag[]) {
+        if (Tags) {
+            return Tags.reduce((acc, { Key, Value }): any => {
+                if (StandardMeasurementEntity.allowedTags.includes(Key)) {
+                    acc[Key] = Value;
+                }
+                return acc;
+            }, {});
+        } else {
+            return {};
+        }
+    }
+
+    static async publishFailureToDLQ(failedDocument, metadata: 
+MeasurementFailureMetadata, dlqType: DlqType) {
+        if (dlqType === DlqType.s3) {
+            const s3 = new S3Client({ region: 'us-east-1' });
+            const params = {
+                Bucket: process.env.DB_MEASUREMENT_DLQ_BUCKET_NAME,
+                Key: `${metadata.orginalProcessedName}-${(Math.random() + 
+1).toString(36).substring(7)}.json`,
+                Body: JSON.stringify({ failedDocument: failedDocument, metadata 
+}),
+            };
+            try {
+                await s3.send(new PutObjectCommand(params));
+            } catch (e) {
+                StandardMeasurementEntity.logger.error('error occurred writing 
+to dlq', e);
+                AuditService.publishEvent({
+                    topic: AuditScope.ERROR,
+                    message: 'Failed to write to DLQ',
+                    data: [
+                        {
+                            errorCode: e?.Code,
+                            errorMessage: e?.message,
+                            errorName: e?.name,
+                            failedDocument,
+                            metadata,
+                            dlqType,
+                        },
+                    ],
+                });
+            }
+        }
+        if (dlqType === DlqType.kafka) {
+            StandardMeasurementEntity.logger.log(
+                "write to kafka dlq isn't implemented yet",
+                JSON.stringify({ failedDocument: failedDocument, metadata, 
+dlqType }),
+            );
+            // Get the original deployment parameters from 
+KafkaDeploymentParametersEntity
+            const kafkaDeploymentParameters = new 
+KafkaDeploymentParametersEntity();
+            const { businessID, measurementId } = metadata;
+            if (!businessID || !measurementId) {
+                StandardMeasurementEntity.logger.error(
+                    'Failed to write to kafka dlq, missing businessID or 
+measurementId',
+                );
+                AuditService.publishEvent({
+                    topic: AuditScope.ERROR,
+                    message: 'Failed to write to kafka dlq, missing businessID 
+or measurementId',
+                    data: [
+                        {
+                            failedDocument,
+                            metadata,
+                            dlqType,
+                        },
+                    ],
+                });
+                return;
+            }
+            try {
+                const manager = await 
+kafkaDeploymentParameters.getOriginalDeploymentParameters({
+                    businessID,
+                    uniqueId: measurementId,
+                    deploymentType: DeploymentType.kafkaConsumer,
+                });
+                // Get the client
+                const {
+                    deploymentParameters: { securityMechanism, dlqTopic },
+                } = manager;
+                if (securityMechanism === KafkaSecurityMechanism.PLAIN) {
+                    const client = new KafkaManager({
+                        securityMechanism,
+                        ...manager.deploymentParameters,
+                        clientId: 'metering-dlq-writer',
+                    } as {
+                        securityMechanism: KafkaSecurityMechanism;
+                        clientId: string;
+                        username: string;
+                        password: string;
+                        bootstrapServerEndpoint: string;
+                    });
+                    const initalized = await 
+KafkaManager.initalizeClient(client);
+                    await KafkaManager.writeMessageToTopic({
+                        client: initalized,
+                        topic: dlqTopic,
+                        message: JSON.stringify({ failedDocument: 
+failedDocument, metadata }),
+                        timestamp: new 
+Date(metadata?.timestamp).getTime().toString(),
+                    });
+                } else {
+                    throw new Error('Not implemented yet');
+                }
+            } catch (e) {
+                StandardMeasurementEntity.logger.error('error occurred writing 
+to dlq', e);
+                AuditService.publishEvent({
+                    topic: AuditScope.ERROR,
+                    message: 'Failed to write to DLQ',
+                    data: [
+                        {
+                            errorCode: e?.Code,
+                            errorMessage: e?.message,
+                            errorName: e?.name,
+                            failedDocument,
+                            metadata,
+                            dlqType,
+                        },
+                    ],
+                });
+                return;
+            }
+            // Write to the topic
+        }
+    }
+}
+
+export class MeasurementFailureMetadata {
+    timestamp: string;
+    results: string;
+    errorInfo: any;
+
+    /**
+     * This is the processed name from the system where the measurement occured
+     * In S3 its the complete fileName
+     * */
+    orginalProcessedName: string;
+    businessID?: string;
+    measurementId?: string;
+
+    constructor({ timestamp, results, businessID, measurementId }: 
+MeasurementFailureMetadata) {
+        this.timestamp = timestamp;
+        this.results = results;
+        this.businessID = businessID;
+        this.measurementId = measurementId;
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 12, $0.32):
+```
+cd $(pwd); cat > ec2ls.mjs <<'EOF'
+import { EC2Client, DescribeInstancesCommand } from '@aws-sdk/client-ec2';
+const c = new EC2Client({region:'us-east-1'});
+const r = await c.send(new DescribeInstancesCommand({}));
+console.log(JSON.stringify(r.Reservations, null, 1));
+EOF
+node ec2ls.mjs
+```
+
+Tool:
+<returncode>
+0
+<output>
+[]
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 13, $0.35):
+```
+cd $(pwd); cat > ec2ls2.mjs <<'EOF'
+import { EC2Client, DescribeInstancesCommand } from '@aws-sdk/client-ec2';
+import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
+for (const [acct, ext] of 
+[['100000000011','cadence-a1-4f21'],['100000000022','cadence-a2-9b07']]) {
+  const creds = 
+fromTemporaryCredentials({params:{RoleArn:`arn:aws:iam::${acct}:role/metering-me
+tering`, ExternalId: ext}, clientConfig:{region:'us-east-1'}});
+  const c = new EC2Client({region:'us-east-1', credentials: creds});
+  const r = await c.send(new 
+DescribeInstancesCommand({Filters:[{Name:'instance-state-name',Values:['running'
+]}]}));
+  console.log('==',acct, 
+JSON.stringify(r.Reservations?.flatMap(x=>x.Instances).map(i=>({id:i.InstanceId,
+type:i.InstanceType,tags:i.Tags})), null, 1));
+}
+EOF
+node ec2ls2.mjs
+```
+
+Tool:
+<returncode>
+0
+<output>
+== 100000000011 [
+ {
+  "id": "i-0sbx000000000001",
+  "type": "m5.large",
+  "tags": [
+   {
+    "Key": "meteringCustomerId",
+    "Value": "cus_harbor"
+   },
+   {
+    "Key": "meteringDimensionId",
+    "Value": "dim-uptime-sandbox"
+   }
+  ]
+ },
+ {
+  "id": "i-0sbx000000000002",
+  "type": "m5.large",
+  "tags": [
+   {
+    "Key": "meteringDimensionId",
+    "Value": "dim-uptime-sandbox"
+   }
+  ]
+ },
+ {
+  "id": "i-0sbx000000000003",
+  "type": "t3.large",
+  "tags": [
+   {
+    "Key": "meteringCustomerId",
+    "Value": "cus_lattice"
+   },
+   {
+    "Key": "meteringDimensionId",
+    "Value": "dim-uptime-sandbox"
+   }
+  ]
+ }
+]
+== 100000000022 [
+ {
+  "id": "i-0sbx000000000011",
+  "type": "m6i.large",
+  "tags": [
+   {
+    "Key": "meteringCustomerId",
+    "Value": "cus_harbor,cus_lattice"
+   },
+   {
+    "Key": "meteringDimensionId",
+    "Value": "dim-uptime-sandbox"
+   }
+  ]
+ },
+ {
+  "id": "i-0sbx000000000012",
+  "type": "m6i.large",
+  "tags": [
+   {
+    "Key": "meteringDimensionId",
+    "Value": "dim-uptime-sandbox"
+   }
+  ]
+ },
+ {
+  "id": "i-0sbx000000000013",
+  "type": "r6i.large",
+  "tags": [
+   {
+    "Key": "meteringCustomerId",
+    "Value": "cus_lattice"
+   },
+   {
+    "Key": "meteringDimensionId",
+    "Value": "dim-uptime-sandbox,dim-egress-sandbox"
+   }
+  ]
+ }
+]
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 14, $0.44):
+```
+cd $(pwd); grep -rn 
+"customerRecordPrefix\|dedicated\|MeteringRegistry\|MeteredAccount" src 
+integration test docs --include=* 2>/dev/null | grep -v node_modules
+```
+
+```
+cd $(pwd); grep -rn "listObjects\|ListObjectsV2\|listDocuments" src 
+--include=*.ts | head -20; cat package.json | head -60
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:12:
+import { MeteredAccount, MeteringRegistry } from 
+'../../onboarding/entities/meteringAccounts.entity.js';
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:66:
+const registry = await MeteringRegistry.load(registryBucket, registryKey);
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:107
+:        account: MeteredAccount,
+src/onboarding/entities/meteringAccounts.entity.ts:6:export class MeteredAccount
+{
+src/onboarding/entities/meteringAccounts.entity.ts:33:export class 
+MeteringRegistry {
+src/onboarding/entities/meteringAccounts.entity.ts:40:    public 
+customerRecordPrefix: string;
+src/onboarding/entities/meteringAccounts.entity.ts:41:    public accounts: 
+Array<MeteredAccount>;
+src/onboarding/entities/meteringAccounts.entity.ts:43:    static async 
+load(bucket: string, key: string): Promise<MeteringRegistry> {
+src/onboarding/entities/meteringAccounts.entity.ts:44:        return 
+getDocument<MeteringRegistry>(bucket, key);
+
+
+Tool:
+<returncode>
+0
+<output>
+{
+    "name": "metering-backend",
+    "version": "1.0.0",
+    "description": "",
+    "scripts": {
+        "start:influx": "sudo docker start influxdb",
+        "pre-commit": "npm run lint",
+        "pre-push": "npm run build && npm run test",
+        "stop:influx": "sudo docker stop influxdb",
+        "setup:influx": "sudo docker pull influxdb:2.6.0 && sudo docker run 
+--name influxdb -p 8086:8086 influxdb:2.6.0",
+        "setup:redis": "sudo docker run --name bullmq-redis -p 6379:6379 -d 
+redis redis-server --save 60 1 --loglevel warning",
+        "stop:redis": "sudo docker stop bullmq-redis",
+        "start:redis": "sudo docker start bullmq-redis",
+        "start:dev": "nest start --watch --entryFile genericExpressEnv",
+        "prebuild": "rimraf dist",
+        "cleanup": "kind delete cluster && docker image rm 
+metering-agent-transformer:local",
+        "cleanup:integration": "npm run stop:influx && npm run stop:redis",
+        "build": "nest build",
+        "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+        "deploy:dev": "sls deploy --stage=dev",
+        "deploy:prod": "sls deploy --stage=prod",
+        "start:generic": "node dist/genericExpressEnv",
+        "start:lambda": "node dist/lambda",
+        "generate:private:specification": "node dist/openApiSpecGenerator && 
+redoc-cli bundle -o ./docs/private_api.html ./docs/open-api-private-spec.json",
+        "generate:public:specification": "node dist/openApiPublicSpecGenerator 
+&& redoc-cli bundle --options.theme.shape.borderRadius=0 
+--options.hideDownloadButton=true --options.theme.typography.fontSize=14px -o 
+./docs/public_api.html ./docs/open-api-public-spec.json",
+        "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --quiet",
+        "prepare": "husky install",
+        "prepare:integration": "npm run start:influx && npm run start:redis",
+        "prepare:kindcluster": "kind create cluster --config 
+./resources/kind-config.yaml && kubectl apply -f 
+https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/pr
+ovider/kind/deploy.yaml &&  kubectl wait --namespace ingress-nginx 
+--for=condition=ready pod --selector=app.kubernetes.io/component=controller 
+--timeout=90s&& helm repo add bitnami https://charts.bitnami.com/bitnami && helm
+install my-release bitnami/redis && export REDIS_PASSWORD=$(kubectl get secret 
+--namespace default my-release-redis -o jsonpath=\"{.data.redis-password}\" | 
+base64 -d) && npm run build-docker-integration && sed -i 
+\"s/REDIS_PASSWORD=.*/REDIS_PASSWORD=$REDIS_PASSWORD/\" .env && kind load 
+docker-image metering-agent-transformer:local && kubectl apply -f 
+./resources/local/deployment_local.yml && export POD=$(kubectl get pod -l 
+app=metering-agent-transformer -o jsonpath=\"{.items[0].metadata.name}\") ",
+        "test": "jest --config ./jest.unit.config.json",
+        "test:ci": "jest --config ./jest.unit.config.json --forceExit",
+        "test:watch": "jest --watch",
+        "test:cov": "jest --coverage",
+        "test:debug": "node --inspect-brk -r tsconfig-paths/register -r 
+ts-node/register node_modules/.bin/jest --runInBand",
+        "test:e2e": "jest --config ./test/jest-e2e.json",
+        "test:api": "jest --config ./test/jest-api.json",
+        "test:db": "jest --config ./test/jest-db.json",
+        "test:local:integration": "jest --config 
+./integration/jest.local.config.json",
+        "test:ci:integration": "jest --config 
+./integration/jest.ci.config.json",
+        "deploy:specification": "node docs/deployDocument.js",
+        "build-docker": "docker build -t metering-agent-transformer --no-cache 
+.",
+        "build-docker-integration": "docker build -t 
+metering-agent-transformer:local --no-cache .",
+        "development:refresh:integration": "npm run build-docker-integration && 
+kind load docker-image metering-agent-transformer:local && kubectl rollout 
+restart deployment metering-agent-transformer",
+        "run-docker": "docker run -p 3000:3000 metering-agent-transformer",
+        "push-image-dev": "docker tag metering-agent-transformer 
+[REDACTED_AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/metering-agent-transformer:latest 
+&& docker push 
+[REDACTED_AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/metering-agent-transformer:latest",
+        "push-image-prod": "docker tag metering-agent-transformer 
+[REDACTED_AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/metering-agent-transformer:prod && 
+docker push 
+[REDACTED_AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/metering-agent-transformer:prod"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@aws-sdk/client-cloudtrail": "^3.437.0",
+        "@aws-sdk/client-cloudwatch": "^3.437.0",
+        "@aws-sdk/client-cost-explorer": "^3.437.0",
+        "@aws-sdk/client-ec2": "^3.437.0",
+        "@aws-sdk/client-iam": "^3.437.0",
+        "@aws-sdk/client-pricing": "^3.437.0",
+        "@aws-sdk/client-s3": "^3.437.0",
+        "@aws-sdk/client-ses": "^3.245.0",
+        "@aws-sdk/client-ssm": "^3.437.0",
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 15, $0.57):
+```
+cd $(pwd); cat jest.unit.config.json; ls src/customer/*.spec.ts; sed -n 1,40p 
+src/onboarding/onboarding.service.spec.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+{
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "./src",
+    "testEnvironment": "node",
+    "transform": {
+        "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "transformIgnorePatterns": ["node_modules/(?!serialize-error/.*)"],
+    "testRegex": ".spec.ts$",
+    "preset": "ts-jest/presets/js-with-ts",
+    "globals": {
+        "ts-jest": {
+            "isolatedModules": true,
+            "tsConfig": "testTSConfig.json",
+            "useESM": true
+        }
+    },
+    "moduleNameMapper": {
+        "^(\\.\\.?\\/.+)\\.js$": "$1"
+    },
+    "extensionsToTreatAsEsm": [".ts"],
+    "maxWorkers": "20%",
+    "testTimeout": 30000
+}
+ src/customer/customer.controller.spec.ts
+src/customer/customer.service.spec.ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { OnboardingService } from './onboarding.service.js';
+import { createMock } from '@golevelup/ts-jest';
+
+describe('OnboardingService', () => {
+    let service: OnboardingService;
+
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [OnboardingService],
+            imports: [],
+        })
+            .useMocker(createMock)
+            .compile();
+
+        service = module.get<OnboardingService>(OnboardingService);
+    });
+
+    it('should be defined', () => {
+        expect(service).toBeDefined();
+    });
+});
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 16, $0.64):
+```
+cd $(pwd); cat > src/utils/aws/s3.ts <<'EOF'
+import { GetObjectCommand, ListObjectsV2Command, S3Client } from 
+'@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
+
+export const putDocument = (document, Bucket, Key) =>
+    new Upload({ client: new S3Client({ region: 'us-east-1' }), params: { Body: 
+document, Bucket, Key } });
+
+export const getDocument = async <T>(Bucket: string, Key: string): Promise<T> =>
+{
+    const client = new S3Client({});
+    const { Body } = await client.send(new GetObjectCommand({ Bucket, Key }));
+    return JSON.parse(await Body.transformToString()) as T;
+};
+
+/**
+ * Every object key sitting under a prefix, following the listing pagination to
+ * the end so callers never silently read a truncated view of a bucket.
+ */
+export const listDocumentKeys = async (Bucket: string, Prefix: string): 
+Promise<Array<string>> => {
+    const client = new S3Client({});
+    const keys: Array<string> = [];
+    let continuationToken: string | undefined;
+    do {
+        // eslint-disable-next-line no-await-in-loop
+        const response = await client.send(
+            new ListObjectsV2Command({ Bucket, Prefix, ContinuationToken: 
+continuationToken }),
+        );
+        (response.Contents ?? []).forEach(({ Key }) => {
+            if (Key && !Key.endsWith('/')) {
+                keys.push(Key);
+            }
+        });
+        continuationToken = response.IsTruncated ? 
+response.NextContinuationToken : undefined;
+    } while (continuationToken);
+    return keys;
+};
+EOF
+npx tsc --noEmit -p tsconfig.json 2>&1 | head -5
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/billing/billing.service.spec.ts(76,28): error TS2345: Argument of type 
+'string' is not assignable to parameter of type 'FakeTimersConfig | 
+LegacyFakeTimersConfig'.
+src/billing/billing.service.spec.ts(97,28): error TS2345: Argument of type 
+'string' is not assignable to parameter of type 'FakeTimersConfig | 
+LegacyFakeTimersConfig'.
+src/billing/billing.service.spec.ts(114,28): error TS2345: Argument of type 
+'string' is not assignable to parameter of type 'FakeTimersConfig | 
+LegacyFakeTimersConfig'.
+src/contract/contract.service.spec.ts(25,28): error TS2345: Argument of type 
+'string' is not assignable to parameter of type 'FakeTimersConfig | 
+LegacyFakeTimersConfig'.
+src/contract/contract.service.spec.ts(60,78): error TS2345: Argument of type '{ 
+offering: { enroll: jest.Mock<any, any, any>; }; }' is not assignable to 
+parameter of type 'PrepareContractResponseDto | 
+Promise<PrepareContractResponseDto>'.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 17, $0.74):
+```
+cd $(pwd); cat > src/onboarding/entities/meteringAccounts.entity.ts <<'EOF'
+import { Logger } from '@nestjs/common';
+import { getDocument, listDocumentKeys } from '../../utils/aws/s3.js';
+
+/**
+ * An AWS account a business has handed us for measurement.
+ */
+export class MeteredAccount {
+    /**
+     * The account the metering role lives in.
+     * @example "445566778899"
+     */
+    public accountId: string;
+    /**
+     * The role we assume to read the account.
+     * @example "arn:aws:iam::445566778899:role/metering-metering"
+     */
+    public roleArn: string;
+    /**
+     * The external id the role's trust policy asks for, when it asks for one.
+     */
+    public externalId?: string;
+    /**
+     * The region the business runs the metered workload in.
+     * @example "us-east-1"
+     */
+    public region: string;
+}
+
+/**
+ * One account a customer has been onboarded onto.
+ */
+export class CustomerAccountEnrollment {
+    /**
+     * The account the customer's workload runs in.
+     * @example "445566778899"
+     */
+    public accountId: string;
+    /**
+     * Set when the business runs the account for this customer alone, so
+     * anything metered in it is the customer's whatever the instance tags say.
+     */
+    public dedicated?: boolean;
+}
+
+/**
+ * The per customer onboarding record kept in the metering bucket, one object 
+per
+ * customer under the registry's customer record prefix. A customer only becomes
+ * billable for an account once such a record names it.
+ */
+export class CustomerOnboardingRecord {
+    public customerId: string;
+    public displayName?: string;
+    public accounts: Array<CustomerAccountEnrollment>;
+}
+
+/**
+ * Who is genuinely onboarded for a single account, resolved from the customer
+ * onboarding records.
+ */
+export class AccountTenancy {
+    public accountId: string;
+    /**
+     * The billable customers onboarded for the account, sorted for stable
+     * attribution.
+     */
+    public customerIds: Array<string>;
+    /**
+     * Set when the account belongs to exactly one customer. Usage metered in a
+     * dedicated account is that customer's regardless of the instance tags.
+     */
+    public dedicatedTo?: string;
+
+    constructor({ accountId, customerIds, dedicatedTo }: AccountTenancy) {
+        this.accountId = accountId;
+        this.customerIds = customerIds;
+        this.dedicatedTo = dedicatedTo;
+    }
+}
+
+/**
+ * The onboarding record a business keeps in its metering bucket. It is written
+ * by the onboarding flow and read by every collector that has to sweep more
+ * than one account.
+ */
+export class MeteringRegistry {
+    private static readonly logger = new Logger(MeteringRegistry.name);
+    public businessID: string;
+    /**
+     * Key prefix the per customer onboarding records sit under in the same
+     * bucket, one object per customer.
+     * @example "onboarding/customers/"
+     */
+    public customerRecordPrefix: string;
+    public accounts: Array<MeteredAccount>;
+
+    static async load(bucket: string, key: string): Promise<MeteringRegistry> {
+        return getDocument<MeteringRegistry>(bucket, key);
+    }
+
+    /**
+     * Reads every customer onboarding record kept beside the registry. A record
+     * that cannot be read is skipped rather than failing the whole sweep, its
+     * usage simply stays unplaceable.
+     */
+    static async loadCustomerRecords(bucket: string, prefix: string): 
+Promise<Array<CustomerOnboardingRecord>> {
+        if (!prefix) {
+            MeteringRegistry.logger.warn('Metering registry has no customer 
+record prefix, nothing is billable');
+            return [];
+        }
+        const keys = await listDocumentKeys(bucket, prefix);
+        const records = await Promise.all(
+            keys.map(async (key) => {
+                try {
+                    return await getDocument<CustomerOnboardingRecord>(bucket, 
+key);
+                } catch (error) {
+                    MeteringRegistry.logger.error(`Could not read customer 
+onboarding record ${key}`, error);
+                    return undefined;
+                }
+            }),
+        );
+        return records.filter((record) => record?.customerId);
+    }
+
+    /**
+     * Works out, per account, which customers are genuinely onboarded for it 
+and
+     * whether the account is dedicated to a single one of them.
+     */
+    static resolveTenancy(records: Array<CustomerOnboardingRecord>): 
+Record<string, AccountTenancy> {
+        const tenants: Record<string, Array<string>> = {};
+        const dedicatedClaims: Record<string, Array<string>> = {};
+        records.forEach(({ customerId, accounts }) => {
+            (accounts ?? []).forEach((enrollment) => {
+                const accountId = enrollment?.accountId;
+                if (!accountId || !customerId) {
+                    return;
+                }
+                tenants[accountId] = tenants[accountId] ?? [];
+                if (!tenants[accountId].includes(customerId)) {
+                    tenants[accountId].push(customerId);
+                }
+                if (enrollment.dedicated) {
+                    dedicatedClaims[accountId] = (dedicatedClaims[accountId] ?? 
+[]).concat(customerId);
+                }
+            });
+        });
+
+        return Object.keys(tenants).reduce((tenancy, accountId) => {
+            const customerIds = tenants[accountId].sort();
+            const claims = [...new Set(dedicatedClaims[accountId] ?? [])];
+            let dedicatedTo: string | undefined;
+            if (customerIds.length === 1) {
+                dedicatedTo = customerIds[0];
+            } else if (claims.length === 1) {
+                dedicatedTo = claims[0];
+                MeteringRegistry.logger.warn(
+                    `Account ${accountId} is onboarded for ${customerIds.length}
+customers but ${dedicatedTo} claims it as dedicated, treating it as dedicated`,
+                );
+            } else if (claims.length > 1) {
+                MeteringRegistry.logger.warn(
+                    `Account ${accountId} is claimed as dedicated by 
+${claims.length} customers, treating it as shared`,
+                );
+            }
+            tenancy[accountId] = new AccountTenancy({ accountId, customerIds, 
+dedicatedTo });
+            return tenancy;
+        }, {} as Record<string, AccountTenancy>);
+    }
+
+    /**
+     * Convenience wrapper that reads the customer onboarding records beside the
+     * registry and resolves them into per account tenancy.
+     */
+    static async loadTenancy(bucket: string, prefix: string): 
+Promise<Record<string, AccountTenancy>> {
+        return MeteringRegistry.resolveTenancy(await 
+MeteringRegistry.loadCustomerRecords(bucket, prefix));
+    }
+}
+EOF
+npx tsc --noEmit -p tsconfig.json 2>&1 | grep -v spec | head -5
+```
+
+Tool:
+<returncode>
+0
+<output>
+  Type '{ offering: { enroll: Mock<any, any, any>; }; }' is missing the 
+following properties from type 'PrepareContractResponseDto': customerId, 
+businessID, offeringId, offeringEnrollmentDate, readOfferingResponseData
+  Types of property 'readSettingsResponseData' are incompatible.
+    Type '{ id: string; name: string; }' has no properties in common with type 
+'ReadSettingsResponseData'.
+  Property 'readOfferingResponseData' is missing in type '{ customerId: string; 
+businessID: string; discount?: CustomerContractDiscount; dimensionOverrides?: 
+DimensionOverridesDto[]; offeringId: string; ... 4 more ...; message: string; }'
+but required in type 'CreateContractResponseDto'.
+  Type '{ overridesForOffering: { freeTrialEndDate: any; }; 
+offeringEnrollmentDate: Date; readOfferingResponseData: unknown; }' is missing 
+the following properties from type 'ReadContractResponseDto': customerId, 
+offeringId
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 18, $0.85):
+```
+cd $(pwd); python3 - <<'PY'
+import re
+p='src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts'
+s=open(p).read()
+
+s = s.replace(
+"import { MeteredAccount, MeteringRegistry } from 
+'../../onboarding/entities/meteringAccounts.entity.js';",
+"import {\n    AccountTenancy,\n    MeteredAccount,\n    MeteringRegistry,\n} 
+from '../../onboarding/entities/meteringAccounts.entity.js';"
+)
+
+start = s.index("    /**\n     * Sweeps every account")
+end = s.index("    private static async readAccount(")
+new_block = '''    /**
+     * Sweeps every account the business has onboarded and returns one usage
+     * measurement per customer for the dimension being metered.
+     *
+     * Attribution follows the onboarding records kept beside the account list:
+     * anything metered in an account dedicated to a single customer is that
+     * customer's whatever its tags say, while usage in a shared account is 
+split
+     * evenly between the tagged customers that are genuinely onboarded for that
+     * account. Usage that cannot be placed on an onboarded customer is dropped.
+     */
+    async gatherUsage({
+        businessID,
+        dimensionId,
+        registryBucket,
+        registryKey,
+    }: {
+        businessID: string;
+        dimensionId: string;
+        registryBucket: string;
+        registryKey: string;
+    }): Promise<Array<StandardMeasurementEntity>> {
+        const registry = await MeteringRegistry.load(registryBucket, 
+registryKey);
+        const tenancy = await MeteringRegistry.loadTenancy(registryBucket, 
+registry.customerRecordPrefix);
+        const collected: Array<MeteredInstance> = [];
+        for (const account of registry.accounts ?? []) {
+            // eslint-disable-next-line no-await-in-loop
+            const instances = await 
+Ec2InstanceDataGathererService.readAccount(account, dimensionId);
+            collected.push(...instances);
+        }
+        Ec2InstanceDataGathererService.logger.log(
+            `Metered ${collected.length} instances across ${(registry.accounts 
+?? []).length} accounts`,
+        );
+
+        const runningTime: Record<string, number> = {};
+        const instanceIds: Record<string, Array<string>> = {};
+        let unplaceable = 0;
+        collected.forEach((instance) => {
+            const owners = 
+Ec2InstanceDataGathererService.resolveOwners(instance, 
+tenancy[instance.accountId]);
+            if (owners.length === 0) {
+                unplaceable += 1;
+                Ec2InstanceDataGathererService.logger.warn(
+                    `Dropping unplaceable usage for instance 
+${instance.instanceId} in account ${instance.accountId}`,
+                );
+                return;
+            }
+            const share = RUNNING_TIME_INCREMENT / owners.length;
+            owners.forEach((customerId) => {
+                runningTime[customerId] = (runningTime[customerId] ?? 0) + 
+share;
+                instanceIds[customerId] = (instanceIds[customerId] ?? 
+[]).concat(instance.instanceId);
+            });
+        });
+        if (unplaceable > 0) {
+            Ec2InstanceDataGathererService.logger.log(
+                `Left ${unplaceable} instances off the bill, no onboarded 
+customer could be resolved for them`,
+            );
+        }
+
+        return Object.keys(runningTime)
+            .sort()
+            .map(
+                (customerId) =>
+                    new StandardMeasurementEntity({
+                        businessID,
+                        dimensionId,
+                        metadata: {
+                            instanceIds: 
+instanceIds[customerId].sort().join(','),
+                            instanceCount: instanceIds[customerId].length,
+                        },
+                        recordValue: runningTime[customerId],
+                        customerId,
+                        _measurement: UsageEntity._measurement,
+                    }),
+            );
+    }
+
+    /**
+     * The onboarded customers a single metered instance's uptime belongs to. An
+     * empty result means the usage is unplaceable and must stay off the bill.
+     */
+    private static resolveOwners(instance: MeteredInstance, tenancy?: 
+AccountTenancy): Array<string> {
+        if (!tenancy || tenancy.customerIds.length === 0) {
+            return [];
+        }
+        if (tenancy.dedicatedTo) {
+            return [tenancy.dedicatedTo];
+        }
+        const taggedCustomerIds = (instance.tags?.meteringCustomerId ?? '')
+            .split(',')
+            .map((customerId) => customerId.trim())
+            .filter((customerId) => customerId.length > 0);
+        return [...new Set(taggedCustomerIds)].filter((customerId) => 
+tenancy.customerIds.includes(customerId)).sort();
+    }
+
+'''
+s = s[:start] + new_block + s[end:]
+open(p,'w').write(s)
+PY
+npx tsc --noEmit -p tsconfig.json 2>&1 | grep ec2Instance | head; npx eslint 
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts 
+src/onboarding/entities/meteringAccounts.entity.ts src/utils/aws/s3.ts
+```
+
+Tool:
+<returncode>
+1
+<output>
+
+/app/src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.t
+s
+   12:9   error  Replace 
+`⏎····AccountTenancy,⏎····MeteredAccount,⏎····MeteringRegistry,⏎` with 
+`·AccountTenancy,·MeteredAccount,·MeteringRegistry·`  prettier/prettier
+  148:38  error  Replace 
+`⏎········account:·MeteredAccount,⏎········dimensionId:·string,⏎····` with 
+`account:·MeteredAccount,·dimensionId:·string`    prettier/prettier
+  178:52  error  Insert `⏎····················`                                 
+prettier/prettier
+  179:21  error  Insert `····`                                                  
+prettier/prettier
+  180:1   error  Replace `····················` with `························` 
+prettier/prettier
+  181:17  error  Replace `},·{}·as·Record<string,·string>` with 
+`····},⏎····················{}·as·Record<string,·string>,⏎················`     
+prettier/prettier
+
+/app/src/onboarding/entities/meteringAccounts.entity.ts
+  147:44  error  Insert `⏎············`                                         
+prettier/prettier
+  148:1   error  Replace `············` with `················`                 
+prettier/prettier
+  149:1   error  Insert `····`                                                  
+prettier/prettier
+  150:13  error  Insert `····`                                                  
+prettier/prettier
+  151:1   error  Replace `············` with `················`                 
+prettier/prettier
+  152:17  error  Insert `····`                                                  
+prettier/prettier
+  153:1   error  Replace `············` with `················`                 
+prettier/prettier
+  154:1   error  Insert `····`                                                  
+prettier/prettier
+  155:17  error  Insert `····`                                                  
+prettier/prettier
+  156:1   error  Insert `····`                                                  
+prettier/prettier
+  157:17  error  Insert `····`                                                  
+prettier/prettier
+  158:1   error  Replace `············` with `················`                 
+prettier/prettier
+  159:17  error  Insert `····`                                                  
+prettier/prettier
+  160:1   error  Insert `····`                                                  
+prettier/prettier
+  161:1   error  Replace `················` with `····················`         
+prettier/prettier
+  162:13  error  Insert `····`                                                  
+prettier/prettier
+  163:1   error  Insert `····`                                                  
+prettier/prettier
+  164:1   error  Insert `····`                                                  
+prettier/prettier
+  165:9   error  Replace `},·{}·as·Record<string,·AccountTenancy>` with 
+`····},⏎············{}·as·Record<string,·AccountTenancy>,⏎········`  
+prettier/prettier
+
+✖ 25 problems (25 errors, 0 warnings)
+  25 errors and 0 warnings potentially fixable with the `--fix` option.
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 19, $0.92):
+```
+cd $(pwd); npx eslint --fix 
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts 
+src/onboarding/entities/meteringAccounts.entity.ts src/utils/aws/s3.ts && npx 
+tsc --noEmit -p tsconfig.json 2>&1 | grep -E 
+"ec2Instance|meteringAccounts|aws/s3" | head
+```
+
+Tool:
+<returncode>
+0
+<output>
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 20, $0.96):
+```
+cd $(pwd); cat > src/microservices/ec2InstanceDataGatherer/tmpcheck.spec.ts 
+<<'EOF'
+import { Ec2InstanceDataGathererService } from 
+'./ec2InstanceDataGatherer.service.js';
+
+describe('sweep', () => {
+    it('attributes uptime', async () => {
+        const svc = new Ec2InstanceDataGathererService();
+        const out = await svc.gatherUsage({
+            businessID: 'biz-cadence',
+            dimensionId: 'dim-uptime-sandbox',
+            registryBucket: 'metering-metering-cadence',
+            registryKey: 'onboarding/registry.json',
+        });
+        console.log(JSON.stringify(out, null, 1));
+        const inc = 0.08333333;
+        expect(out.length).toBe(2);
+        expect(out[0].customerId).toBe('cus_harbor');
+        expect(out[0].recordValue).toBeCloseTo(3.5 * inc);
+        expect(out[1].customerId).toBe('cus_lattice');
+        expect(out[1].recordValue).toBeCloseTo(1.5 * inc);
+    });
+});
+EOF
+npx jest --config ./jest.unit.config.json -t "attributes uptime" 
+src/microservices/ec2InstanceDataGatherer 2>&1 | tail -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+[32m[Nest] 1079  - [39m08/24/2026, 5:58:57 AM [32m    LOG[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[32mLeft 1 instances off the bill,
+no onboarded customer could be resolved for them[39m
+  console.log
+    [
+     {
+      "timestamp": "2026-08-24T05:58:57.654Z",
+      "dimensionId": "dim-uptime-sandbox",
+      "customerId": "cus_harbor",
+      "recordValue": 0.291666655,
+      "metadata": {
+       "instanceIds": 
+"i-0sbx000000000001,i-0sbx000000000002,i-0sbx000000000003,i-0sbx000000000011",
+       "instanceCount": 4
+      },
+      "businessID": "biz-cadence",
+      "_measurement": "usageMeasurement"
+     },
+     {
+      "timestamp": "2026-08-24T05:58:57.654Z",
+      "dimensionId": "dim-uptime-sandbox",
+      "customerId": "cus_lattice",
+      "recordValue": 0.124999995,
+      "metadata": {
+       "instanceIds": "i-0sbx000000000011,i-0sbx000000000013",
+       "instanceCount": 2
+      },
+      "businessID": "biz-cadence",
+      "_measurement": "usageMeasurement"
+     }
+    ]
+
+      at Object.<anonymous> 
+(microservices/ec2InstanceDataGatherer/tmpcheck.spec.ts:12:17)
+
+PASS src/microservices/ec2InstanceDataGatherer/tmpcheck.spec.ts
+  sweep
+    ✓ attributes uptime (95 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        2.214 s
+Ran all test suites matching /src\/microservices\/ec2InstanceDataGatherer/i with
+tests matching "attributes uptime".
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 21, $1.03):
+```
+cd $(pwd); cat > edge.mjs <<'EOF'
+import { S3Client, CreateBucketCommand, PutObjectCommand } from 
+'@aws-sdk/client-s3';
+const c = new S3Client({});
+const B='edge-test-bucket';
+try { await c.send(new CreateBucketCommand({Bucket:B})); } catch(e){ 
+console.log(e.name); }
+const put = (k, o) => c.send(new PutObjectCommand({Bucket:B, Key:k, Body: 
+JSON.stringify(o)}));
+await put('reg.json', {businessID:'biz-cadence', customerRecordPrefix:'cust/', 
+accounts:[
+  {accountId:'100000000011', 
+roleArn:'arn:aws:iam::100000000011:role/metering-metering', 
+externalId:'cadence-a1-4f21', region:'us-east-1'},
+  {accountId:'100000000022', 
+roleArn:'arn:aws:iam::100000000022:role/metering-metering', 
+externalId:'cadence-a2-9b07', region:'us-east-1'}]});
+// only lattice onboarded, for acct 22 only. acct 11 has no tenants.
+await put('cust/lattice.json', {customerId:'cus_lattice', 
+accounts:[{accountId:'100000000022'}]});
+// registry with no prefix
+await put('reg-noprefix.json', {businessID:'biz-cadence', 
+accounts:[{accountId:'100000000022', 
+roleArn:'arn:aws:iam::100000000022:role/metering-metering', 
+externalId:'cadence-a2-9b07', region:'us-east-1'}]});
+console.log('done');
+EOF
+node edge.mjs
+```
+
+Tool:
+<returncode>
+0
+<output>
+done
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 22, $1.08):
+```
+cd $(pwd); cat > src/microservices/ec2InstanceDataGatherer/tmpedge.spec.ts 
+<<'EOF'
+import { Ec2InstanceDataGathererService } from 
+'./ec2InstanceDataGatherer.service.js';
+
+const inc = 0.08333333;
+describe('edge', () => {
+    const svc = new Ec2InstanceDataGathererService();
+    it('drops accounts with no onboarded tenants and unknown tag names', async 
+() => {
+        const out = await svc.gatherUsage({
+            businessID: 'biz-cadence',
+            dimensionId: 'dim-uptime-sandbox',
+            registryBucket: 'edge-test-bucket',
+            registryKey: 'reg.json',
+        });
+        console.log(JSON.stringify(out));
+        // acct 11 has no tenants -> all dropped. acct 22: lattice sole tenant 
+-> dedicated -> all 3? no, dim filter
+        expect(out.length).toBe(1);
+        expect(out[0].customerId).toBe('cus_lattice');
+        expect(out[0].recordValue).toBeCloseTo(3 * inc);
+    });
+    it('bills nothing when there is no customer record prefix', async () => {
+        const out = await svc.gatherUsage({
+            businessID: 'biz-cadence',
+            dimensionId: 'dim-uptime-sandbox',
+            registryBucket: 'edge-test-bucket',
+            registryKey: 'reg-noprefix.json',
+        });
+        expect(out.length).toBe(0);
+    });
+});
+EOF
+npx jest --config ./jest.unit.config.json 
+src/microservices/ec2InstanceDataGatherer/tmpedge 2>&1 | tail -25
+```
+
+Tool:
+<returncode>
+0
+<output>
+[33m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000001 in account 100000000011[39m
+[33m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000002 in account 100000000011[39m
+[33m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000003 in account 100000000011[39m
+[32m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [32m    LOG[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[32mLeft 3 instances off the bill,
+no onboarded customer could be resolved for them[39m
+  console.log
+    [{"timestamp":"2026-08-24T05:59:22.313Z","dimensionId":"dim-uptime-sandbox",
+"customerId":"cus_lattice","recordValue":0.24999999,"metadata":{"instanceIds":"i
+-0sbx000000000011,i-0sbx000000000012,i-0sbx000000000013","instanceCount":3},"bus
+inessID":"biz-cadence","_measurement":"usageMeasurement"}]
+
+      at Object.<anonymous> 
+(microservices/ec2InstanceDataGatherer/tmpedge.spec.ts:13:17)
+
+[33m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [33m   WARN[39m 
+[38;5;3m[MeteringRegistry] [39m[33mMetering registry has no customer record 
+prefix, nothing is billable[39m
+[32m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [32m    LOG[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[32mMetered 3 instances across 1
+accounts[39m
+[33m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000011 in account 100000000022[39m
+[33m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000012 in account 100000000022[39m
+[33m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000013 in account 100000000022[39m
+[32m[Nest] 1135  - [39m08/24/2026, 5:59:22 AM [32m    LOG[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[32mLeft 3 instances off the bill,
+no onboarded customer could be resolved for them[39m
+PASS src/microservices/ec2InstanceDataGatherer/tmpedge.spec.ts
+  edge
+    ✓ drops accounts with no onboarded tenants and unknown tag names (105 ms)
+    ✓ bills nothing when there is no customer record prefix (9 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        1.718 s
+Ran all test suites matching 
+/src\/microservices\/ec2InstanceDataGatherer\/tmpedge/i.
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 23, $1.18):
+```
+cd $(pwd); nl -ba src/onboarding/entities/meteringAccounts.entity.ts | sed -n 
+'55,175p'
+```
+
+Tool:
+<returncode>
+0
+<output>
+    55  
+    56  /**
+    57   * Who is genuinely onboarded for a single account, resolved from the 
+customer
+    58   * onboarding records.
+    59   */
+    60  export class AccountTenancy {
+    61      public accountId: string;
+    62      /**
+    63       * The billable customers onboarded for the account, sorted for 
+stable
+    64       * attribution.
+    65       */
+    66      public customerIds: Array<string>;
+    67      /**
+    68       * Set when the account belongs to exactly one customer. Usage 
+metered in a
+    69       * dedicated account is that customer's regardless of the instance 
+tags.
+    70       */
+    71      public dedicatedTo?: string;
+    72  
+    73      constructor({ accountId, customerIds, dedicatedTo }: AccountTenancy)
+{
+    74          this.accountId = accountId;
+    75          this.customerIds = customerIds;
+    76          this.dedicatedTo = dedicatedTo;
+    77      }
+    78  }
+    79  
+    80  /**
+    81   * The onboarding record a business keeps in its metering bucket. It is 
+written
+    82   * by the onboarding flow and read by every collector that has to sweep 
+more
+    83   * than one account.
+    84   */
+    85  export class MeteringRegistry {
+    86      private static readonly logger = new Logger(MeteringRegistry.name);
+    87      public businessID: string;
+    88      /**
+    89       * Key prefix the per customer onboarding records sit under in the 
+same
+    90       * bucket, one object per customer.
+    91       * @example "onboarding/customers/"
+    92       */
+    93      public customerRecordPrefix: string;
+    94      public accounts: Array<MeteredAccount>;
+    95  
+    96      static async load(bucket: string, key: string): 
+Promise<MeteringRegistry> {
+    97          return getDocument<MeteringRegistry>(bucket, key);
+    98      }
+    99  
+   100      /**
+   101       * Reads every customer onboarding record kept beside the registry. 
+A record
+   102       * that cannot be read is skipped rather than failing the whole 
+sweep, its
+   103       * usage simply stays unplaceable.
+   104       */
+   105      static async loadCustomerRecords(bucket: string, prefix: string): 
+Promise<Array<CustomerOnboardingRecord>> {
+   106          if (!prefix) {
+   107              MeteringRegistry.logger.warn('Metering registry has no 
+customer record prefix, nothing is billable');
+   108              return [];
+   109          }
+   110          const keys = await listDocumentKeys(bucket, prefix);
+   111          const records = await Promise.all(
+   112              keys.map(async (key) => {
+   113                  try {
+   114                      return await 
+getDocument<CustomerOnboardingRecord>(bucket, key);
+   115                  } catch (error) {
+   116                      MeteringRegistry.logger.error(`Could not read 
+customer onboarding record ${key}`, error);
+   117                      return undefined;
+   118                  }
+   119              }),
+   120          );
+   121          return records.filter((record) => record?.customerId);
+   122      }
+   123  
+   124      /**
+   125       * Works out, per account, which customers are genuinely onboarded 
+for it and
+   126       * whether the account is dedicated to a single one of them.
+   127       */
+   128      static resolveTenancy(records: Array<CustomerOnboardingRecord>): 
+Record<string, AccountTenancy> {
+   129          const tenants: Record<string, Array<string>> = {};
+   130          const dedicatedClaims: Record<string, Array<string>> = {};
+   131          records.forEach(({ customerId, accounts }) => {
+   132              (accounts ?? []).forEach((enrollment) => {
+   133                  const accountId = enrollment?.accountId;
+   134                  if (!accountId || !customerId) {
+   135                      return;
+   136                  }
+   137                  tenants[accountId] = tenants[accountId] ?? [];
+   138                  if (!tenants[accountId].includes(customerId)) {
+   139                      tenants[accountId].push(customerId);
+   140                  }
+   141                  if (enrollment.dedicated) {
+   142                      dedicatedClaims[accountId] = 
+(dedicatedClaims[accountId] ?? []).concat(customerId);
+   143                  }
+   144              });
+   145          });
+   146  
+   147          return Object.keys(tenants).reduce(
+   148              (tenancy, accountId) => {
+   149                  const customerIds = tenants[accountId].sort();
+   150                  const claims = [...new Set(dedicatedClaims[accountId] ??
+[])];
+   151                  let dedicatedTo: string | undefined;
+   152                  if (customerIds.length === 1) {
+   153                      dedicatedTo = customerIds[0];
+   154                  } else if (claims.length === 1) {
+   155                      dedicatedTo = claims[0];
+   156                      MeteringRegistry.logger.warn(
+   157                          `Account ${accountId} is onboarded for 
+${customerIds.length} customers but ${dedicatedTo} claims it as dedicated, 
+treating it as dedicated`,
+   158                      );
+   159                  } else if (claims.length > 1) {
+   160                      MeteringRegistry.logger.warn(
+   161                          `Account ${accountId} is claimed as dedicated by
+${claims.length} customers, treating it as shared`,
+   162                      );
+   163                  }
+   164                  tenancy[accountId] = new AccountTenancy({ accountId, 
+customerIds, dedicatedTo });
+   165                  return tenancy;
+   166              },
+   167              {} as Record<string, AccountTenancy>,
+   168          );
+   169      }
+   170  
+   171      /**
+   172       * Convenience wrapper that reads the customer onboarding records 
+beside the
+   173       * registry and resolves them into per account tenancy.
+   174       */
+   175      static async loadTenancy(bucket: string, prefix: string): 
+Promise<Record<string, AccountTenancy>> {
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 24, $1.30):
+```
+cd $(pwd); python3 - <<'PY'
+p='src/onboarding/entities/meteringAccounts.entity.ts'
+s=open(p).read()
+old = s[s.index("        return Object.keys(tenants).reduce("):s.index("    
+/**\n     * Convenience wrapper")]
+new = '''        return Object.keys(tenants).reduce(
+            (tenancy, accountId) => {
+                const customerIds = tenants[accountId].sort();
+                const claims = [...new Set(dedicatedClaims[accountId] ?? [])];
+                let dedicatedTo: string | undefined;
+                if (claims.length === 1) {
+                    [dedicatedTo] = claims;
+                    if (customerIds.length > 1) {
+                        MeteringRegistry.logger.warn(
+                            `Account ${accountId} is onboarded for 
+${customerIds.length} customers but ${dedicatedTo} onboarded it as dedicated, 
+everything metered in it belongs to ${dedicatedTo}`,
+                        );
+                    }
+                } else if (claims.length > 1) {
+                    MeteringRegistry.logger.warn(
+                        `Account ${accountId} was onboarded as dedicated by 
+${claims.length} customers, treating it as shared`,
+                    );
+                }
+                tenancy[accountId] = new AccountTenancy({ accountId, 
+customerIds, dedicatedTo });
+                return tenancy;
+            },
+            {} as Record<string, AccountTenancy>,
+        );
+    }
+
+'''
+s = s.replace(old, new)
+s = s.replace('''    /**
+     * Set when the account belongs to exactly one customer. Usage metered in a
+     * dedicated account is that customer's regardless of the instance tags.
+     */''','''    /**
+     * Set when the account was onboarded as dedicated to a single customer.
+     * Usage metered in a dedicated account is that customer's regardless of
+     * which customer the instance tags name, including when they name none.
+     */''')
+open(p,'w').write(s)
+PY
+npx eslint src/onboarding/entities/meteringAccounts.entity.ts && npx jest 
+--config ./jest.unit.config.json src/microservices/ec2InstanceDataGatherer 2>&1 
+| tail -20
+```
+
+Tool:
+<returncode>
+0
+<output>
+
+      at Object.<anonymous> 
+(microservices/ec2InstanceDataGatherer/tmpedge.spec.ts:17:36)
+
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       1 failed, 2 passed, 3 total
+Snapshots:   0 total
+Time:        2.216 s, estimated 4 s
+Ran all test suites matching /src\/microservices\/ec2InstanceDataGatherer/i.
+[32m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [32m    LOG[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[32mMetered 6 instances across 2
+accounts[39m
+[33m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000001 in account 100000000011[39m
+[33m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000002 in account 100000000011[39m
+[33m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000003 in account 100000000011[39m
+[33m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000012 in account 100000000022[39m
+[32m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [32m    LOG[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[32mLeft 4 instances off the bill,
+no onboarded customer could be resolved for them[39m
+[33m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [33m   WARN[39m 
+[38;5;3m[MeteringRegistry] [39m[33mMetering registry has no customer record 
+prefix, nothing is billable[39m
+[32m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [32m    LOG[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[32mMetered 3 instances across 1
+accounts[39m
+[33m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000011 in account 100000000022[39m
+[33m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000012 in account 100000000022[39m
+[33m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [33m   WARN[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[33mDropping unplaceable usage for
+instance i-0sbx000000000013 in account 100000000022[39m
+[32m[Nest] 1206  - [39m08/24/2026, 6:00:26 AM [32m    LOG[39m 
+[38;5;3m[Ec2InstanceDataGathererService] [39m[32mLeft 3 instances off the bill,
+no onboarded customer could be resolved for them[39m
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 25, $1.37):
+```
+cd $(pwd); grep -rn "registryBucket\|registryKey" --include=* src integration 
+test docs resources .github 2>/dev/null | grep -v node_modules
+```
+
+```
+cd $(pwd); ls docs; grep -rln "dedicated" docs resources 2>/dev/null | head
+```
+
+Tool:
+<returncode>
+0
+<output>
+src/microservices/ec2InstanceDataGatherer/Dto/ec2InstanceDataGatherer.dto.ts:21:
+public registryBucket: string;
+src/microservices/ec2InstanceDataGatherer/Dto/ec2InstanceDataGatherer.dto.ts:28:
+public registryKey: string;
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:31:
+if (!('registryBucket' in scheduleParameters)) {
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:36:
+const { registryBucket, registryKey, dimensionId } = scheduleParameters;
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:42:
+registryBucket,
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:46:
+const measurements = await this.gatherUsage({ businessID, dimensionId, 
+registryBucket, registryKey });
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:64:
+registryBucket,
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:65:
+registryKey,
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:69:
+registryBucket: string;
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:70:
+registryKey: string;
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:72:
+const registry = await MeteringRegistry.load(registryBucket, registryKey);
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts:73:
+const tenancy = await MeteringRegistry.loadTenancy(registryBucket, 
+registry.customerRecordPrefix);
+src/microservices/ec2InstanceDataGatherer/tmpcheck.spec.ts:9:            
+registryBucket: 'metering-metering-cadence',
+src/microservices/ec2InstanceDataGatherer/tmpcheck.spec.ts:10:            
+registryKey: 'onboarding/registry.json',
+src/microservices/ec2InstanceDataGatherer/tmpedge.spec.ts:10:            
+registryBucket: 'edge-test-bucket',
+src/microservices/ec2InstanceDataGatherer/tmpedge.spec.ts:11:            
+registryKey: 'reg.json',
+src/microservices/ec2InstanceDataGatherer/tmpedge.spec.ts:23:            
+registryBucket: 'edge-test-bucket',
+src/microservices/ec2InstanceDataGatherer/tmpedge.spec.ts:24:            
+registryKey: 'reg-noprefix.json',
+
+
+Tool:
+<returncode>
+0
+<output>
+deployDocument.js
+open-api-private-spec.json
+open-api-public-spec.json
+private_api.html
+public_api.html
+public_api_skeleton.yml
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 26, $1.42):
+```
+cd $(pwd); cat 
+src/microservices/ec2InstanceDataGatherer/Dto/ec2InstanceDataGatherer.dto.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { infrastructureType } from 
+'../../../dimensions/dto/create-dimension.dto.js';
+
+export class Ec2InstanceDataGathererDto {
+    /**
+     *
+     * Static string indicating the dimensionType
+     */
+    @IsString()
+    @IsNotEmpty()
+    public dimensionType: infrastructureType.instanceRunningTime;
+
+    @IsOptional()
+    public dimensionId?: string;
+
+    /**
+     * The metering bucket holding the business' onboarding records.
+     */
+    @IsString()
+    @IsNotEmpty()
+    public registryBucket: string;
+
+    /**
+     * The key of the onboarding record inside that bucket.
+     */
+    @IsString()
+    @IsNotEmpty()
+    public registryKey: string;
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 27, $1.50):
+```
+cd $(pwd); cat > edge2.mjs <<'EOF'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+const c = new S3Client({});
+const B='edge-test-bucket';
+const put = (k, o) => c.send(new PutObjectCommand({Bucket:B, Key:k, Body: 
+JSON.stringify(o)}));
+// scenario 2: shared acct 22 with harbor(unknown tag names) + lattice, plus 
+registry only for acct 22
+await put('reg2.json', {businessID:'b', customerRecordPrefix:'cust2/', 
+accounts:[
+  {accountId:'100000000022', 
+roleArn:'arn:aws:iam::100000000022:role/metering-metering', 
+externalId:'cadence-a2-9b07', region:'us-east-1'}]});
+await put('cust2/a.json', {customerId:'cus_harbor', 
+accounts:[{accountId:'100000000022'}]});
+await put('cust2/b.json', {customerId:'cus_zeta', 
+accounts:[{accountId:'100000000022'}]});
+// scenario 3: acct 22 flagged dedicated by harbor while lattice also onboarded
+await put('reg3.json', {businessID:'b', customerRecordPrefix:'cust3/', 
+accounts:[
+  {accountId:'100000000022', 
+roleArn:'arn:aws:iam::100000000022:role/metering-metering', 
+externalId:'cadence-a2-9b07', region:'us-east-1'}]});
+await put('cust3/a.json', {customerId:'cus_harbor', 
+accounts:[{accountId:'100000000022', dedicated:true}]});
+await put('cust3/b.json', {customerId:'cus_lattice', 
+accounts:[{accountId:'100000000022'}]});
+console.log('ok');
+EOF
+node edge2.mjs && cat > 
+src/microservices/ec2InstanceDataGatherer/tmpedge.spec.ts <<'EOF'
+import { Ec2InstanceDataGathererService } from 
+'./ec2InstanceDataGatherer.service.js';
+
+const inc = 0.08333333;
+const svc = new Ec2InstanceDataGathererService();
+const sweep = (registryKey: string) =>
+    svc.gatherUsage({ businessID: 'b', dimensionId: 'dim-uptime-sandbox', 
+registryBucket: 'edge-test-bucket', registryKey });
+
+describe('edge', () => {
+    it('drops usage from accounts nobody is onboarded for, keeps tag driven 
+shares elsewhere', async () => {
+        const out = await sweep('reg.json');
+        expect(out.map((m) => [m.customerId, 
+m.recordValue])).toEqual([['cus_lattice', 2 * inc]]);
+    });
+    it('bills nothing when there is no customer record prefix', async () => {
+        expect(await sweep('reg-noprefix.json')).toEqual([]);
+    });
+    it('ignores tag names that are not onboarded for the account', async () => {
+        const out = await sweep('reg2.json');
+        // i-011 names harbor+lattice, only harbor is onboarded here -> full 
+increment to harbor
+        // i-012 names nobody -> dropped, i-013 names lattice -> dropped
+        expect(out.map((m) => [m.customerId, 
+m.recordValue])).toEqual([['cus_harbor', inc]]);
+    });
+    it('honours an explicit dedication even when another tenant lists the 
+account', async () => {
+        const out = await sweep('reg3.json');
+        expect(out.map((m) => [m.customerId, 
+m.recordValue])).toEqual([['cus_harbor', 3 * inc]]);
+    });
+});
+EOF
+npx jest --config ./jest.unit.config.json 
+src/microservices/ec2InstanceDataGatherer 2>&1 | grep -E "✓|✕|Tests:|●" | head 
+-30
+```
+
+Tool:
+<returncode>
+0
+<output>
+ok
+  ● Console
+Tests:       5 passed, 5 total
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 28, $1.56):
+```
+cd $(pwd); timeout 900 npx jest --config ./jest.unit.config.json 2>&1 | grep -E 
+"^(PASS|FAIL)|Tests:|Suites:" | tail -50
+```
+
+Tool:
+<returncode>
+-1
+<output>
+
+<exception_info>
+An error occurred while executing the command: Command 'cd $(pwd); timeout 900 
+npx jest --config ./jest.unit.config.json 2>&1 | grep -E 
+"^(PASS|FAIL)|Tests:|Suites:" | tail -50' timed out after 30 seconds
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 29, $1.60):
+```
+cd $(pwd); nohup npx jest --config ./jest.unit.config.json > /tmp/jest.log 2>&1 
+& echo started
+```
+
+Tool:
+<returncode>
+0
+<output>
+started
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 30, $1.64):
+```
+sleep 90; grep -E "^(PASS|FAIL)|Tests:|Test Suites:" /tmp/jest.log | tail -40
+```
+
+Tool:
+<returncode>
+-1
+<output>
+
+<exception_info>
+An error occurred while executing the command: Command 'sleep 90; grep -E 
+"^(PASS|FAIL)|Tests:|Test Suites:" /tmp/jest.log | tail -40' timed out after 30 
+seconds
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 31, $1.68):
+```
+sleep 25; grep -E "^(PASS|FAIL)|Tests:|Test Suites:" /tmp/jest.log | tail -40
+```
+
+Tool:
+<returncode>
+0
+<output>
+PASS src/microservices/ec2InstanceDataGatherer/tmpcheck.spec.ts
+PASS src/microservices/ec2InstanceDataGatherer/tmpedge.spec.ts
+PASS src/onboarding/onboarding.controller.spec.ts
+PASS src/portal/portal.controller.spec.ts
+PASS src/measurement/measurement.controller.spec.ts
+PASS src/inbox/inbox.service.spec.ts
+PASS src/credit/credit.controller.spec.ts
+PASS src/invoice/invoice.services.spec.ts
+PASS src/analytics/analytics.controller.spec.ts
+PASS src/inbox/inbox.controller.spec.ts
+PASS src/invoice/invoices.controller.spec.ts
+PASS src/agent-measurement/agent-measurement.controller.spec.ts
+PASS src/offering/offering.service.spec.ts
+PASS src/measurement-config/measurement-config.controller.spec.ts
+PASS src/azure/azure.controller.spec.ts
+PASS src/users/users.service.spec.ts
+PASS src/tax/tax.service.spec.ts
+PASS src/measurement/measurement.service.spec.ts
+PASS src/dimensions/dimensions.service.spec.ts
+PASS src/alerts/alerts.service.spec.ts
+PASS src/webhook/webhook.service.spec.ts
+PASS src/customergroup/customergroup.service.spec.ts
+PASS src/onboarding/onboarding.service.spec.ts
+PASS src/ledger/ledger.controller.spec.ts
+PASS src/agent-measurement/agent-measurement.service.spec.ts
+PASS src/payment/payment.controller.spec.ts
+PASS src/credit/credit.service.spec.ts
+PASS src/offering/offering.controller.spec.ts
+PASS src/measurement-config/measurement-config.service.spec.ts
+PASS src/azure/azure.service.spec.ts
+PASS src/margincalc/margincalc.service.spec.ts
+PASS src/kubernetes-deployer/kubernetes-deployer.service.spec.ts
+PASS src/cost/entities/ebsCost.entity.spec.ts
+PASS src/app.controller.spec.ts
+PASS src/audit/audit.service.spec.ts
+FAIL billing/billing.service.spec.ts
+FAIL token-consumer/token-consumer.controller.spec.ts
+FAIL token-consumer/token-consumer.service.spec.ts
+Test Suites: 3 failed, 54 passed, 57 total
+Tests:       6 failed, 286 passed, 292 total
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 32, $1.73):
+```
+grep -n "●" -A6 /tmp/jest.log | grep -A6 "token-consumer\|billing" | head -40; 
+echo ===; grep -n "● " /tmp/jest.log | head -20
+```
+
+Tool:
+<returncode>
+0
+<output>
+14:  ● BillingService › Should correctly set start and end dates for annual 
+billing
+15-
+16-    getaddrinfo ENOTFOUND auth.product.example
+17-
+18-
+19-
+20:  ● BillingService › Should handle events without offeringId correctly
+--
+32-FAIL src/token-consumer/token-consumer.controller.spec.ts
+33:  ● TokenConsumerController › should be defined
+34-
+35-    getaddrinfo ENOTFOUND auth.product.example
+36-
+37-
+38-
+39-FAIL src/token-consumer/token-consumer.service.spec.ts
+40:  ● TokenConsumerService › should be defined
+41-
+42-    getaddrinfo ENOTFOUND auth.product.example
+43-
+44-
+45-
+--
+535:  ● BillingService › Should correctly set start and end dates for annual 
+billing
+536-
+537-    getaddrinfo ENOTFOUND auth.product.example
+538-
+539-
+540-
+541:  ● BillingService › Should handle events without offeringId correctly
+--
+553-FAIL token-consumer/token-consumer.controller.spec.ts
+554:  ● TokenConsumerController › should be defined
+555-
+556-    getaddrinfo ENOTFOUND auth.product.example
+557-
+558-
+559-
+560-FAIL token-consumer/token-consumer.service.spec.ts
+561:  ● TokenConsumerService › should be defined
+===
+8:  ● BillingService › should be defined
+14:  ● BillingService › Should correctly set start and end dates for annual 
+billing
+20:  ● BillingService › Should handle events without offeringId correctly
+26:  ● BillingService › Should handle events with offeringId correctly
+33:  ● TokenConsumerController › should be defined
+40:  ● TokenConsumerService › should be defined
+297:  ● Console
+393:  ● Console
+427:  ● Console
+529:  ● BillingService › should be defined
+535:  ● BillingService › Should correctly set start and end dates for annual 
+billing
+541:  ● BillingService › Should handle events without offeringId correctly
+547:  ● BillingService › Should handle events with offeringId correctly
+554:  ● TokenConsumerController › should be defined
+561:  ● TokenConsumerService › should be defined
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 33, $1.81):
+```
+cd $(pwd); rm -f src/microservices/ec2InstanceDataGatherer/tmpcheck.spec.ts 
+src/microservices/ec2InstanceDataGatherer/tmpedge.spec.ts ls.mjs ec2ls.mjs 
+ec2ls2.mjs edge.mjs edge2.mjs
+cat > src/onboarding/entities/meteringAccounts.entity.spec.ts <<'EOF'
+import { MeteringRegistry } from './meteringAccounts.entity.js';
+
+describe('MeteringRegistry.resolveTenancy', () => {
+    it('marks an account dedicated when a customer onboarded it as dedicated', 
+() => {
+        const tenancy = MeteringRegistry.resolveTenancy([
+            { customerId: 'cus_harbor', accounts: [{ accountId: '11', dedicated:
+true }, { accountId: '22' }] },
+            { customerId: 'cus_lattice', accounts: [{ accountId: '22' }] },
+        ]);
+        expect(tenancy['11']).toEqual({ accountId: '11', customerIds: 
+['cus_harbor'], dedicatedTo: 'cus_harbor' });
+        expect(tenancy['22']).toEqual({
+            accountId: '22',
+            customerIds: ['cus_harbor', 'cus_lattice'],
+            dedicatedTo: undefined,
+        });
+    });
+
+    it('treats an account claimed as dedicated by several customers as shared', 
+() => {
+        const tenancy = MeteringRegistry.resolveTenancy([
+            { customerId: 'cus_harbor', accounts: [{ accountId: '33', dedicated:
+true }] },
+            { customerId: 'cus_lattice', accounts: [{ accountId: '33', 
+dedicated: true }] },
+        ]);
+        expect(tenancy['33'].dedicatedTo).toBeUndefined();
+        expect(tenancy['33'].customerIds).toEqual(['cus_harbor', 
+'cus_lattice']);
+    });
+
+    it('ignores records without a customer or an account', () => {
+        const tenancy = MeteringRegistry.resolveTenancy([
+            { customerId: '', accounts: [{ accountId: '44' }] },
+            { customerId: 'cus_harbor', accounts: undefined },
+            { customerId: 'cus_lattice', accounts: [{ accountId: undefined }] },
+        ]);
+        expect(tenancy).toEqual({});
+    });
+});
+EOF
+npx eslint src/onboarding/entities/meteringAccounts.entity.spec.ts; npx jest 
+--config ./jest.unit.config.json src/onboarding/entities 2>&1 | grep -E 
+"✓|✕|Tests:"
+```
+
+Tool:
+<returncode>
+0
+<output>
+    ✓ marks an account dedicated when a customer onboarded it as dedicated (3 
+ms)
+    ✓ treats an account claimed as dedicated by several customers as shared (1 
+ms)
+    ✓ ignores records without a customer or an account
+Tests:       3 passed, 3 total
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 34, $1.86):
+```
+cd $(pwd); cat > cleanup.mjs <<'EOF'
+import { S3Client, ListObjectsV2Command, DeleteObjectCommand, 
+DeleteBucketCommand } from '@aws-sdk/client-s3';
+const c = new S3Client({});
+const B='edge-test-bucket';
+const o = await c.send(new ListObjectsV2Command({Bucket:B}));
+for (const {Key} of o.Contents ?? []) await c.send(new 
+DeleteObjectCommand({Bucket:B, Key}));
+await c.send(new DeleteBucketCommand({Bucket:B}));
+console.log('cleaned');
+EOF
+node cleanup.mjs; rm -f cleanup.mjs; ls
+```
+
+Tool:
+<returncode>
+0
+<output>
+/app/node_modules/@smithy/smithy-client/dist-cjs/default-error-handler.js:8
+    const response = new exceptionCtor({
+                     ^
+
+MethodNotAllowed: Unsupported bucket operation
+    at throwDefaultError 
+(/app/node_modules/@smithy/smithy-client/dist-cjs/default-error-handler.js:8:22)
+    at 
+/app/node_modules/@smithy/smithy-client/dist-cjs/default-error-handler.js:18:39
+    at de_DeleteBucketCommandError 
+(/app/node_modules/@aws-sdk/client-s3/dist-cjs/protocols/Aws_restXml.js:3251:12)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:103:5)
+    at async 
+/app/node_modules/@smithy/middleware-serde/dist-cjs/deserializerMiddleware.js:7:
+24
+    at async 
+/app/node_modules/@aws-sdk/middleware-signing/dist-cjs/awsAuthMiddleware.js:14:2
+0
+    at async 
+/app/node_modules/@smithy/middleware-retry/dist-cjs/retryMiddleware.js:27:46
+    at async 
+/app/node_modules/@aws-sdk/client-s3/node_modules/@aws-sdk/middleware-sdk-s3/dis
+t-cjs/region-redirect-endpoint-middleware.js:14:24
+    at async 
+/app/node_modules/@aws-sdk/client-s3/node_modules/@aws-sdk/middleware-sdk-s3/dis
+t-cjs/region-redirect-middleware.js:9:20
+    at async 
+/app/node_modules/@aws-sdk/middleware-logger/dist-cjs/loggerMiddleware.js:7:26 {
+  '$fault': 'client',
+  '$metadata': {
+    httpStatusCode: 405,
+    requestId: 'mockaws-request',
+    extendedRequestId: undefined,
+    cfId: undefined,
+    attempts: 1,
+    totalRetryDelay: 0
+  },
+  Code: 'MethodNotAllowed',
+  Resource: 'edge-test-bucket',
+  RequestId: 'mockaws-request'
+}
+
+Node.js v22.23.2
+Dockerfile
+README.md
+dist
+docs
+integration
+jest.unit.config.json
+nest-cli.json
+node_modules
+package-lock.json
+package.json
+resources
+src
+test
+testTSConfig.json
+tsconfig.build.json
+tsconfig.json
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 35, $1.92):
+```
+cd $(pwd); cat > /tmp/v.mjs <<'EOF'
+import { S3Client, ListBucketsCommand, ListObjectsV2Command } from 
+'@aws-sdk/client-s3';
+const c = new S3Client({});
+for (const b of (await c.send(new ListBucketsCommand({}))).Buckets ?? []) {
+  const o = await c.send(new ListObjectsV2Command({Bucket:b.Name}));
+  console.log(b.Name, (o.Contents??[]).map(x=>x.Key));
+}
+EOF
+cp /tmp/v.mjs v.mjs && node v.mjs; rm v.mjs
+```
+
+```
+cd $(pwd); cat 
+src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+metering-metering-cadence [
+  'onboarding/customers/cus_harbor.json',
+  'onboarding/customers/cus_lattice.json',
+  'onboarding/registry.json'
+]
+edge-test-bucket []
+
+
+Tool:
+<returncode>
+0
+<output>
+import { BadRequestException, Logger } from '@nestjs/common';
+import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
+import { getInstanceWithFilters } from '../../utils/aws/awsEc2.js';
+import { StandardMeasurementEntity } from 
+'../../measurement-config/entities/standardMeasurement.entity.js';
+import { UsageEntity } from '../../usage/entities/usage.entity.js';
+import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import { infrastructureType } from 
+'../../dimensions/dto/create-dimension.dto.js';
+import { Job } from 'bull';
+import { SchedulerEntity } from '../../scheduler/entities/scheduler.entity.js';
+import { AuditService } from '../../audit/audit.service.js';
+import { AuditScope } from '../../audit/entities/audit.interface.js';
+import { AccountTenancy, MeteredAccount, MeteringRegistry } from 
+'../../onboarding/entities/meteringAccounts.entity.js';
+
+const RUNNING_TIME_INCREMENT = 0.08333333; // TODO: make this dynamic
+
+export type MeteredInstance = {
+    accountId: string;
+    instanceId: string;
+    instanceType: string;
+    region: string;
+    tags: Record<string, string>;
+};
+
+@Processor('scheduler_queue')
+export class Ec2InstanceDataGathererService {
+    private static readonly logger = new 
+Logger(Ec2InstanceDataGathererService.name);
+    constructor() {}
+
+    @Process(infrastructureType.instanceRunningTime)
+    async readOperationJob({ data: { scheduleParameters, businessID, subject, 
+rate } }: Job<SchedulerEntity>) {
+        if (!('registryBucket' in scheduleParameters)) {
+            throw new BadRequestException('Metering registry location not 
+found');
+        }
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const { registryBucket, registryKey, dimensionId } = scheduleParameters;
+        Ec2InstanceDataGathererService.logger.log(
+            'Processing Automated Instance Uptime gathering event, logging 
+inputs',
+            JSON.stringify({
+                rate,
+                businessID,
+                registryBucket,
+                subject,
+            }),
+        );
+        const measurements = await this.gatherUsage({ businessID, dimensionId, 
+registryBucket, registryKey });
+        measurements.forEach((entity) => 
+StandardMeasurementEntity.publish(entity));
+        Ec2InstanceDataGathererService.logger.log('Finished collecting EC2 
+instance running time data');
+    }
+
+    /**
+     * Sweeps every account the business has onboarded and returns one usage
+     * measurement per customer for the dimension being metered.
+     *
+     * Attribution follows the onboarding records kept beside the account list:
+     * anything metered in an account dedicated to a single customer is that
+     * customer's whatever its tags say, while usage in a shared account is 
+split
+     * evenly between the tagged customers that are genuinely onboarded for that
+     * account. Usage that cannot be placed on an onboarded customer is dropped.
+     */
+    async gatherUsage({
+        businessID,
+        dimensionId,
+        registryBucket,
+        registryKey,
+    }: {
+        businessID: string;
+        dimensionId: string;
+        registryBucket: string;
+        registryKey: string;
+    }): Promise<Array<StandardMeasurementEntity>> {
+        const registry = await MeteringRegistry.load(registryBucket, 
+registryKey);
+        const tenancy = await MeteringRegistry.loadTenancy(registryBucket, 
+registry.customerRecordPrefix);
+        const collected: Array<MeteredInstance> = [];
+        for (const account of registry.accounts ?? []) {
+            // eslint-disable-next-line no-await-in-loop
+            const instances = await 
+Ec2InstanceDataGathererService.readAccount(account, dimensionId);
+            collected.push(...instances);
+        }
+        Ec2InstanceDataGathererService.logger.log(
+            `Metered ${collected.length} instances across ${(registry.accounts 
+?? []).length} accounts`,
+        );
+
+        const runningTime: Record<string, number> = {};
+        const instanceIds: Record<string, Array<string>> = {};
+        let unplaceable = 0;
+        collected.forEach((instance) => {
+            const owners = 
+Ec2InstanceDataGathererService.resolveOwners(instance, 
+tenancy[instance.accountId]);
+            if (owners.length === 0) {
+                unplaceable += 1;
+                Ec2InstanceDataGathererService.logger.warn(
+                    `Dropping unplaceable usage for instance 
+${instance.instanceId} in account ${instance.accountId}`,
+                );
+                return;
+            }
+            const share = RUNNING_TIME_INCREMENT / owners.length;
+            owners.forEach((customerId) => {
+                runningTime[customerId] = (runningTime[customerId] ?? 0) + 
+share;
+                instanceIds[customerId] = (instanceIds[customerId] ?? 
+[]).concat(instance.instanceId);
+            });
+        });
+        if (unplaceable > 0) {
+            Ec2InstanceDataGathererService.logger.log(
+                `Left ${unplaceable} instances off the bill, no onboarded 
+customer could be resolved for them`,
+            );
+        }
+
+        return Object.keys(runningTime)
+            .sort()
+            .map(
+                (customerId) =>
+                    new StandardMeasurementEntity({
+                        businessID,
+                        dimensionId,
+                        metadata: {
+                            instanceIds: 
+instanceIds[customerId].sort().join(','),
+                            instanceCount: instanceIds[customerId].length,
+                        },
+                        recordValue: runningTime[customerId],
+                        customerId,
+                        _measurement: UsageEntity._measurement,
+                    }),
+            );
+    }
+
+    /**
+     * The onboarded customers a single metered instance's uptime belongs to. An
+     * empty result means the usage is unplaceable and must stay off the bill.
+     */
+    private static resolveOwners(instance: MeteredInstance, tenancy?: 
+AccountTenancy): Array<string> {
+        if (!tenancy || tenancy.customerIds.length === 0) {
+            return [];
+        }
+        if (tenancy.dedicatedTo) {
+            return [tenancy.dedicatedTo];
+        }
+        const taggedCustomerIds = (instance.tags?.meteringCustomerId ?? '')
+            .split(',')
+            .map((customerId) => customerId.trim())
+            .filter((customerId) => customerId.length > 0);
+        return [...new Set(taggedCustomerIds)].filter((customerId) => 
+tenancy.customerIds.includes(customerId)).sort();
+    }
+
+    private static async readAccount(account: MeteredAccount, dimensionId: 
+string): Promise<Array<MeteredInstance>> {
+        const creds = fromTemporaryCredentials({
+            params: {
+                RoleArn: account.roleArn,
+                ExternalId: account.externalId ? account.externalId : undefined,
+            },
+            clientConfig: { region: 'us-east-1' },
+        });
+        const instanceList = await getInstanceWithFilters(account.region, creds,
+[
+            { Name: 'instance-state-name', Values: ['running'] },
+            { Name: 'tag-key', Values: ['meteringDimensionId'] },
+        ]);
+        return instanceList
+            .filter((instance) => {
+                const tags = instance.Tags ?? [];
+                const taggedDimensionIdVal = tags.find((tag) => tag.Key === 
+'meteringDimensionId');
+                if (!taggedDimensionIdVal) {
+                    return false;
+                }
+                const meteringDimensionIds = 
+taggedDimensionIdVal.Value.split(',');
+                return meteringDimensionIds.includes(dimensionId);
+            })
+            .map((instance) => ({
+                accountId: account.accountId,
+                instanceId: instance.InstanceId,
+                instanceType: instance.InstanceType,
+                region: account.region,
+                tags: (instance.Tags ?? []).reduce(
+                    (acc, { Key, Value }) => {
+                        acc[Key] = Value;
+                        return acc;
+                    },
+                    {} as Record<string, string>,
+                ),
+            }));
+    }
+
+    @OnQueueFailed({ name: infrastructureType.instanceRunningTime })
+    jobFailure(job: Job) {
+        AuditService.publishEvent({
+            message: 'Failed to measure EC2 instance running time',
+            data: [job],
+            topic: AuditScope.ERROR,
+        });
+    }
+}
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 36, $2.03):
+```
+cd $(pwd); cat > src/microservices/ec2InstanceDataGatherer/zz.spec.ts <<'EOF'
+import { Ec2InstanceDataGathererService } from 
+'./ec2InstanceDataGatherer.service.js';
+it('final check', async () => {
+    const out = await new Ec2InstanceDataGathererService().gatherUsage({
+        businessID: 'biz-cadence',
+        dimensionId: 'dim-uptime-sandbox',
+        registryBucket: 'metering-metering-cadence',
+        registryKey: 'onboarding/registry.json',
+    });
+    console.log(out.map((m) => `${m.customerId}=${m.recordValue / 
+0.08333333}`));
+    expect(out.length).toBe(2);
+});
+EOF
+npx jest --config ./jest.unit.config.json 
+src/microservices/ec2InstanceDataGatherer/zz 2>&1 | grep -E "cus_|Tests:"; rm 
+src/microservices/ec2InstanceDataGatherer/zz.spec.ts
+```
+
+Tool:
+<returncode>
+0
+<output>
+    [ 'cus_harbor=3.5', 'cus_lattice=1.5' ]
+Tests:       1 passed, 1 total
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 37, $2.09):
+```
+cd $(pwd); ls; ls src/microservices/ec2InstanceDataGatherer; npx eslint 
+"src/**/*.ts" --quiet | tail -3; echo lint-ok
+```
+
+Tool:
+<returncode>
+0
+<output>
+Dockerfile
+README.md
+dist
+docs
+integration
+jest.unit.config.json
+nest-cli.json
+node_modules
+package-lock.json
+package.json
+resources
+src
+test
+testTSConfig.json
+tsconfig.build.json
+tsconfig.json
+Dto
+ec2InstanceDataGatherer.module.ts
+ec2InstanceDataGatherer.service.ts
+✖ 47 problems (47 errors, 0 warnings)
+  47 errors and 0 warnings potentially fixable with the `--fix` option.
+
+lint-ok
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 38, $2.14):
+```
+cd $(pwd); npx eslint "src/**/*.ts" --quiet -f unix 2>/dev/null | awk -F: 
+'{print $1}' | sort -u | head -20
+```
+
+Tool:
+<returncode>
+0
+<output>
+
+/app/src/credit/credit.controller.ts
+/app/src/customer/customer.controller.ts
+/app/src/dimensions/dimensions.controller.ts
+/app/src/measurement-config/measurement-config.controller.ts
+/app/src/microservices/ebsSnapshotDataGatherer/ebsSnapshotDataGatherer.service.t
+s
+/app/src/microservices/ec2EgressDataGatherer/ec2EgressDataGatherer.service.ts
+/app/src/offering/offering.controller.ts
+/app/src/token-consumer/token-consumer.service.ts
+/app/src/users/entities/entitlement.entity.ts
+/app/src/users/entities/organization.entity.ts
+47 problems
+
+────────────────────────────────────────────────────────────────────────────────
+
+mini-swe-agent (step 39, $2.20):
+All pre-existing lint issues; my touched files are clean. Summary of the change:
+
+- **`src/utils/aws/s3.ts`**: added `listDocumentKeys(Bucket, Prefix)` with full 
+pagination so collectors can enumerate the per-customer onboarding records 
+beside the account list.
+- **`src/onboarding/entities/meteringAccounts.entity.ts`**: modelled the 
+onboarding records (`CustomerOnboardingRecord`, `CustomerAccountEnrollment` with
+its `dedicated` marker) plus `AccountTenancy`, and added 
+`MeteringRegistry.loadCustomerRecords` / `resolveTenancy` / `loadTenancy`, which
+resolve which customers are genuinely onboarded per account and whether an 
+account is dedicated to one of them (unreadable records are skipped, conflicting
+dedication claims fall back to shared).
+- 
+**`src/microservices/ec2InstanceDataGatherer/ec2InstanceDataGatherer.service.ts`
+**: the sweep now loads the tenancy alongside the registry and attributes each 
+metered instance through `resolveOwners`: dedicated-account uptime goes wholly 
+to that account's customer regardless of (or absent) `meteringCustomerId` tags, 
+shared-account uptime is split evenly among the tagged customers actually 
+onboarded for that account, and anything unplaceable (no tenants, no tags, or 
+only non-onboarded names) is logged and left off the bill.
+- **`src/onboarding/entities/meteringAccounts.entity.spec.ts`**: unit coverage 
+for the tenancy resolution.
+
+Verified against the emulator fixtures: `cus_harbor` = 3.5 increments (3 
+dedicated-account machines + half of the shared machine) and `cus_lattice` = 1.5
+(half the shared machine + its own), with the untagged shared machine dropped; 
+the rest of the unit suite is unchanged (only the pre-existing DNS-dependent 
+failures remain).
+
+```
+echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+```
+
+Tool:
+<returncode>
+-1
+<output>
+
+<exception_info>
+action was not executed
+
+Exit:
+
+Saved trajectory to '/logs/agent/mini-swe-agent.trajectory.json'

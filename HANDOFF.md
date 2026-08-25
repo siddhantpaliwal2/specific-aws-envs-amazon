@@ -25,7 +25,9 @@ credential-separation adapter.
 
 The additive Task 5 configuration uses that route and
 `bedrock/us.anthropic.claude-opus-5` under the same policy. The shared model
-configuration sets a 32,768-token response cap.
+configuration sets a 32,768-token response cap. The stored Opus 5 Tasks 1–4
+trials retain the report cohort's separate frozen identities and are provided
+for evidence audit, not silently regenerated against the current task tree.
 
 The adapter stores provider credentials in a named Bedrock profile and removes
 their source variables before the agent phase. Commands issued by the model
@@ -35,9 +37,10 @@ emulator's buckets; a wrong endpoint or credential stops the trial before it
 can enter the scored cohort.
 
 These commands sample a new stochastic cohort; they cannot reproduce the exact
-stored model outputs. All 48 recorded attempts are complete under the existing
+stored model outputs. All 80 recorded attempts are complete under the existing
 `sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/` path: 32 historical
-four-task trials and 16 matched Task 5 trials.
+four-task Opus 4.8 trials, 32 report Opus 5 trials for Tasks 1–4, and 16 matched
+Task 5 trials.
 
 ## Audit the stored evidence without model calls
 
@@ -46,6 +49,7 @@ verifier results:
 
 ```sh
 python3 harness/summarize_cohort.py
+python3 harness/summarize_report_opus5.py
 python3 harness/summarize_task5.py
 git diff --exit-code README.md sample-run/indexes
 ```
@@ -82,6 +86,7 @@ README matrix from raw verifier outputs:
 ```sh
 python3 harness/redact_artifacts.py
 python3 harness/summarize_cohort.py
+python3 harness/summarize_report_opus5.py
 python3 harness/summarize_task5.py
 ```
 

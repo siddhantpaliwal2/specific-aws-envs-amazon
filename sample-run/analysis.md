@@ -1,5 +1,27 @@
 # Cohort selection and interpretation
 
+## Report Opus 5 evidence for Tasks 1–4
+
+The 32 Opus 5 trajectories referenced by the report are included at the same
+stable raw root as the previously shared evidence.
+
+| Task | Model | Solves | Interpretation |
+| --- | --- | ---: | --- |
+| [Task 1: tenant attribution](../tasks/01-tenant-attribution/instruction.md) | Opus 5 | 7/8 | Seven solves under the report cohort's frozen Task 1 identity |
+| [Task 2: entitlement overage lines](../tasks/02-entitlement-overage-lines/instruction.md) | Opus 5 | 5/8 | Five solves and three failures under the report cohort's frozen Task 2 identity |
+| [Task 3: usage-window aggregation](../tasks/03-usage-window-aggregation/instruction.md) | Opus 5 | 8/8 | Consistent solving under the report cohort's frozen Task 3 identity |
+| [Task 4: usage attribution chain](../tasks/04-usage-attribution-chain/instruction.md) | Opus 5 | 8/8 | Consistent solving under the report cohort's frozen Task 4 identity |
+
+All 32 have numeric rewards, both trajectory formats, readable transcripts,
+lock and result records, complete verifier artifacts, and no Harbor exception.
+The exact evidence and report-path mapping is in
+[`indexes/report-opus5-trials.json`](indexes/report-opus5-trials.json).
+
+These rows should not be treated as matched pairs with the historical Opus 4.8
+matrix below. The preserved historical cohort records different frozen task
+digests and a different run policy; keeping the denominators separate preserves
+both the old links and the report evidence without relabeling either cohort.
+
 ## Task 5 matched supplement
 
 Task 5 adds eight valid trials per model without changing or pooling the
