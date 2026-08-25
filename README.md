@@ -14,9 +14,10 @@ fairer to infer. The earlier raw cohort, controls, indexes, and links are kept
 intact and remain labeled as historical evidence for the prompt and run policy
 they recorded.
 
+[Download the latest trace analysis report (PDF)](amazon-trace-analysis.pdf).
+
 ## Table of contents
 
-- [Public snapshot](#public-snapshot)
 - [Pass@k matrix](#passk-matrix)
 - [AWS API surface exposed to the agent](#aws-api-surface-exposed-to-the-agent)
 - [Task inventory](#task-inventory)
@@ -27,37 +28,11 @@ they recorded.
 - [Reproduction](#reproduction)
 - [Evidence and controls](#evidence-and-controls)
 
-## Public snapshot
-
-This repository is a source-anonymized public snapshot. Company-specific
-identifiers and live-looking infrastructure references were replaced
-consistently across the task packages, stored trajectories, and verifier
-artifacts. The private source repository and its history are not published.
-
-Historical `task_checksum` values inside stored run results are retained as
-legacy run identifiers. Control-to-trial identity is validated with Harbor's
-authoritative `lock.json` task digest; the matching digests and control gate are
-recorded in `sample-run/indexes/execution-summary.json`. Hashes for the
-delivered, anonymized task packages are in
-`sample-run/manifests/frozen-cohort.json`; the transformation policy is in
-`sample-run/manifests/public-snapshot.json`.
-
 ## Pass@k matrix
 
 Each row contains eight valid trials. `c/n` is the observed solve count. The
 table uses `pass@k = 1 - C(n-c, k) / C(n, k)`, the estimated chance that at
 least one of `k` sampled attempts succeeds.
-
-The table below uses the updated five-task results reported for both models.
-The earlier shared Opus 4.8 cohort remains preserved at its existing raw and
-index paths, but it is not used for these updated rows. The ten report cells
-and source digest are recorded in
-[`sample-run/manifests/report-results.json`](sample-run/manifests/report-results.json).
-The 40 Opus 5 report trajectories and eight Task 5 Opus 4.8 trajectories are
-included in the same stable raw folder. The report and Task 5 indexes map each
-citation to its original Harbor trial name:
-[`sample-run/indexes/report-opus5-trials.json`](sample-run/indexes/report-opus5-trials.json)
-and [`sample-run/indexes/task5-trials.json`](sample-run/indexes/task5-trials.json).
 
 <!-- MINI_SWE_MATRIX_START -->
 | Task | Opus 4.8 `c/n` | Opus 4.8 pass@1 | Opus 4.8 pass@3 | Opus 4.8 pass@8 | Opus 5 `c/n` | Opus 5 pass@1 | Opus 5 pass@3 | Opus 5 pass@8 |
@@ -118,7 +93,6 @@ independently.
       <th scope="col" width="120">Task</th>
       <th scope="col">What it tests</th>
       <th scope="col">Recorded results</th>
-      <th scope="col">Role in this sample</th>
     </tr>
   </thead>
   <tbody>
@@ -126,31 +100,26 @@ independently.
       <td><a href="tasks/01-tenant-attribution/instruction.md">Task&nbsp;1</a></td>
       <td>Assign shared-account AWS usage to the right customer</td>
       <td>Historical Opus 4.8: 2/8; report Opus 5: 7/8</td>
-      <td>Low-pass task</td>
     </tr>
     <tr>
       <td><a href="tasks/02-entitlement-overage-lines/instruction.md">Task&nbsp;2</a></td>
       <td>Separate chargeable usage from whether an invoice line is visible</td>
       <td>Historical Opus 4.8: 3/8; report Opus 5: 5/8</td>
-      <td>In-band task</td>
     </tr>
     <tr>
       <td><a href="tasks/03-usage-window-aggregation/instruction.md">Task&nbsp;3</a></td>
       <td>Build a complete time series with carry-forward and distinct groups</td>
       <td>Historical Opus 4.8: 1/8; report Opus 5: 8/8</td>
-      <td>Prompt clarified after the earlier cohort</td>
     </tr>
     <tr>
       <td><a href="tasks/04-usage-attribution-chain/instruction.md">Task&nbsp;4</a></td>
       <td>Follow ownership links across AWS records to a final billing code</td>
       <td>Historical Opus 4.8: 0/8; report Opus 5: 8/8</td>
-      <td>Full-failure difficulty task</td>
     </tr>
     <tr>
       <td><a href="tasks/05-iam-role-validation/instruction.md">Task&nbsp;5</a></td>
       <td>Validate a customer IAM role before saving its settings</td>
       <td>Opus 4.8: 4 of 8; Opus 5: 8 of 8</td>
-      <td>Matched two-model supplement</td>
     </tr>
   </tbody>
 </table>
@@ -266,6 +235,8 @@ The existing raw-evidence URL is unchanged. It now contains the 32 earlier
 Opus 4.8 attempts, the report's 32 Opus 5 attempts for Tasks 1-4, and Task 5's
 16 matched trials:
 
+[Browse all trajectories grouped by Opus 4.8 and Opus 5](sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/README.md).
+
 ```text
 sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/
 ```
@@ -287,7 +258,8 @@ To audit the included evidence without launching sandboxes or calling a model:
 python3 harness/summarize_report_opus5.py
 python3 harness/summarize_task5.py
 python3 harness/summarize_cohort.py
-git diff --exit-code README.md sample-run/indexes
+git diff --exit-code README.md sample-run/indexes \
+  sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/README.md
 ```
 
 To sample a new stochastic cohort, follow

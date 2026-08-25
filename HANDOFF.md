@@ -51,7 +51,8 @@ verifier results:
 python3 harness/summarize_report_opus5.py
 python3 harness/summarize_task5.py
 python3 harness/summarize_cohort.py
-git diff --exit-code README.md sample-run/indexes
+git diff --exit-code README.md sample-run/indexes \
+  sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/README.md
 ```
 
 ## Launch a new cohort
