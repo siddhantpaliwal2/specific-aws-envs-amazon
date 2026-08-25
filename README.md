@@ -3,7 +3,7 @@
 This repository contains five packaged AWS coding tasks. The original shared
 four-task cohort remains at its existing paths with 6 solves across 32 valid
 Claude Opus 4.8 trials. The same stable raw-evidence folder now also contains
-the report's 32 Claude Opus 5 trajectories for Tasks 1–4 and Task 5's 16
+the report's 32 Claude Opus 5 trajectories for Tasks 1-4 and Task 5's 16
 matched trajectories. All 40 Opus 5 trajectories discussed in the report are
 there, for 80 scored attempts in total.
 
@@ -95,7 +95,7 @@ Unweighted macro-average across the four tasks:
 The macro pass@k values average the four task-level estimates; they are not a
 pooled trial estimator.
 
-### Opus 5 report evidence for Tasks 1–4
+### Opus 5 report evidence for Tasks 1-4
 
 The 32 Opus 5 trajectories analyzed in the report are included in the same
 stable raw folder. The index preserves the report's trial numbering and maps
@@ -280,7 +280,7 @@ clipped edges.
 ## Where the trajectories are stored
 
 The existing raw-evidence URL is unchanged. It now contains the 32 earlier
-Opus 4.8 attempts, the report's 32 Opus 5 attempts for Tasks 1–4, and Task 5's
+Opus 4.8 attempts, the report's 32 Opus 5 attempts for Tasks 1-4, and Task 5's
 16 matched trials:
 
 ```text
@@ -320,7 +320,7 @@ agent configuration, and verifier controls.
   Claude Opus 5 through Amazon Bedrock. Task 5 uses both models under a matched
   policy. The later policy has a 32,768-token response cap and binary verifiers.
 - **Denominator:** All 80 stored trials are valid: 32 historical Opus 4.8
-  attempts, 32 report Opus 5 attempts for Tasks 1–4, and 16 matched Task 5
+  attempts, 32 report Opus 5 attempts for Tasks 1-4, and 16 matched Task 5
   attempts. The three evidence sets retain separate indexes and are not pooled
   across mismatched frozen identities. Admission requires a numeric reward,
   complete ATIF and native mini-SWE-agent trajectories, a complete verifier
@@ -330,7 +330,7 @@ agent configuration, and verifier controls.
 - **Raw model evidence:**
   [`sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/`](sample-run/raw/amazon-opus-4-8-four-task-cohort-20260818/)
   contains all 80 scored attempts: the original 32, the report's 32 Opus 5
-  attempts for Tasks 1–4, and Task 5's 16 matched attempts. The folder name is
+  attempts for Tasks 1-4, and Task 5's 16 matched attempts. The folder name is
   retained so previously shared links remain stable.
 - **Raw controls:**
   [`sample-run/raw/amazon-opus-4-8-four-task-controls-20260818/`](sample-run/raw/amazon-opus-4-8-four-task-controls-20260818/)
@@ -339,7 +339,7 @@ agent configuration, and verifier controls.
   [`sample-run/indexes/trials.json`](sample-run/indexes/trials.json) resolves
   every earlier trial to its stored evidence;
   [`sample-run/indexes/report-opus5-trials.json`](sample-run/indexes/report-opus5-trials.json)
-  resolves the report's Opus 5 trials for Tasks 1–4 and records their report
+  resolves the report's Opus 5 trials for Tasks 1-4 and records their report
   source paths; and
   [`sample-run/indexes/task5-trials.json`](sample-run/indexes/task5-trials.json)
   resolves the Task 5 trials.
